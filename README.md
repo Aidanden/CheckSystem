@@ -589,5 +589,3 @@ For issues and questions:
 ---
 
 **Happy Coding!** 💻✨
-#   C h e c k S y s t e m  
- 

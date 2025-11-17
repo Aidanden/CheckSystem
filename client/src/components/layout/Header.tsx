@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
-import { LogOut } from 'lucide-react';
+import { LogOut, MapPin } from 'lucide-react';
 
 export default function Header() {
   const router = useRouter();
@@ -16,18 +16,23 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white border-b-2 border-gray-100 px-8 py-4 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-800">مرحباً، {user?.username}</h2>
+          <h2 className="text-xl font-bold text-gray-800 mb-1">
+            مرحباً، <span className="text-primary-600">{user?.username}</span>
+          </h2>
           {user?.branch && (
-            <p className="text-sm text-gray-500">الفرع: {user.branch.branchName}</p>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <MapPin className="w-4 h-4 text-primary-500" />
+              <span className="font-medium">{user.branch.branchName}</span>
+            </div>
           )}
         </div>
 
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
         >
           <LogOut className="w-5 h-5" />
           <span>تسجيل الخروج</span>
