@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import { formatDateMedium, formatNumber } from '@/utils/locale';
 
 interface PrintOperation {
   id: number;
@@ -252,7 +253,7 @@ export default function HistoryPage() {
                         {operation.sheetsPrinted} ورقة
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(operation.printDate).toLocaleString('ar-SA')}
+                        {formatDateMedium(operation.printDate)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">

@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { inventoryService, printingService } from '@/lib/api';
 import { Inventory, PrintStatistics, PrintOperation } from '@/types';
 import { Package, FileText, TrendingUp, Clock } from 'lucide-react';
+import { formatDateShort, formatNumber } from '@/utils/locale';
 
 export default function DashboardPage() {
   const [inventory, setInventory] = useState<Inventory[]>([]);
@@ -197,7 +198,7 @@ export default function DashboardPage() {
                       </td>
                       <td className="py-4 px-4 text-sm font-semibold text-primary-600">{op.sheetsPrinted}</td>
                       <td className="py-4 px-4 text-sm text-gray-600">
-                        {new Date(op.printDate).toLocaleDateString('ar-EG')}
+                        {formatDateShort(op.printDate)}
                       </td>
                       <td className="py-4 px-4">
                         <span className="badge badge-success">

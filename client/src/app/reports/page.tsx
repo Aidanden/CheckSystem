@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { printingService } from '@/lib/api';
 import { PrintOperation, PrintStatistics } from '@/types';
-import { FileText, Download, Filter } from 'lucide-react';
+import { FileText, Download, Filter, Calendar } from 'lucide-react';
+import { formatDateShort, formatDateMedium, formatNumber } from '@/utils/locale';
 
 export default function ReportsPage() {
   const [operations, setOperations] = useState<PrintOperation[]>([]);
@@ -39,7 +40,7 @@ export default function ReportsPage() {
       op.accountNumber,
       op.accountType === 1 ? 'Individual' : 'Corporate',
       op.sheetsPrinted,
-      new Date(op.printDate).toLocaleDateString(),
+      formatDateShort(op.printDate),
       op.status,
     ]);
 
@@ -180,7 +181,7 @@ export default function ReportsPage() {
                       {op.sheetsPrinted}
                     </td>
                     <td className="py-3 px-4 text-sm">
-                      {new Date(op.printDate).toLocaleString('ar-EG')}
+                      {formatDateMedium(op.printDate)}
                     </td>
                     <td className="py-3 px-4">
                       <span

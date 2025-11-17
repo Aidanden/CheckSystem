@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import routes from './routes';
 import { errorHandler } from './middleware/errorHandler.middleware';
 import prisma from './lib/prisma';
+import { getMorganConfig } from './config/logger.config';
 
 // Load environment variables
 dotenv.config();
@@ -19,7 +20,9 @@ app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true,
 }));
-app.use(morgan('dev')); // Logging
+// Use secure logging configuration
+const morganConfig = getMorganConfig();
+app.use(morgan(morganConfig.format, morganConfig.options));
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 

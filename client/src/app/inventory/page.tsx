@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { inventoryService } from '@/lib/api';
 import { Inventory, InventoryTransaction } from '@/types';
-import { Package, Plus, TrendingUp, TrendingDown } from 'lucide-react';
+import { Package, Plus, Minus, History, TrendingUp, TrendingDown } from 'lucide-react';
+import { formatDateShort, formatNumber } from '@/utils/locale';
 
 export default function InventoryPage() {
   const [inventory, setInventory] = useState<Inventory[]>([]);
@@ -172,7 +173,7 @@ export default function InventoryPage() {
                     </td>
                     <td className="py-3 px-4 text-sm font-mono">{trans.quantity}</td>
                     <td className="py-3 px-4 text-sm">
-                      {new Date(trans.createdAt).toLocaleDateString('ar-EG')}
+                      {formatDateShort(trans.createdAt)}
                     </td>
                     <td className="py-3 px-4 text-sm text-gray-600">
                       {trans.notes || '-'}

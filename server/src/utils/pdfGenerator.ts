@@ -2,6 +2,7 @@ import PDFDocument from 'pdfkit';
 import { CheckbookData } from '../types/check.types';
 import * as fs from 'fs';
 import * as path from 'path';
+import { formatDateLong, LIBYA_CONFIG } from './locale';
 
 export class PDFGenerator {
   /**
@@ -36,6 +37,12 @@ export class PDFGenerator {
         // Pipe to file
         const stream = fs.createWriteStream(filepath);
         doc.pipe(stream);
+
+        // Register MICR font
+        const micrFontPath = path.join(__dirname, '../fonts/micrenc.ttf');
+        if (fs.existsSync(micrFontPath)) {
+          doc.registerFont('MICR', micrFontPath);
+        }
 
         // Add Arabic font support (using Arial as fallback)
         // Note: For production, use a proper Arabic font like Amiri or Cairo
@@ -92,15 +99,23 @@ export class PDFGenerator {
     doc.moveDown();
     doc.text(`Serial Range: ${operation.serialFrom} - ${operation.serialTo}`);
     doc.text(`Total Checks: ${operation.sheetsPrinted}`);
-    doc.text(`Print Date: ${operation.printDate.toLocaleString()}`);
+    doc.text(`Print Date: ${formatDateLong(operation.printDate)}`);
     doc.moveDown(2);
 
     doc.fontSize(10);
-    doc.text('MICR Line Format:', { underline: true });
-    doc.text('[Serial] [Routing Number] [Account Number] [Account Type]');
+    doc.text('MICR Line Format (RTL - Right to Left):', { underline: true });
+    doc.text('[Account Type] [Account Number] [Routing Number] [Serial]');
     doc.moveDown();
     doc.text('Example MICR Line:');
-    doc.text(checkbookData.checks[0].micrLine, { font: 'Courier' });
+    
+    // Use MICR font if available, otherwise fallback to Courier
+    try {
+      doc.font('MICR').fontSize(12).text(checkbookData.checks[0].micrLine);
+      doc.font('Helvetica').fontSize(8).text('(Type starts from right: 01=Individual, 02=Corporate)');
+    } catch (e) {
+      doc.font('Courier').text(checkbookData.checks[0].micrLine);
+      doc.text('(Type starts from right: 01=Individual, 02=Corporate)', { fontSize: 8 });
+    }
   }
 
   /**
@@ -160,13 +175,21 @@ export class PDFGenerator {
       .stroke();
 
     // Account holder name at bottom left
-    doc.fontSize(8).text(check.accountHolderName, 20, height - 40);
+    doc.fontSize(8).font('Helvetica').text(check.accountHolderName, 20, height - 40);
 
     // MICR line at bottom (in special MICR font style)
-    doc.fontSize(10).font('Courier').text(check.micrLine, 20, height - 25, {
-      width: width - 40,
-      align: 'center',
-    });
+    try {
+      doc.fontSize(12).font('MICR').text(check.micrLine, 20, height - 25, {
+        width: width - 40,
+        align: 'center',
+      });
+    } catch (e) {
+      // Fallback to Courier if MICR font is not available
+      doc.fontSize(10).font('Courier').text(check.micrLine, 20, height - 25, {
+        width: width - 40,
+        align: 'center',
+      });
+    }
 
     // Add some decorative elements
     doc

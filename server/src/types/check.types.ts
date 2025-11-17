@@ -10,12 +10,12 @@ export interface CheckSize {
   unit: 'mm';
 }
 
-// MICR line components
+// MICR line components (RTL format - displayed right to left)
 export interface MICRComponents {
-  serialNumber: string;      // 9 digits: "000000001"
+  serialNumber: string;      // 9 digits: "000000001" (leftmost)
   routingNumber: string;     // 9 digits: "123456789"
   accountNumber: string;     // 15 digits: "100012345678901"
-  accountType: string;       // 2 digits: "01" or "02"
+  accountType: string;       // 2 digits: "01" or "02" (rightmost)
 }
 
 // Single check data
@@ -28,7 +28,7 @@ export interface CheckData {
   accountHolderName: string;        // Customer name
   branchName: string;               // Branch name
   checkSize: CheckSize;             // Check dimensions
-  micrLine: string;                 // Complete MICR line
+  micrLine: string;                 // Complete MICR line (RTL: Type Account Routing Serial)
 }
 
 // Checkbook data (collection of checks)
@@ -149,7 +149,8 @@ export class CheckFormatter {
   }
 
   /**
-   * Generate complete MICR line
+   * Generate complete MICR line (RTL format - starts from right)
+   * Format: [Account Type] [Account Number] [Routing Number] [Serial Number]
    */
   static generateMICRLine(
     serialNumber: number,
@@ -159,7 +160,8 @@ export class CheckFormatter {
   ): string {
     const serial = this.formatSerialNumber(serialNumber);
     const type = this.formatAccountType(accountType);
-    return `${serial} ${routingNumber} ${accountNumber} ${type}`;
+    // RTL format: Type first (rightmost), then account, routing, and serial
+    return `${type} ${accountNumber} ${routingNumber} ${serial}`;
   }
 
   /**

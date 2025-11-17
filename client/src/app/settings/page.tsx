@@ -406,12 +406,12 @@ export default function SettingsPage() {
               <div>
                 <h3 className="font-medium text-gray-700 mb-2">خط MICR</h3>
                 <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
-                  <p className="font-medium mb-1">ترتيب البيانات (من اليسار لليمين):</p>
+                  <p className="font-medium mb-1">ترتيب البيانات (من اليمين لليسار - RTL):</p>
                   <p className="font-mono text-xs">
-                    [رقم التسلسل 9 أرقام] [الرقم التوجيهي] [رقم الحساب 15 رقم] [نوع الصك: 01 أفراد / 02 شركات]
+                    [نوع الصك: 01 أفراد / 02 شركات] [رقم الحساب 15 رقم] [الرقم التوجيهي] [رقم التسلسل 9 أرقام]
                   </p>
                   <p className="mt-1 font-mono text-xs text-blue-600">
-                    مثال: 000000001 1100000001 100012345678901 01
+                    مثال: 01 100012345678901 1100000001 000000001
                   </p>
                 </div>
               </div>
@@ -546,12 +546,13 @@ export default function SettingsPage() {
                   left: `${currentSettings.micrLine.x * 2}px`,
                   top: `${currentSettings.micrLine.y * 2}px`,
                   fontSize: `${currentSettings.micrLine.fontSize * 1.5}px`,
-                  fontFamily: 'monospace',
+                  fontFamily: 'MICR, monospace',
                   textAlign: currentSettings.micrLine.align,
                   transform: currentSettings.micrLine.align === 'center' ? 'translateX(-50%)' : 'none',
+                  letterSpacing: '0.05em',
                 }}
               >
-                000000001 1100000001 100012345678901 01
+                01 100012345678901 1100000001 000000001
               </div>
             </div>
 
@@ -563,12 +564,12 @@ export default function SettingsPage() {
               </div>
               
               <div className="bg-green-50 border border-green-200 rounded p-3 text-sm">
-                <p className="font-medium text-green-800 mb-1">📋 تكوين خط MICR:</p>
+                <p className="font-medium text-green-800 mb-1">📋 تكوين خط MICR (من اليمين لليسار):</p>
                 <div className="font-mono text-xs text-green-700 space-y-1">
-                  <p>• التسلسل: <span className="text-green-900 font-bold">000000001</span> (9 أرقام)</p>
-                  <p>• التوجيهي: <span className="text-green-900 font-bold">1100000001</span> (رقم الفرع)</p>
-                  <p>• الحساب: <span className="text-green-900 font-bold">100012345678901</span> (15 رقم)</p>
-                  <p>• النوع: <span className="text-green-900 font-bold">01</span> (أفراد) أو <span className="text-green-900 font-bold">02</span> (شركات)</p>
+                  <p className="text-right">• <span className="text-green-900 font-bold">01</span> (أفراد) أو <span className="text-green-900 font-bold">02</span> (شركات) - النوع (يمين)</p>
+                  <p className="text-right">• <span className="text-green-900 font-bold">100012345678901</span> (15 رقم) - رقم الحساب</p>
+                  <p className="text-right">• <span className="text-green-900 font-bold">1100000001</span> - الرقم التوجيهي (رقم الفرع)</p>
+                  <p className="text-right">• <span className="text-green-900 font-bold">000000001</span> (9 أرقام) - التسلسل (يسار)</p>
                 </div>
               </div>
             </div>

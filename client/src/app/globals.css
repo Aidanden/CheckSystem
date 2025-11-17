@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* MICR Font Definition */
+@font-face {
+  font-family: 'MICR';
+  src: url('/font/micrenc.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --primary: 220 14% 96%;
   --foreground: 222.2 84% 4.9%;
