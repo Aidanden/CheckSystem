@@ -63,10 +63,10 @@ export default function SettingsPage() {
     try {
       setInitialLoading(true);
       const token = localStorage.getItem('token');
-      
+
       if (!token) return;
 
-      const response = await fetch(`http://localhost:5000/api/print-settings/${activeTab}`, {
+      const response = await fetch(`http://10.250.100.40:5000/api/print-settings/${activeTab}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -111,13 +111,13 @@ export default function SettingsPage() {
 
     try {
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         setError('الرجاء تسجيل الدخول');
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/print-settings', {
+      const response = await fetch('http://10.250.100.40:5000/api/print-settings', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -171,21 +171,19 @@ export default function SettingsPage() {
           <div className="flex gap-4">
             <button
               onClick={() => setActiveTab(1)}
-              className={`px-6 py-3 font-medium border-b-2 transition-colors ${
-                activeTab === 1
+              className={`px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 1
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-600 hover:text-gray-800'
-              }`}
+                }`}
             >
               شيكات الأفراد (25 ورقة)
             </button>
             <button
               onClick={() => setActiveTab(2)}
-              className={`px-6 py-3 font-medium border-b-2 transition-colors ${
-                activeTab === 2
+              className={`px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 2
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-600 hover:text-gray-800'
-              }`}
+                }`}
             >
               شيكات الشركات (50 ورقة)
             </button>
@@ -215,7 +213,7 @@ export default function SettingsPage() {
             {/* Check Dimensions */}
             <div className="space-y-4">
               <h3 className="font-medium text-gray-700">المقاسات (ملم)</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">
@@ -248,7 +246,7 @@ export default function SettingsPage() {
             {/* Branch Name Position */}
             <div className="space-y-4 border-t pt-4">
               <h3 className="font-medium text-gray-700">اسم الفرع</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">X (من اليسار)</label>
@@ -300,7 +298,7 @@ export default function SettingsPage() {
             {/* Serial Number Position */}
             <div className="space-y-4 border-t pt-4">
               <h3 className="font-medium text-gray-700">الرقم التسلسلي</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">X</label>
@@ -352,7 +350,7 @@ export default function SettingsPage() {
             {/* Account Holder Name Position */}
             <div className="space-y-4 border-t pt-4">
               <h3 className="font-medium text-gray-700">اسم صاحب الحساب</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">X</label>
@@ -415,7 +413,7 @@ export default function SettingsPage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">X</label>
@@ -491,7 +489,7 @@ export default function SettingsPage() {
               معاينة الشيك
             </h2>
 
-            <div 
+            <div
               className="border-2 border-gray-300 bg-white relative overflow-hidden"
               style={{
                 width: `${currentSettings.checkWidth * 2}px`,
@@ -562,7 +560,7 @@ export default function SettingsPage() {
                 <p>• المقاسات الفعلية: {currentSettings.checkWidth} × {currentSettings.checkHeight} ملم</p>
                 <p>• استخدم الإعدادات لضبط مواضع البيانات بدقة</p>
               </div>
-              
+
               <div className="bg-green-50 border border-green-200 rounded p-3 text-sm">
                 <p className="font-medium text-green-800 mb-1">📋 تكوين خط MICR (من اليمين لليسار):</p>
                 <div className="font-mono text-xs text-green-700 space-y-1">

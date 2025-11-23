@@ -140,7 +140,7 @@ $token = "YOUR_TOKEN"
 $headers = @{Authorization = "Bearer $token"}
 
 $body = @{account_number="100012345678901"} | ConvertTo-Json
-Invoke-RestMethod -Uri http://localhost:5000/api/printing/print -Method POST -Headers $headers -ContentType "application/json" -Body $body
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/printing/print -Method POST -Headers $headers -ContentType "application/json" -Body $body
 ```
 
 **المتوقع:**
@@ -153,7 +153,7 @@ Invoke-RestMethod -Uri http://localhost:5000/api/printing/print -Method POST -He
 
 ```powershell
 $body = @{account_number="200034567890123"} | ConvertTo-Json
-Invoke-RestMethod -Uri http://localhost:5000/api/printing/print -Method POST -Headers $headers -ContentType "application/json" -Body $body
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/printing/print -Method POST -Headers $headers -ContentType "application/json" -Body $body
 ```
 
 **المتوقع:**
@@ -167,7 +167,7 @@ Invoke-RestMethod -Uri http://localhost:5000/api/printing/print -Method POST -He
 ```powershell
 # اطبع للحساب 100012345678901 مرة أخرى
 $body = @{account_number="100012345678901"} | ConvertTo-Json
-Invoke-RestMethod -Uri http://localhost:5000/api/printing/print -Method POST -Headers $headers -ContentType "application/json" -Body $body
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/printing/print -Method POST -Headers $headers -ContentType "application/json" -Body $body
 ```
 
 **المتوقع:**

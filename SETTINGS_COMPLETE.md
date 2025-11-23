@@ -230,11 +230,11 @@ client/src/
 ```bash
 # Get individual settings
 curl -H "Authorization: Bearer TOKEN" \
-  http://localhost:5000/api/print-settings/1
+  http://10.250.100.40:5000/api/print-settings/1
 
 # Get corporate settings
 curl -H "Authorization: Bearer TOKEN" \
-  http://localhost:5000/api/print-settings/2
+  http://10.250.100.40:5000/api/print-settings/2
 ```
 
 ### 2. اختبار حفظ الإعدادات:
@@ -251,7 +251,7 @@ curl -X POST \
     "accountHolderName": {"x": 20, "y": 70, "fontSize": 10, "align": "left"},
     "micrLine": {"x": 117.5, "y": 80, "fontSize": 12, "align": "center"}
   }' \
-  http://localhost:5000/api/print-settings
+  http://10.250.100.40:5000/api/print-settings
 ```
 
 ### 3. اختبار من Frontend:

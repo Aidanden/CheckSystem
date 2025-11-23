@@ -48,7 +48,7 @@
 
 **1. Login:**
 ```http
-POST http://localhost:5000/api/auth/login
+POST http://10.250.100.40:5000/api/auth/login
 Content-Type: application/json
 
 {
@@ -59,7 +59,7 @@ Content-Type: application/json
 
 **2. Print:**
 ```http
-POST http://localhost:5000/api/printing/print
+POST http://10.250.100.40:5000/api/printing/print
 Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 

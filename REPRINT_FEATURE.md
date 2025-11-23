@@ -230,7 +230,7 @@ if (customSerialFrom !== undefined && customSerialTo !== undefined) {
 ### من API مباشرة:
 
 ```http
-POST http://localhost:5000/api/printing/print
+POST http://10.250.100.40:5000/api/printing/print
 Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 

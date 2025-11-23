@@ -81,7 +81,7 @@ npm run db:seed
 npm run dev
 ```
 
-**✅ Backend يعمل الآن على:** `http://localhost:5000`
+**✅ Backend يعمل الآن على:** `http://10.250.100.40:5000`
 
 ---
 
@@ -264,7 +264,7 @@ JWT_SECRET="your-secret-key"
 **Solution:**
 ```powershell
 # تأكد أن Backend يعمل على port 5000
-# افتح: http://localhost:5000
+# افتح: http://10.250.100.40:5000
 
 # إذا لم يعمل:
 cd G:\Code\CheckSystem\server

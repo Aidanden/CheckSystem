@@ -132,7 +132,7 @@
 ```bash
 cd server
 npm run dev
-# Server: http://localhost:5000
+# Server: http://10.250.100.40:5000
 ```
 
 #### Frontend:

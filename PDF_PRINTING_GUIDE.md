@@ -107,7 +107,7 @@ G:\Code\CheckSystem\server\output\checkbooks\checkbook_100012345678901_176323245
 
 #### 1. تسجيل الدخول
 ```http
-POST http://localhost:5000/api/auth/login
+POST http://10.250.100.40:5000/api/auth/login
 Content-Type: application/json
 
 {
@@ -120,7 +120,7 @@ Content-Type: application/json
 
 #### 2. طباعة شيك
 ```http
-POST http://localhost:5000/api/printing/print
+POST http://10.250.100.40:5000/api/printing/print
 Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
@@ -133,7 +133,7 @@ Content-Type: application/json
 
 #### 3. تحميل PDF
 ```http
-GET http://localhost:5000/api/printing/download/FILENAME.pdf
+GET http://10.250.100.40:5000/api/printing/download/FILENAME.pdf
 Authorization: Bearer YOUR_TOKEN
 ```
 

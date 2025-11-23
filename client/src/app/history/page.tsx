@@ -46,13 +46,13 @@ export default function HistoryPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         router.push('/login');
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/printing/history', {
+      const response = await fetch('http://10.250.100.40:5000/api/printing/history', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -106,13 +106,13 @@ export default function HistoryPage() {
       setSuccess('');
 
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         router.push('/login');
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/printing/print', {
+      const response = await fetch('http://10.250.100.40:5000/api/printing/print', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -132,11 +132,11 @@ export default function HistoryPage() {
       }
 
       setSuccess('تمت إعادة الطباعة بنجاح! تم فتح ملف PDF في نافذة جديدة.');
-      
+
       // Open PDF in new tab for printing (fetch with token, embed and auto-print)
       if (data.pdfPath) {
         const filename = data.pdfPath.split('\\').pop() || data.pdfPath.split('/').pop();
-        const downloadUrl = `http://localhost:5000/api/printing/download/${filename}`;
+        const downloadUrl = `http://10.250.100.40:5000/api/printing/download/${filename}`;
         try {
           const res = await fetch(downloadUrl, { headers: { 'Authorization': `Bearer ${token}` } });
           if (!res.ok) throw new Error('Failed to download PDF');
@@ -150,7 +150,7 @@ export default function HistoryPage() {
 
       // Refresh history
       await fetchHistory();
-      
+
       // Close modal after 2 seconds
       setTimeout(() => {
         closeReprintModal();
@@ -292,7 +292,7 @@ export default function HistoryPage() {
                 <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
                   إعادة طباعة دفتر الشيكات
                 </h3>
-                
+
                 <div className="mt-2 space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">

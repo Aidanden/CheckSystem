@@ -7,7 +7,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:5000/api",
+      "value": "http://10.250.100.40:5000/api",
       "type": "string"
     },
     {
@@ -51,8 +51,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             }
           }
         },
@@ -86,8 +91,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             }
           }
         }
@@ -108,8 +118,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/branches",
-              "host": ["{{baseUrl}}"],
-              "path": ["branches"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "branches"
+              ]
             }
           }
         },
@@ -125,8 +139,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/branches/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["branches", "1"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "branches",
+                "1"
+              ]
             }
           }
         },
@@ -150,8 +169,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/branches",
-              "host": ["{{baseUrl}}"],
-              "path": ["branches"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "branches"
+              ]
             }
           }
         }
@@ -172,8 +195,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/users/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "me"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
             }
           }
         },
@@ -189,8 +217,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["users"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
             }
           }
         },
@@ -206,8 +238,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/users/permissions",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "permissions"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "permissions"
+              ]
             }
           }
         },
@@ -231,8 +268,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["users"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
             }
           }
         }
@@ -253,8 +294,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory"
+              ]
             }
           }
         },
@@ -278,8 +323,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/inventory/add",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "add"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "add"
+              ]
             }
           }
         },
@@ -295,8 +345,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/transactions/history?limit=50",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "transactions", "history"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "transactions",
+                "history"
+              ],
               "query": [
                 {
                   "key": "limit",
@@ -331,8 +387,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/accounts/query",
-              "host": ["{{baseUrl}}"],
-              "path": ["accounts", "query"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "accounts",
+                "query"
+              ]
             }
           }
         },
@@ -348,8 +409,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/accounts",
-              "host": ["{{baseUrl}}"],
-              "path": ["accounts"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "accounts"
+              ]
             }
           }
         }
@@ -378,8 +443,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/printing/print",
-              "host": ["{{baseUrl}}"],
-              "path": ["printing", "print"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "printing",
+                "print"
+              ]
             }
           }
         },
@@ -395,8 +465,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/printing/history?limit=50",
-              "host": ["{{baseUrl}}"],
-              "path": ["printing", "history"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "printing",
+                "history"
+              ],
               "query": [
                 {
                   "key": "limit",
@@ -418,8 +493,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/printing/statistics",
-              "host": ["{{baseUrl}}"],
-              "path": ["printing", "statistics"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "printing",
+                "statistics"
+              ]
             }
           }
         }
@@ -432,11 +512,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/health",
-          "host": ["{{baseUrl}}"],
-          "path": ["health"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
         }
       }
     }
   ]
 }
-

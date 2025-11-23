@@ -25,7 +25,7 @@ npm install
 
 الملف موجود بالفعل مع:
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
 ```
 
 ### 2. تشغيل Backend

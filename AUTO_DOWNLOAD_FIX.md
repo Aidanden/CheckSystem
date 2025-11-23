@@ -24,7 +24,7 @@
 // بعد نجاح الطباعة
 if (result.pdfPath) {
   const filename = result.pdfPath.split('\\').pop() || result.pdfPath.split('/').pop();
-  const downloadUrl = `http://localhost:5000/api/printing/download/${filename}`;
+  const downloadUrl = `http://10.250.100.40:5000/api/printing/download/${filename}`;
   
   // فتح PDF في نافذة جديدة
   window.open(downloadUrl, '_blank');
@@ -85,7 +85,7 @@ if (result.pdfPath) {
 // Download PDF automatically if path is provided
 if (result.pdfPath) {
   const filename = result.pdfPath.split('\\').pop() || result.pdfPath.split('/').pop();
-  const downloadUrl = `http://localhost:5000/api/printing/download/${filename}`;
+  const downloadUrl = `http://10.250.100.40:5000/api/printing/download/${filename}`;
   
   // Open PDF in new tab for printing
   window.open(downloadUrl, '_blank');
@@ -114,7 +114,7 @@ setSuccess('تمت إعادة الطباعة بنجاح! تم فتح ملف PDF 
 // Open PDF in new tab for printing
 if (data.pdfPath) {
   const filename = data.pdfPath.split('\\').pop() || data.pdfPath.split('/').pop();
-  const downloadUrl = `http://localhost:5000/api/printing/download/${filename}`;
+  const downloadUrl = `http://10.250.100.40:5000/api/printing/download/${filename}`;
   window.open(downloadUrl, '_blank');
 }
 ```

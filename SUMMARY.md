@@ -134,7 +134,7 @@ npm run prisma:migrate
 npm run db:seed
 npm run dev
 ```
-الخادم سيعمل على: `http://localhost:5000`
+الخادم سيعمل على: `http://10.250.100.40:5000`
 
 ### الخطوة 3: تشغيل العميل
 ```bash
