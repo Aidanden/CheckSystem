@@ -90,7 +90,7 @@
 
 ```
 1. http://localhost:3000
-2. Login: admin / admin123
+2. Login: admin / [REDACTED]
 3. "المخزون" → تأكد من وجود مخزون
 4. "طباعة شيك"
 5. أدخل رقم حساب (15 رقم)

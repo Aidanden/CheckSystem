@@ -100,7 +100,7 @@ import {
 // مثال: Login
 const response = await authService.login({
   username: 'admin',
-  password: 'admin123'
+  password: '[REDACTED]'
 });
 
 // مثال: Get branches
@@ -123,7 +123,7 @@ function MyComponent() {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   
   const handleLogin = async () => {
-    await dispatch(login({ username: 'admin', password: 'admin123' }));
+    await dispatch(login({ username: 'admin', password: '[REDACTED]' }));
   };
 }
 ```
@@ -400,7 +400,7 @@ http://localhost:3000
 
 # 5. Login with:
 # Username: admin
-# Password: admin123
+# Password: [REDACTED]
 ```
 
 ---

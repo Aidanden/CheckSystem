@@ -52,7 +52,7 @@
 ```
 1. سجل الدخول كمسؤول
    Username: admin
-   Password: admin123
+  Password: [REDACTED]
 
 2. اذهب إلى "⚙️ إعدادات الطباعة" من القائمة
    أو: http://localhost:3000/settings

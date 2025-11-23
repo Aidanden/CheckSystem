@@ -82,7 +82,7 @@ npm run db:seed
 هذا سيقوم بإضافة:
 - ✅ 5 صلاحيات (permissions)
 - ✅ فرع افتراضي (الفرع الرئيسي)
-- ✅ مستخدم admin (username: admin, password: admin123)
+- ✅ مستخدم admin (username: admin, password: [REDACTED])
 - ✅ مستخدم demo (username: demo_user, password: demo123)
 - ✅ مخزون أولي (100 أفراد، 50 شركات)
 
@@ -295,7 +295,7 @@ npm run prisma:generate
 Invoke-RestMethod http://localhost:5000/api/health
 
 # Login
-$body = @{username="admin"; password="admin123"} | ConvertTo-Json
+$body = @{username="admin"; password="[REDACTED]"} | ConvertTo-Json
 Invoke-RestMethod -Uri http://localhost:5000/api/auth/login `
     -Method POST -ContentType "application/json" -Body $body
 ```

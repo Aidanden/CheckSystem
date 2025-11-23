@@ -172,7 +172,7 @@ npm run dev
 ```
 Admin:
   Username: admin
-  Password: admin123
+   Password: [REDACTED]
 
 Demo User:
   Username: demo_user
@@ -362,7 +362,7 @@ cd server
 # See API_TESTING_GUIDE.md for details
 
 # Example: Login test
-$body = @{username="admin"; password="admin123"} | ConvertTo-Json
+$body = @{username="admin"; password="[REDACTED]"} | ConvertTo-Json
 Invoke-RestMethod -Uri http://localhost:5000/api/auth/login -Method POST -ContentType "application/json" -Body $body
 ```
 

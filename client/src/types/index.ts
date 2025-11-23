@@ -47,6 +47,8 @@ export interface Account {
   lastPrintedSerial: number;
   createdAt: string;
   updatedAt: string;
+  branchId?: number;
+  branch?: Branch;
 }
 
 // Inventory Types
@@ -104,7 +106,9 @@ export interface PrintCheckbookResponse {
   message: string;
   operation?: PrintOperation;
   pdfPath?: string;
+  checkbookData?: any; // Checkbook data for client-side PDF generation
 }
+
 
 // Statistics Types
 export interface PrintStatistics {

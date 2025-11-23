@@ -145,7 +145,7 @@ npm run dev
 ### 2. تسجيل الدخول
 ```
 Username: admin
-Password: admin123
+Password: [REDACTED]
 ```
 
 ### 3. طباعة شيك جديد
@@ -390,7 +390,7 @@ http://localhost:3000
 
 # 4. سجل الدخول
 Username: admin
-Password: admin123
+Password: [REDACTED]
 
 # 5. جرب جميع الميزات!
 ```

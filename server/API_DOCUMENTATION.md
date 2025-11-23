@@ -26,7 +26,7 @@ Authorization: Bearer <token>
 ```json
 {
   "username": "admin",
-  "password": "admin123"
+  "password": "[REDACTED]"
 }
 ```
 

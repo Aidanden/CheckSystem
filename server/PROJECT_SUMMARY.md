@@ -200,7 +200,7 @@
 
 ### 👤 Admin User
 - Username: `admin`
-- Password: `admin123`
+- Password: `[REDACTED]`
 - جميع الصلاحيات
 - is_admin: true
 

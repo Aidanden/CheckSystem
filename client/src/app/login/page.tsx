@@ -125,18 +125,13 @@ export default function LoginPage() {
               )}
             </button>
 
-            <div className="text-center text-sm text-gray-500 mt-4 pt-4 border-t border-gray-100">
-              <p className="mb-1">للتجربة:</p>
-              <p className="font-mono text-xs bg-gray-50 py-2 px-3 rounded-lg inline-block">
-                admin / admin123
-              </p>
-            </div>
+            {/* Demo credentials removed for production/testing */}
           </form>
         </div>
 
         {/* Footer */}
         <div className="text-center mt-8 text-sm text-gray-600">
-          <p className="mb-1">جميع الحقوق محفوظة © 2024</p>
+          <p className="mb-1">جميع الحقوق محفوظة © 2025</p>
           <p className="font-semibold text-primary-600">
             شركة التقنية الحديثة - MTC
           </p>

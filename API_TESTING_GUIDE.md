@@ -44,7 +44,7 @@ Server سيعمل على: `http://localhost:5000`
 # Admin Login
 $body = @{
     username = "admin"
-    password = "admin123"
+    password = "[REDACTED]"
 } | ConvertTo-Json
 
 $response = Invoke-RestMethod -Uri http://localhost:5000/api/auth/login `
@@ -448,7 +448,7 @@ Invoke-RestMethod -Uri "http://localhost:5000/api/printing/statistics?branch_id=
 
 ```powershell
 # 1. Login
-$body = @{username="admin"; password="admin123"} | ConvertTo-Json
+$body = @{username="admin"; password="[REDACTED]"} | ConvertTo-Json
 $response = Invoke-RestMethod -Uri http://localhost:5000/api/auth/login -Method POST -ContentType "application/json" -Body $body
 $token = $response.token
 $headers = @{Authorization = "Bearer $token"}

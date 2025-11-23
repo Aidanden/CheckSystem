@@ -266,7 +266,7 @@
   - Routing Number: 1100000001
 
 #### المستخدمون (2)
-- **Admin:** username=admin, password=admin123 (جميع الصلاحيات)
+- **Admin:** username=admin, password=[REDACTED] (جميع الصلاحيات)
 - **Demo:** username=demo_user, password=demo123 (PRINTING, REPORTING)
 
 #### المخزون
@@ -318,7 +318,7 @@ curl http://localhost:5000/api/health
 ```bash
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "admin123"}'
+  -d '{"username": "admin", "password": "[REDACTED]"}'
 ```
 
 ✅ **Print Flow**

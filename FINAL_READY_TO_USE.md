@@ -73,7 +73,7 @@ npm run dev
 URL: http://localhost:3000/login
 
 Username: admin
-Password: admin123
+Password: [REDACTED]
 ```
 
 ### 3️⃣ ضبط إعدادات الطباعة (مرة واحدة)
@@ -320,7 +320,7 @@ http://localhost:3000
 ### الخطوة 3: سجل الدخول
 ```
 Username: admin
-Password: admin123
+Password: [REDACTED]
 ```
 
 ### الخطوة 4: اضبط الإعدادات

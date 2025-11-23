@@ -109,7 +109,7 @@ npm run dev
 ```
 👤 Admin Account:
    Username: admin
-   Password: admin123
+   Password: [REDACTED]
 
 👤 Demo User:
    Username: demo_user
@@ -314,8 +314,8 @@ npm install
 
 | Username | Password | Role | Permissions |
 |----------|----------|------|-------------|
-| admin | admin123 | Admin | All permissions |
-| demo_user | demo123 | User | Print, View Inventory |
+| admin | [REDACTED] | Admin | All permissions |
+| demo_user | [REDACTED] | User | Print, View Inventory |
 
 ### Database Info:
 
@@ -446,7 +446,7 @@ npm run dev
 
 # Browser
 http://localhost:3000
-Login: admin / admin123
+Login: admin / [REDACTED]
 ```
 
 **Happy Coding!** 💻✨

@@ -76,7 +76,7 @@ npm run dev
 
 ```
 1. افتح: http://localhost:3000
-2. Login: admin / admin123
+2. Login: admin / [REDACTED]
 3. اذهب إلى "المخزون"
 4. تأكد من وجود مخزون كافي (100 ورقة مثلاً)
 5. اذهب إلى "طباعة شيك"

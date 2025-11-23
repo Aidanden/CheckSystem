@@ -17,6 +17,14 @@ export class AccountModel {
   static async findByAccountNumber(accountNumber: string): Promise<Account | null> {
     return prisma.account.findUnique({
       where: { accountNumber },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            branchName: true,
+          },
+        },
+      },
     });
   }
 

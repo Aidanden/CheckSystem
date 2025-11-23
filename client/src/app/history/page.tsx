@@ -133,11 +133,19 @@ export default function HistoryPage() {
 
       setSuccess('تمت إعادة الطباعة بنجاح! تم فتح ملف PDF في نافذة جديدة.');
       
-      // Open PDF in new tab for printing
+      // Open PDF in new tab for printing (fetch with token, embed and auto-print)
       if (data.pdfPath) {
         const filename = data.pdfPath.split('\\').pop() || data.pdfPath.split('/').pop();
         const downloadUrl = `http://localhost:5000/api/printing/download/${filename}`;
-        window.open(downloadUrl, '_blank');
+        try {
+          const res = await fetch(downloadUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+          if (!res.ok) throw new Error('Failed to download PDF');
+          const blob = await res.blob();
+          const blobUrl = window.URL.createObjectURL(blob);
+          window.open(blobUrl, '_blank');
+        } catch (e) {
+          console.error('Download failed', e);
+        }
       }
 
       // Refresh history

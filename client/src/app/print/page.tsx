@@ -16,13 +16,13 @@ export default function PrintPage() {
 
   const handleQuery = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!accountNumber) return;
 
     setLoading(true);
     setError(null);
     setSuccess(false);
-    
+
     try {
       const data = await accountService.query(accountNumber);
       setAccount(data);
@@ -48,16 +48,31 @@ export default function PrintPage() {
 
       setSuccess(true);
       setError(null);
-      
-      // Download PDF automatically if path is provided
-      if (result.pdfPath) {
-        const filename = result.pdfPath.split('\\').pop() || result.pdfPath.split('/').pop();
-        const downloadUrl = `http://localhost:5000/api/printing/download/${filename}`;
-        
-        // Open PDF in new tab for printing
-        window.open(downloadUrl, '_blank');
+
+      // Generate printable HTML preview instead of PDF
+      if (result.checkbookData) {
+        try {
+          const { default: renderCheckbookHtml } = await import('@/lib/utils/printRenderer');
+          const htmlContent = renderCheckbookHtml(result.checkbookData);
+
+          const printWindow = window.open('', '_blank', 'width=1024,height=768');
+          if (!printWindow) {
+            throw new Error('تعذّر فتح نافذة الطباعة');
+          }
+
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+
+          setTimeout(() => {
+            printWindow.focus();
+            printWindow.print();
+          }, 300);
+        } catch (e) {
+          console.error('Failed to render printable view:', e);
+          setError('فشل إنشاء صفحة الطباعة');
+        }
       }
-      
+
       // Refresh account data after printing
       setTimeout(async () => {
         const updatedAccount = await accountService.query(account.accountNumber);
@@ -81,7 +96,7 @@ export default function PrintPage() {
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
             الاستعلام عن حساب
           </h2>
-          
+
           <form onSubmit={handleQuery} className="flex gap-4">
             <input
               type="text"
@@ -137,7 +152,7 @@ export default function PrintPage() {
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
               بيانات الحساب
             </h2>
-            
+
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -146,21 +161,21 @@ export default function PrintPage() {
                     {account.accountNumber}
                   </p>
                 </div>
-                
+
                 <div>
                   <p className="text-sm text-gray-600">اسم صاحب الحساب</p>
                   <p className="font-semibold text-gray-800 mt-1">
                     {account.accountHolderName}
                   </p>
                 </div>
-                
+
                 <div>
                   <p className="text-sm text-gray-600">نوع الحساب</p>
                   <p className="font-semibold text-gray-800 mt-1">
                     {account.accountType === 1 ? 'حساب فردي' : 'حساب شركة'}
                   </p>
                 </div>
-                
+
                 <div>
                   <p className="text-sm text-gray-600">آخر رقم تسلسلي مطبوع</p>
                   <p className="font-mono font-semibold text-gray-800 mt-1">
@@ -187,7 +202,7 @@ export default function PrintPage() {
                     </>
                   )}
                 </button>
-                
+
                 <p className="text-xs text-gray-500 text-center mt-2">
                   سيتم طباعة {account.accountType === 1 ? '25' : '50'} ورقة شيك للحساب أعلاه
                 </p>

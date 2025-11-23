@@ -367,7 +367,7 @@ Root/
 ### Login:
 ```
 Username: admin
-Password: admin123
+Password: [REDACTED]
 ```
 
 ---

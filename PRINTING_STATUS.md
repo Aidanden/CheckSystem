@@ -53,7 +53,7 @@ if (!branchId) {
 ## 🧪 اختبار النظام
 
 ### طريقة 1: من Frontend
-1. سجل الدخول: `username: admin`, `password: admin123`
+1. سجل الدخول: `username: admin`, `password: [REDACTED]`
 2. اذهب إلى صفحة الطباعة
 3. أدخل رقم الحساب: `100012345678901`
 4. اضغط على "طباعة"
@@ -67,7 +67,7 @@ Content-Type: application/json
 
 {
   "username": "admin",
-  "password": "admin123"
+  "password": "[REDACTED]"
 }
 ```
 
@@ -90,7 +90,7 @@ Authorization: Bearer YOUR_TOKEN_HERE
 # Login
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d "{\"username\":\"admin\",\"password\":\"admin123\"}"
+  -d "{\"username\":\"admin\",\"password\":\"[REDACTED]\"}"
 
 # Print (استبدل YOUR_TOKEN بالـ token)
 curl -X POST http://localhost:5000/api/printing/print \

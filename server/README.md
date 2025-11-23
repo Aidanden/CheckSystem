@@ -72,7 +72,7 @@ npm run prisma:studio
 
 ### Admin
 - Username: `admin`
-- Password: `admin123`
+- Password: `[REDACTED]`
 
 ### Demo User  
 - Username: `demo_user`

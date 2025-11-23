@@ -83,7 +83,7 @@ npm run dev
 ### 4️⃣ Login
 ```
 Username: admin
-Password: admin123
+Password: [REDACTED]
 ```
 
 ---

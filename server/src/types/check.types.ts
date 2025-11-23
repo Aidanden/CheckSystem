@@ -75,28 +75,28 @@ export const CHECK_CONSTANTS = {
     width: 86,
     height: 240,
   },
-  
+
   // Number of checks per book
   SHEETS_PER_BOOK: {
     INDIVIDUAL: 25,
     CORPORATE: 50,
   },
-  
+
   // Field lengths
   SERIAL_LENGTH: 9,
   ROUTING_LENGTH: 9,
   ACCOUNT_LENGTH: 15,
   TYPE_LENGTH: 2,
-  
+
   // Account type codes
   ACCOUNT_TYPE: {
     INDIVIDUAL: '01',
     CORPORATE: '02',
   },
-  
+
   // MICR font
   MICR_FONT: 'MICR E-13B',
-  
+
   // Print positions (approximate, adjust as needed)
   POSITIONS: {
     BRANCH_NAME: {
@@ -143,14 +143,15 @@ export class CheckFormatter {
    * Format account type to 2 digits
    */
   static formatAccountType(type: 1 | 2): string {
-    return type === 1 
-      ? CHECK_CONSTANTS.ACCOUNT_TYPE.INDIVIDUAL 
+    return type === 1
+      ? CHECK_CONSTANTS.ACCOUNT_TYPE.INDIVIDUAL
       : CHECK_CONSTANTS.ACCOUNT_TYPE.CORPORATE;
   }
 
   /**
    * Generate complete MICR line (RTL format - starts from right)
    * Format: [Account Type] [Account Number] [Routing Number] [Serial Number]
+   * With MICR delimiters: "serial"  'account'  'routing'  type
    */
   static generateMICRLine(
     serialNumber: number,
@@ -160,8 +161,10 @@ export class CheckFormatter {
   ): string {
     const serial = this.formatSerialNumber(serialNumber);
     const type = this.formatAccountType(accountType);
-    // RTL format: Type first (rightmost), then account, routing, and serial
-    return `${type} ${accountNumber} ${routingNumber} ${serial}`;
+
+    // MICR format with proper delimiters (as per bank standard)
+    // " for serial number, ' for account and routing
+    return `"${serial}"  '${accountNumber}'  '${routingNumber}'  ${type}`;
   }
 
   /**

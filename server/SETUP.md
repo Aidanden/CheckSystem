@@ -77,7 +77,7 @@ npm run seed
 
 هذا سيقوم بإنشاء:
 - فرع افتراضي (الفرع الرئيسي)
-- مستخدم admin (username: `admin`, password: `admin123`)
+- مستخدم admin (username: `admin`, password: `[REDACTED]`)
 - مستخدم تجريبي (username: `demo_user`, password: `demo123`)
 - مخزون أولي (100 دفتر أفراد، 50 دفتر شركات)
 
@@ -127,7 +127,7 @@ curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "admin",
-    "password": "admin123"
+    "password": "[REDACTED]"
   }'
 ```
 
@@ -229,7 +229,7 @@ npm run seed         # إضافة بيانات أولية
 
 ### Admin User
 - **Username:** admin
-- **Password:** admin123
+- **Password:** [REDACTED]
 - **الصلاحيات:** جميع الصلاحيات
 
 ### Demo User

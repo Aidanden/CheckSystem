@@ -89,7 +89,7 @@ Invoke-RestMethod -Uri http://localhost:5000/api/health -Method GET
 ```powershell
 $body = @{
     username = "admin"
-    password = "admin123"
+    password = "[REDACTED]"
 } | ConvertTo-Json
 
 $response = Invoke-RestMethod -Uri http://localhost:5000/api/auth/login `
@@ -130,7 +130,7 @@ Write-Host "Token: $token"
 #### ✅ نجاح - Admin
 ```powershell
 username: admin
-password: admin123
+password: [REDACTED]
 ```
 
 #### ✅ نجاح - Demo User

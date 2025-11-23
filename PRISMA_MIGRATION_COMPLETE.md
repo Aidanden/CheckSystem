@@ -351,7 +351,7 @@ prisma.branch.      // ✅ Shows: findMany, findUnique, create, etc.
 Invoke-RestMethod http://localhost:5000/api/health
 
 # Login
-$body = @{username="admin"; password="admin123"} | ConvertTo-Json
+$body = @{username="admin"; password="[REDACTED]"} | ConvertTo-Json
 $response = Invoke-RestMethod -Uri http://localhost:5000/api/auth/login `
     -Method POST -ContentType "application/json" -Body $body
 

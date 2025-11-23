@@ -3,12 +3,13 @@ import { AccountModel } from '../models/Account.model';
 import { InventoryModel } from '../models/Inventory.model';
 import { PrintOperationModel } from '../models/PrintOperation.model';
 import { BranchModel } from '../models/Branch.model';
+import { PrintSettingsModel } from '../models/PrintSettings.model';
 import { AccountService } from './account.service';
 import { InventoryService } from './inventory.service';
 import { AccountType, StockType, PrintStatus, PrintCheckbookResponse } from '../types';
 import { CheckFormatter, CheckData, CheckbookData } from '../types/check.types';
-import { PDFGenerator } from '../utils/pdfGenerator';
-import * as path from 'path';
+
+
 
 export class PrintingService {
   static async printCheckbook(
@@ -37,11 +38,48 @@ export class PrintingService {
         }
 
         // Determine stock type and number of sheets
-        const stockType: StockType = account.accountType === AccountType.INDIVIDUAL 
-          ? StockType.INDIVIDUAL 
+        const stockType: StockType = account.accountType === AccountType.INDIVIDUAL
+          ? StockType.INDIVIDUAL
           : StockType.CORPORATE;
 
         const sheetsPerBook = account.accountType === AccountType.INDIVIDUAL ? 25 : 50;
+
+        // If account is assigned to a specific branch and doesn't match the requested branch, prevent printing
+        if (account.branchId && account.branchId !== branchId) {
+          throw new Error('غير مسموح بالوصول لحساب تابع لفرع آخر');
+        }
+
+        // Load print settings for this account type (use tx to keep within transaction)
+        let settings: any = null;
+        const dbSettings = await tx.printSettings.findUnique({ where: { accountType: account.accountType } });
+
+        console.log('\n📋 Loading Print Settings for Account Type:', account.accountType);
+        console.log('DB Settings Found:', dbSettings ? 'Yes' : 'No');
+
+        if (dbSettings) {
+          settings = {
+            accountType: dbSettings.accountType,
+            checkWidth: dbSettings.checkWidth,
+            checkHeight: dbSettings.checkHeight,
+            branchName: { x: dbSettings.branchNameX, y: dbSettings.branchNameY, fontSize: dbSettings.branchNameFontSize, align: dbSettings.branchNameAlign },
+            serialNumber: { x: dbSettings.serialNumberX, y: dbSettings.serialNumberY, fontSize: dbSettings.serialNumberFontSize, align: dbSettings.serialNumberAlign },
+            accountHolderName: { x: dbSettings.accountHolderNameX, y: dbSettings.accountHolderNameY, fontSize: dbSettings.accountHolderNameFontSize, align: dbSettings.accountHolderNameAlign },
+            micrLine: { x: dbSettings.micrLineX, y: dbSettings.micrLineY, fontSize: dbSettings.micrLineFontSize, align: dbSettings.micrLineAlign },
+          };
+
+          console.log('Settings Loaded:');
+          console.log('  Check Size:', settings.checkWidth, 'x', settings.checkHeight, 'mm');
+          console.log('  Branch Name:', settings.branchName);
+          console.log('  Serial Number:', settings.serialNumber);
+          console.log('  Account Holder:', settings.accountHolderName);
+          console.log('  MICR Line:', settings.micrLine);
+        } else {
+          // Fallback to defaults via PrintSettingsModel.getOrDefault
+          settings = await PrintSettingsModel.getOrDefault(account.accountType);
+          console.log('⚠️ Using default settings (no DB settings found)');
+        }
+        console.log('');
+
 
         // Check inventory availability using transaction client
         const inventory = await tx.inventory.findFirst({
@@ -56,17 +94,17 @@ export class PrintingService {
         // Calculate serial numbers
         let serialFrom: number;
         let serialTo: number;
-        
+
         if (customSerialFrom !== undefined && customSerialTo !== undefined) {
           // Custom range specified (for reprint)
           serialFrom = customSerialFrom;
           serialTo = customSerialTo;
-          
+
           // Validate range
           if (serialFrom < 1 || serialTo < serialFrom) {
             throw new Error('رقم التسلسل غير صحيح');
           }
-          
+
           const requestedSheets = serialTo - serialFrom + 1;
           if (requestedSheets > sheetsPerBook) {
             throw new Error(`لا يمكن طباعة أكثر من ${sheetsPerBook} ورقة في المرة الواحدة`);
@@ -113,10 +151,12 @@ export class PrintingService {
           branch.branchName,
           branch.routingNumber,
           serialFrom,
-          serialTo
+          serialTo,
+          settings
         );
 
         // Create print operation record using transaction client
+        const sheetsPrintedCount = serialTo - serialFrom + 1;
         const operation = await tx.printOperation.create({
           data: {
             accountId: account.id,
@@ -127,22 +167,20 @@ export class PrintingService {
             accountType: account.accountType,
             serialFrom: serialFrom,
             serialTo: serialTo,
-            sheetsPrinted: sheetsPerBook,
+            sheetsPrinted: sheetsPrintedCount,
+            pdfFilename: null,
             status: PrintStatus.COMPLETED,
           },
         });
 
-        // Send to MICR printer (this is async but doesn't use database)
+        // Send to MICR printer
         await this.sendToMICRPrinter(checkbookData);
-
-        // Generate PDF file
-        const pdfPath = await this.generateCheckbookPDF(checkbookData);
 
         return {
           success: true,
           message: `تمت طباعة دفتر الشيكات بنجاح. الأرقام التسلسلية من ${serialFrom} إلى ${serialTo}`,
           operation,
-          pdfPath, // Return PDF path for download
+          checkbookData, // Return data for client-side PDF generation
         };
       });
 
@@ -190,10 +228,14 @@ export class PrintingService {
     branchName: string,
     routingNumber: string,
     serialFrom: number,
-    serialTo: number
+    serialTo: number,
+    settings: any
   ): CheckbookData {
     const checks: CheckData[] = [];
-    const checkSize = CheckFormatter.getCheckSize(accountType);
+    // Determine check size either from settings or formatter defaults
+    const checkSize = settings && settings.checkWidth && settings.checkHeight
+      ? { width: settings.checkWidth, height: settings.checkHeight, unit: 'mm' }
+      : CheckFormatter.getCheckSize(accountType);
 
     // Generate data for each check in the book
     for (let serial = serialFrom; serial <= serialTo; serial++) {
@@ -207,7 +249,8 @@ export class PrintingService {
         accountType
       );
 
-      checks.push({
+      // Attach position/format settings per check so PDF generator can use them
+      const checkObj: any = {
         checkNumber,
         serialNumber: serialFormatted,
         routingNumber,
@@ -217,7 +260,31 @@ export class PrintingService {
         branchName,
         checkSize,
         micrLine,
-      });
+      };
+
+      if (settings) {
+        checkObj.branchNameX = settings.branchName?.x;
+        checkObj.branchNameY = settings.branchName?.y;
+        checkObj.branchNameFontSize = settings.branchName?.fontSize;
+        checkObj.branchNameAlign = settings.branchName?.align;
+
+        checkObj.serialNumberX = settings.serialNumber?.x;
+        checkObj.serialNumberY = settings.serialNumber?.y;
+        checkObj.serialNumberFontSize = settings.serialNumber?.fontSize;
+        checkObj.serialNumberAlign = settings.serialNumber?.align;
+
+        checkObj.accountHolderNameX = settings.accountHolderName?.x;
+        checkObj.accountHolderNameY = settings.accountHolderName?.y;
+        checkObj.accountHolderNameFontSize = settings.accountHolderName?.fontSize;
+        checkObj.accountHolderNameAlign = settings.accountHolderName?.align;
+
+        checkObj.micrLineX = settings.micrLine?.x;
+        checkObj.micrLineY = settings.micrLine?.y;
+        checkObj.micrLineFontSize = settings.micrLine?.fontSize;
+        checkObj.micrLineAlign = settings.micrLine?.align;
+      }
+
+      checks.push(checkObj as CheckData);
     }
 
     return {
@@ -238,35 +305,6 @@ export class PrintingService {
   }
 
   /**
-   * Generate PDF file for checkbook
-   */
-  private static async generateCheckbookPDF(checkbookData: CheckbookData): Promise<string> {
-    try {
-      // Create output directory if it doesn't exist
-      const outputDir = path.join(process.cwd(), 'output', 'checkbooks');
-      const pdfPath = await PDFGenerator.generateCheckbookPDF(checkbookData, outputDir);
-      
-      console.log('\n📄 تم إنشاء ملف PDF:');
-      console.log(`   المسار: ${pdfPath}`);
-      console.log(`   الحجم: ${this.getFileSizeInMB(pdfPath)} MB`);
-      
-      return pdfPath;
-    } catch (error) {
-      console.error('❌ خطأ في إنشاء ملف PDF:', error);
-      throw new Error('Failed to generate PDF file');
-    }
-  }
-
-  /**
-   * Get file size in MB
-   */
-  private static getFileSizeInMB(filepath: string): string {
-    const fs = require('fs');
-    const stats = fs.statSync(filepath);
-    return (stats.size / (1024 * 1024)).toFixed(2);
-  }
-
-  /**
    * Send checkbook data to MICR printer
    * TODO: Implement actual printer integration
    */
@@ -282,9 +320,9 @@ export class PrintingService {
     console.log(`   النوع: ${checkbookData.operation.accountType === 1 ? 'فردي' : 'شركة'}`);
     console.log(`   التسلسل: من ${checkbookData.operation.serialFrom} إلى ${checkbookData.operation.serialTo}`);
     console.log(`   عدد الأوراق: ${checkbookData.operation.sheetsPrinted}`);
-    
+
     console.log('\n🖨️ نماذج من الشيكات:');
-    
+
     // Show first 3 checks as example
     const samplesToShow = Math.min(3, checkbookData.checks.length);
     for (let i = 0; i < samplesToShow; i++) {
@@ -296,11 +334,11 @@ export class PrintingService {
       console.log(`      في الأسفل (اليسار): ${check.accountHolderName}`);
       console.log(`      خط MICR: ${check.micrLine}`);
     }
-    
+
     if (checkbookData.checks.length > 3) {
       console.log(`\n   ... وباقي ${checkbookData.checks.length - 3} شيك`);
     }
-    
+
     console.log('\n' + '='.repeat(60));
     console.log('✅ تم إرسال البيانات إلى الطابعة بنجاح');
     console.log('='.repeat(60) + '\n');

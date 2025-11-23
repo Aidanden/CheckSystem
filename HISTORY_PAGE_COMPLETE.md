@@ -193,7 +193,7 @@ http://localhost:3000/history
 
 # 3. سجل الدخول:
 Username: admin
-Password: admin123
+Password: [REDACTED]
 
 # 4. استعرض السجل واضغط "إعادة طباعة"
 ```

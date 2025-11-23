@@ -189,7 +189,7 @@ npm run dev
 ### 2. تسجيل الدخول
 ```
 Username: admin
-Password: admin123
+Password: [REDACTED]
 ```
 
 ### 3. ضبط الإعدادات (مرة واحدة)
@@ -353,7 +353,7 @@ http://localhost:3000
 
 # 4. سجل الدخول
 Username: admin
-Password: admin123
+Password: [REDACTED]
 
 # 5. اضبط الإعدادات
 http://localhost:3000/settings

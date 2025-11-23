@@ -106,7 +106,7 @@ npm run dev
 افتح: **http://localhost:3000**
 
 ```
-1. Login: admin / admin123
+1. Login: admin / [REDACTED]
 2. اذهب إلى "طباعة شيك"
 3. جرب الأرقام:
    - 100012345678901

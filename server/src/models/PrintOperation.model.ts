@@ -14,6 +14,7 @@ export class PrintOperationModel {
     sheetsPrinted: number;
     status?: string;
     notes?: string;
+    pdfFilename?: string;
   }): Promise<PrintOperation> {
     return prisma.printOperation.create({
       data: {
@@ -28,6 +29,7 @@ export class PrintOperationModel {
         sheetsPrinted: operation.sheetsPrinted,
         status: operation.status || 'COMPLETED',
         notes: operation.notes,
+        pdfFilename: operation.pdfFilename,
       },
     });
   }

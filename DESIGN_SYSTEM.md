@@ -219,7 +219,7 @@ http://localhost:3000
 ```
 
 ### بيانات تسجيل الدخول
-- المسؤول: `admin` / `admin123`
+- المسؤول: `admin` / `[REDACTED]`
 - مستخدم تجريبي: `demo_user` / `demo123`
 
 ---
