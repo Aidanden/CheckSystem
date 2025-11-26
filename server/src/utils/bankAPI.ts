@@ -1,5 +1,6 @@
 import { BankAPIResponse, CheckbookDetails, ChequeStatusInfo } from '../types';
 import { parseStringPromise } from 'xml2js';
+import { SystemSettingService } from '../services/systemSetting.service';
 
 interface QueryCheckbookParams {
   accountNumber: string;
@@ -14,6 +15,15 @@ export class BankAPIClient {
   constructor() {
     this.baseUrl = process.env.BANK_API_URL || 'http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService';
     this.apiKey = process.env.BANK_API_KEY || '';
+  }
+
+  private async getBaseUrl(): Promise<string> {
+    try {
+      return await SystemSettingService.getSoapEndpoint();
+    } catch (error) {
+      console.warn('Failed to get SOAP endpoint from settings, using default:', error);
+      return this.baseUrl;
+    }
   }
 
   async getAccountInfo(accountNumber: string): Promise<BankAPIResponse> {
@@ -72,7 +82,8 @@ export class BankAPIClient {
 
   private async postSoapRequest(envelope: string): Promise<string> {
     try {
-      const response = await fetch(this.baseUrl, {
+      const endpoint = await this.getBaseUrl();
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'text/xml;charset=UTF-8',
@@ -88,10 +99,11 @@ export class BankAPIClient {
       return response.text();
     } catch (error: any) {
       if (error.cause?.code === 'ECONNREFUSED') {
-        console.error(`❌ Cannot connect to FCUBS SOAP endpoint: ${this.baseUrl}`);
+        const endpoint = await this.getBaseUrl();
+        console.error(`❌ Cannot connect to FCUBS SOAP endpoint: ${endpoint}`);
         console.error('   Make sure the SOAP server is running and accessible.');
-        console.error('   Check BANK_API_URL in your .env file.');
-        throw new Error(`FCUBS SOAP server is not accessible at ${this.baseUrl}. Please check your network connection and server configuration.`);
+        console.error('   Check BANK_API_URL in your .env file or system settings.');
+        throw new Error(`FCUBS SOAP server is not accessible at ${endpoint}. Please check your network connection and server configuration.`);
       }
       throw error;
     }
