@@ -86,7 +86,7 @@ const sheetsPerBook = account.accountType === AccountType.INDIVIDUAL ? 25 : 50;
 
 ### اختبار 1: حساب فردي (25 ورقة)
 ```http
-POST http://10.250.100.40:5000/api/printing/print
+POST http://localhost:5000/api/printing/print
 Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
@@ -105,7 +105,7 @@ Content-Type: application/json
 
 ### اختبار 2: حساب شركة (50 ورقة)
 ```http
-POST http://10.250.100.40:5000/api/printing/print
+POST http://localhost:5000/api/printing/print
 Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 

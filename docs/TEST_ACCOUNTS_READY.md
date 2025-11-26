@@ -103,7 +103,7 @@ npm run dev
 
 ### الخطوة 3: التجربة!
 
-افتح: **http://10.250.100.40:3040**
+افتح: **http://localhost:3040**
 
 ```
 1. Login: admin / [REDACTED]

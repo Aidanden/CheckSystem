@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Settings as SettingsIcon, Save, RotateCcw, Printer } from 'lucide-react';
+import { Settings as SettingsIcon, Save, RotateCcw, Printer, RefreshCw } from 'lucide-react';
+import { systemSettingsService } from '@/lib/api';
 
 interface PrintPosition {
   x: number;
@@ -69,11 +70,36 @@ export default function SettingsPage() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [initialLoading, setInitialLoading] = useState(true);
+  const [soapApiEndpoint, setSoapApiEndpoint] = useState('');
+  const [soapApiLoading, setSoapApiLoading] = useState(true);
+  const [soapApiSaving, setSoapApiSaving] = useState(false);
+  const [soapApiMessage, setSoapApiMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const getCurrentSettings = () => {
     if (activeTab === 1) return individualSettings;
     if (activeTab === 2) return corporateSettings;
     return bankStaffSettings;
+  };
+
+  const handleSoapEndpointSave = async () => {
+    const value = soapApiEndpoint.trim();
+    if (!value) {
+      setSoapApiMessage({ type: 'error', text: 'الرجاء إدخال رابط SOAP صالح.' });
+      return;
+    }
+
+    setSoapApiSaving(true);
+    setSoapApiMessage(null);
+    try {
+      const { endpoint } = await systemSettingsService.updateSoapEndpoint(value);
+      setSoapApiEndpoint(endpoint);
+      setSoapApiMessage({ type: 'success', text: 'تم حفظ رابط SOAP بنجاح.' });
+    } catch (err: any) {
+      const apiError = err?.response?.data?.error;
+      setSoapApiMessage({ type: 'error', text: apiError || 'فشل في حفظ رابط SOAP.' });
+    } finally {
+      setSoapApiSaving(false);
+    }
   };
 
   const setCurrentSettings = (updater: (prev: PrintSettings) => PrintSettings) => {
@@ -88,6 +114,24 @@ export default function SettingsPage() {
 
   const currentSettings = getCurrentSettings();
 
+  const fetchSoapEndpoint = async () => {
+    setSoapApiLoading(true);
+    setSoapApiMessage(null);
+    try {
+      const { endpoint } = await systemSettingsService.getSoapEndpoint();
+      setSoapApiEndpoint(endpoint);
+    } catch (err) {
+      console.error('فشل تحميل رابط SOAP:', err);
+      setSoapApiMessage({ type: 'error', text: 'تعذر تحميل رابط SOAP الحالي، سيتم استخدام القيمة الافتراضية.' });
+    } finally {
+      setSoapApiLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSoapEndpoint();
+  }, []);
+
   // Load settings from backend
   useEffect(() => {
     loadSettings();
@@ -100,7 +144,7 @@ export default function SettingsPage() {
 
       if (!token) return;
 
-      const response = await fetch(`http://10.250.100.40:5000/api/print-settings/${activeTab}`, {
+      const response = await fetch(`http://localhost:5000/api/print-settings/${activeTab}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -153,7 +197,7 @@ export default function SettingsPage() {
         return;
       }
 
-      const response = await fetch('http://10.250.100.40:5000/api/print-settings', {
+      const response = await fetch('http://localhost:5000/api/print-settings', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -303,6 +347,68 @@ export default function SettingsPage() {
         <div className="flex items-center gap-3">
           <SettingsIcon className="w-8 h-8 text-blue-600" />
           <h1 className="text-2xl font-bold text-gray-800">إعدادات الطباعة</h1>
+        </div>
+
+        <div className="card space-y-4">
+          <div className="flex flex-col gap-2">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800">رابط SOAP API</h2>
+              <p className="text-sm text-gray-600">يمكنك تغيير رابط خدمة SOAP لاختبار بيئات مختلفة دون الحاجة لإعادة نشر النظام.</p>
+            </div>
+            {soapApiMessage && (
+              <div className={`${soapApiMessage.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'} border px-3 py-2 rounded`}> 
+                {soapApiMessage.text}
+              </div>
+            )}
+          </div>
+
+          <label className="block text-sm text-gray-600" htmlFor="soap-endpoint-input">
+            رابط SOAP الحالي
+          </label>
+          <input
+            id="soap-endpoint-input"
+            type="text"
+            className="input w-full"
+            value={soapApiEndpoint}
+            onChange={(e) => setSoapApiEndpoint(e.target.value)}
+            disabled={soapApiLoading || soapApiSaving}
+            placeholder="http://localhost:8080/FCUBSAccService"
+          />
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleSoapEndpointSave}
+              disabled={soapApiSaving || soapApiLoading}
+              className="btn btn-primary flex items-center gap-2 disabled:opacity-50"
+            >
+              {soapApiSaving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  جاري الحفظ...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  حفظ الرابط
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={fetchSoapEndpoint}
+              disabled={soapApiLoading}
+              className="btn bg-gray-100 text-gray-800 hover:bg-gray-200 flex items-center gap-2 disabled:opacity-50"
+            >
+              <RefreshCw className={soapApiLoading ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />
+              إعادة تحميل الرابط
+            </button>
+
+            <div className="text-xs text-gray-500 flex items-center">
+              {soapApiLoading ? 'جاري تحميل الرابط من الخادم...' : 'آخر قيمة محمّلة من الخادم'}
+            </div>
+          </div>
         </div>
 
         {/* Tabs */}

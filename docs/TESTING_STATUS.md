@@ -271,11 +271,11 @@ npm run seed
 npm run dev
 
 # 5. اختبار Health Check
-Invoke-RestMethod http://10.250.100.40:5000/api/health
+Invoke-RestMethod http://localhost:5000/api/health
 
 # 6. اختبار Login
 $body = @{username="admin"; password="[REDACTED]"} | ConvertTo-Json
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/auth/login -Method POST -ContentType "application/json" -Body $body
+Invoke-RestMethod -Uri http://localhost:5000/api/auth/login -Method POST -ContentType "application/json" -Body $body
 
 # 7. متابعة باقي الاختبارات من TESTING_GUIDE.md
 ```

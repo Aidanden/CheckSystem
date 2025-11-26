@@ -99,7 +99,10 @@ const parseStatuses = (detailsNode: Element | null): SoapChequeStatus[] => {
   })).filter((item) => item.chequeNumber > 0);
 };
 
-export async function querySoapCheckbook(params: QueryParams): Promise<SoapCheckbookResponse> {
+export async function querySoapCheckbook(
+  params: QueryParams,
+  options?: { endpoint?: string }
+): Promise<SoapCheckbookResponse> {
   const prepared: Required<QueryParams> = {
     accountNumber: params.accountNumber.trim(),
     branchCode: (params.branchCode || DEFAULT_BRANCH).trim() || DEFAULT_BRANCH,
@@ -107,8 +110,9 @@ export async function querySoapCheckbook(params: QueryParams): Promise<SoapCheck
   };
 
   const envelope = buildSoapEnvelope(prepared);
+  const targetEndpoint = options?.endpoint?.trim() || SOAP_ENDPOINT;
 
-  const response = await fetch(SOAP_ENDPOINT, {
+  const response = await fetch(targetEndpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'text/xml;charset=UTF-8',

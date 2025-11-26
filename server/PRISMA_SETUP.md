@@ -292,11 +292,11 @@ npm run prisma:generate
 
 ```powershell
 # Health check
-Invoke-RestMethod http://10.250.100.40:5000/api/health
+Invoke-RestMethod http://localhost:5000/api/health
 
 # Login
 $body = @{username="admin"; password="[REDACTED]"} | ConvertTo-Json
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/auth/login `
+Invoke-RestMethod -Uri http://localhost:5000/api/auth/login `
     -Method POST -ContentType "application/json" -Body $body
 ```
 

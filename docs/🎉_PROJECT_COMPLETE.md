@@ -70,7 +70,7 @@ npm run prisma:migrate  # اكتب: init
 npm run db:seed
 npm run dev
 ```
-✅ **Backend: http://10.250.100.40:5000**
+✅ **Backend: http://localhost:5000**
 
 ### 3️⃣ Frontend
 ```powershell
@@ -78,7 +78,7 @@ cd client
 npm install
 npm run dev
 ```
-✅ **Frontend: http://10.250.100.40:3040**
+✅ **Frontend: http://localhost:3040**
 
 ### 4️⃣ Login
 ```

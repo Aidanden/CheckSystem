@@ -131,7 +131,7 @@
             };
 
             console.log('🖨️ Sending request:');
-            console.log('URL:', 'http://10.250.100.40:5000/api/printing/print');
+            console.log('URL:', 'http://localhost:5000/api/printing/print');
             console.log('Headers:', {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token.substring(0, 20)}...`
@@ -139,7 +139,7 @@
             console.log('Body:', requestData);
 
             try {
-                const response = await fetch('http://10.250.100.40:5000/api/printing/print', {
+                const response = await fetch('http://localhost:5000/api/printing/print', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

@@ -150,7 +150,7 @@ npm run db:seed
 npm run dev
 ```
 
-✅ Backend running on: `http://10.250.100.40:5000`
+✅ Backend running on: `http://localhost:5000`
 
 ### 4. Setup Frontend
 
@@ -165,7 +165,7 @@ npm install
 npm run dev
 ```
 
-✅ Frontend running on: `http://10.250.100.40:3040`
+✅ Frontend running on: `http://localhost:3040`
 
 ### 5. Login Credentials
 
@@ -363,7 +363,7 @@ cd server
 
 # Example: Login test
 $body = @{username="admin"; password="[REDACTED]"} | ConvertTo-Json
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/auth/login -Method POST -ContentType "application/json" -Body $body
+Invoke-RestMethod -Uri http://localhost:5000/api/auth/login -Method POST -ContentType "application/json" -Body $body
 ```
 
 ### Frontend Testing

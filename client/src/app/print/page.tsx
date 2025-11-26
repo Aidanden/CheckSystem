@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Search, Printer, CheckCircle, RefreshCw } from 'lucide-react';
 import renderCheckbookHtml, { type CheckbookData } from '@/lib/utils/printRenderer';
@@ -10,7 +10,7 @@ import {
   type SoapCheckbookResponse,
 } from '@/lib/soap/checkbook';
 import { printSettingsAPI, type PrintSettings } from '@/lib/printSettings.api';
-import { branchService } from '@/lib/api';
+import { branchService, systemSettingsService } from '@/lib/api';
 
 export default function PrintPage() {
   const [accountNumber, setAccountNumber] = useState('');
@@ -23,6 +23,9 @@ export default function PrintPage() {
   const [error, setError] = useState<string | null>(null);
   const [branchInfo, setBranchInfo] = useState<{ name: string; routing: string } | null>(null);
   const [layout, setLayout] = useState<PrintSettings | null>(null);
+  const [soapEndpoint, setSoapEndpoint] = useState<string | null>(null);
+  const [soapEndpointLoading, setSoapEndpointLoading] = useState(false);
+  const [soapEndpointError, setSoapEndpointError] = useState<string | null>(null);
 
   const resolveAccountType = (data: SoapCheckbookResponse): 1 | 2 | 3 => {
     if (data.chequeLeaves === 10) return 3;
@@ -30,6 +33,24 @@ export default function PrintPage() {
     if (data.chequeLeaves === 50) return 2;
     return data.accountNumber.startsWith('2') ? 2 : 1;
   };
+
+  const loadSoapEndpoint = async () => {
+    setSoapEndpointLoading(true);
+    setSoapEndpointError(null);
+    try {
+      const { endpoint } = await systemSettingsService.getSoapEndpoint();
+      setSoapEndpoint(endpoint);
+    } catch (endpointErr) {
+      console.error('Failed to load SOAP endpoint:', endpointErr);
+      setSoapEndpointError('تعذر تحميل رابط SOAP المخصص، سيتم استخدام القيمة الافتراضية.');
+    } finally {
+      setSoapEndpointLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSoapEndpoint();
+  }, []);
 
   const handleQuery = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,11 +66,24 @@ export default function PrintPage() {
     setLayout(null);
 
     try {
+      let endpointOverride = soapEndpoint?.trim();
+      if (!endpointOverride) {
+        try {
+          const { endpoint } = await systemSettingsService.getSoapEndpoint();
+          endpointOverride = endpoint;
+          setSoapEndpoint(endpoint);
+          setSoapEndpointError(null);
+        } catch (fetchEndpointError) {
+          console.warn('تعذر تحميل رابط SOAP، سيتم استخدام القيمة الافتراضية.', fetchEndpointError);
+          setSoapEndpointError('تم استخدام رابط SOAP الافتراضي بسبب فشل تحميل الإعداد.');
+        }
+      }
+
       const soapResponse = await querySoapCheckbook({
         accountNumber,
         branchCode: '001',
         firstChequeNumber: firstChequeNumber ? parseInt(firstChequeNumber, 10) : undefined,
-      });
+      }, { endpoint: endpointOverride });
 
       const accountType = resolveAccountType(soapResponse);
 
@@ -179,6 +213,27 @@ export default function PrintPage() {
               </button>
             </div>
           </form>
+
+          <div className="md:col-span-3 flex flex-wrap items-center gap-2 text-xs text-gray-600 mt-3">
+            <span className="font-semibold text-gray-700">رابط SOAP الحالي:</span>
+            <span className="font-mono text-gray-900">
+              {soapEndpointLoading ? 'جاري التحميل...' : soapEndpoint || 'القيمة الافتراضية (من البيئة)'}
+            </span>
+            <button
+              type="button"
+              onClick={loadSoapEndpoint}
+              className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+              disabled={soapEndpointLoading}
+            >
+              <RefreshCw className="w-4 h-4" />
+              تحديث الرابط
+            </button>
+            {soapEndpointError && (
+              <span className="text-red-600">
+                {soapEndpointError}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Error Message */}
