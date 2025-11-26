@@ -1,4 +1,4 @@
-const SOAP_ENDPOINT = process.env.NEXT_PUBLIC_SOAP_ENDPOINT || 'http://localhost:8080/FCUBSAccService';
+const SOAP_ENDPOINT = process.env.NEXT_PUBLIC_SOAP_ENDPOINT || 'http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService';
 
 const DEFAULT_BRANCH = '001';
 

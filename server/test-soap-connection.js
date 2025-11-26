@@ -1,5 +1,5 @@
 async function testSoapConnection() {
-    const soapUrl = 'http://localhost:8080/FCUBSAccService';
+    const soapUrl = 'http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService';
     const xmlBody = `<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fcub="http://fcubs.ofss.com/service/FCUBSAccService">
   <soapenv:Header/>

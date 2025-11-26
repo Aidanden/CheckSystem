@@ -60,7 +60,7 @@
 
 يجب أن ترى:
     🚀 خادم SOAP التجريبي يعمل على المنفذ: 8080
-    📍 SOAP Endpoint: http://localhost:8080/FCUBSAccService
+    📍 SOAP Endpoint: http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService
     🏥 Health Check: http://localhost:8080/health
 
 

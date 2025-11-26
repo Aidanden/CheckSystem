@@ -73,7 +73,7 @@
 🔍 معلومات الخادم:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🌐 SOAP Endpoint:  http://localhost:8080/FCUBSAccService
+🌐 SOAP Endpoint:  http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService
 🏥 Health Check:   http://localhost:8080/health
 📊 Method:         POST
 📄 Content-Type:   text/xml; charset=utf-8

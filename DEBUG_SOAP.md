@@ -8,7 +8,7 @@
 
 ```env
 # يجب أن يكون هكذا لاستخدام الخادم المحلي
-BANK_API_URL=http://localhost:8080/FCUBSAccService
+BANK_API_URL=http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService
 ```
 
 ## 2. مراقبة السجلات (Logs)
@@ -44,7 +44,7 @@ BANK_API_URL=http://localhost:8080/FCUBSAccService
 يمكنك استخدام هذا الأمر في terminal منفصل لاختبار خادم SOAP مباشرة:
 
 ```bash
-curl -X POST http://localhost:8080/FCUBSAccService \
+curl -X POST http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService \
   -H "Content-Type: text/xml" \
   -d "<soapenv:Envelope ...>" # انسخ مثال من SOAP_SERVER_GUIDE.md
 ```

@@ -9,7 +9,7 @@
         <con:settings/>
         <con:definitionCache type="TEXT" rootPart=""/>
         <con:endpoints>
-            <con:endpoint>http://localhost:8080/FCUBSAccService</con:endpoint>
+            <con:endpoint>http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService</con:endpoint>
         </con:endpoints>
         <con:operation id="query-checkbook-op" isOneWay="false" 
             action="" name="QueryCheckBook" bindingOperationName="QueryCheckBook" 
@@ -19,7 +19,7 @@
             <con:call id="default-request" name="Request 1">
                 <con:settings/>
                 <con:encoding>UTF-8</con:encoding>
-                <con:endpoint>http://localhost:8080/FCUBSAccService</con:endpoint>
+                <con:endpoint>http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService</con:endpoint>
                 <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fcub="http://fcubs.ofss.com/service/FCUBSAccService">
    <soapenv:Header/>
    <soapenv:Body>
@@ -71,7 +71,7 @@
                             </con:setting>
                         </con:settings>
                         <con:encoding>UTF-8</con:encoding>
-                        <con:endpoint>http://localhost:8080/FCUBSAccService</con:endpoint>
+                        <con:endpoint>http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService</con:endpoint>
                         <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fcub="http://fcubs.ofss.com/service/FCUBSAccService">
    <soapenv:Header/>
    <soapenv:Body>

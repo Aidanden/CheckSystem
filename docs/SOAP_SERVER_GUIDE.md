@@ -21,7 +21,7 @@ npm run soap:test
 ═══════════════════════════════════════════════════════════════
 🚀 خادم SOAP التجريبي يعمل على المنفذ: 8080
 ═══════════════════════════════════════════════════════════════
-📍 SOAP Endpoint: http://localhost:8080/FCUBSAccService
+📍 SOAP Endpoint: http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService
 🏥 Health Check: http://localhost:8080/health
 ```
 
@@ -49,7 +49,7 @@ curl http://localhost:8080/health
 
 ```typescript
 // في server/src/utils/bankAPI.ts
-this.baseUrl = process.env.BANK_API_URL || 'http://localhost:8080/FCUBSAccService';
+this.baseUrl = process.env.BANK_API_URL || 'http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService';
 ```
 
 ### إعدادات بيئة اختيارية
@@ -58,7 +58,7 @@ this.baseUrl = process.env.BANK_API_URL || 'http://localhost:8080/FCUBSAccServic
 
 ```env
 # خادم SOAP المحلي (افتراضي)
-BANK_API_URL=http://localhost:8080/FCUBSAccService
+BANK_API_URL=http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService
 BANK_API_USER=ADMINUSER1
 BANK_DEFAULT_BRANCH_CODE=001
 
@@ -89,7 +89,7 @@ BANK_DEFAULT_BRANCH_CODE=001
 ### باستخدام cURL
 
 ```bash
-curl -X POST http://localhost:8080/FCUBSAccService \
+curl -X POST http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService \
   -H "Content-Type: text/xml" \
   -d '<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fcub="http://fcubs.ofss.com/service/FCUBSAccService">

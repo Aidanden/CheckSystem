@@ -22,7 +22,7 @@ node server_soap_test.js
 
 ### 1. SOAP Service Endpoint
 ```
-POST http://localhost:8080/FCUBSAccService
+POST http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService
 Content-Type: text/xml
 ```
 
@@ -88,7 +88,7 @@ GET http://localhost:8080/health
 ## 🧪 اختبار باستخدام cURL
 
 ```bash
-curl -X POST http://localhost:8080/FCUBSAccService \
+curl -X POST http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService \
   -H "Content-Type: text/xml" \
   -d @- << 'EOF'
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fcub="http://fcubs.ofss.com/service/FCUBSAccService">
@@ -177,7 +177,7 @@ npm run soap:test
 #### الطريقة الأسهل:
 1. في SoapUI، اذهب إلى **File** → **New REST Project**
 2. ثم احذفه واختر **New SOAP Project**
-3. في خانة **Initial WSDL**، ضع: `http://localhost:8080/FCUBSAccService?wsdl`
+3. في خانة **Initial WSDL**، ضع: `http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService?wsdl`
    (حتى لو لم يكن موجود، سنضيف الطلب يدوياً)
 
 ### الخطوة 4: إنشاء طلب يدوي
@@ -186,7 +186,7 @@ npm run soap:test
 2. اختر **New Request**
 3. سمّه: `QueryCheckBook`
 4. في نافذة الطلب:
-   - **Endpoint**: `http://localhost:8080/FCUBSAccService`
+   - **Endpoint**: `http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService`
    - **Method**: POST
 
 ### الخطوة 5: إضافة محتوى الطلب (Request XML)
@@ -287,7 +287,7 @@ npm run soap:test
 #### المشكلة: No Response
 **الحل**: تحقق من الـ endpoint URL:
 ```
-http://localhost:8080/FCUBSAccService
+http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService
 ```
 
 ### 📊 فحص السجلات (Logs)
@@ -308,7 +308,7 @@ http://localhost:8080/FCUBSAccService
 
 1. افتح Postman
 2. أنشئ طلب جديد من نوع `POST`
-3. ضع الـ URL: `http://localhost:8080/FCUBSAccService`
+3. ضع الـ URL: `http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService`
 4. في Headers أضف:
    - `Content-Type`: `text/xml`
 5. في Body اختر `raw` و `XML` والصق محتوى الطلب أعلاه

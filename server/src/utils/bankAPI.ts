@@ -12,7 +12,7 @@ export class BankAPIClient {
   private apiKey: string;
 
   constructor() {
-    this.baseUrl = process.env.BANK_API_URL || 'http://localhost:8080/FCUBSAccService';
+    this.baseUrl = process.env.BANK_API_URL || 'http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService';
     this.apiKey = process.env.BANK_API_KEY || '';
   }
 

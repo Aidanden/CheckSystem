@@ -6,6 +6,7 @@ import inventoryRoutes from './inventory.routes';
 import accountRoutes from './account.routes';
 import printingRoutes from './printing.routes';
 import printSettingsRoutes from './printSettings.routes';
+import systemSettingsRoutes from './systemSettings.routes';
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.use('/inventory', inventoryRoutes);
 router.use('/accounts', accountRoutes);
 router.use('/printing', printingRoutes);
 router.use('/print-settings', printSettingsRoutes);
+router.use('/system-settings', systemSettingsRoutes);
 
 export default router;
 

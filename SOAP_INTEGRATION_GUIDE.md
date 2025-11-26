@@ -23,7 +23,7 @@ cd server
 npm run soap:test
 ```
 
-الخادم سيعمل على: `http://localhost:8080/FCUBSAccService`
+الخادم سيعمل على: `http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService`
 
 ---
 
@@ -191,7 +191,7 @@ interface ChequeStatus {
 في ملف `client/src/services/soapService.ts`:
 
 ```typescript
-private soapEndpoint = 'http://localhost:8080/FCUBSAccService';
+private soapEndpoint = 'http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService';
 // غيّر إلى:
 private soapEndpoint = 'http://your-fcubs-server:port/FCUBSAccService';
 ```
