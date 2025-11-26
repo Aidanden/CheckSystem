@@ -9,6 +9,8 @@ export interface SoapChequeStatus {
 export interface SoapCheckbookResponse {
   accountNumber: string;
   accountBranch: string;
+  branchName?: string;
+  routingNumber?: string;
   firstChequeNumber?: number;
   chequeLeaves?: number;
   requestStatus?: string;

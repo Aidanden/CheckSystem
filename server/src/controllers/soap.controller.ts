@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { bankAPI } from '../utils/bankAPI';
+import { BranchModel } from '../models/Branch.model';
 
 export class SoapController {
   static async queryCheckbook(req: AuthRequest, res: Response): Promise<void> {
@@ -32,6 +33,26 @@ export class SoapController {
         branchCode: finalBranchCode,
         firstChequeNumber: firstChequeNumber ? parseInt(firstChequeNumber, 10) : undefined,
       });
+
+      // جلب معلومات الفرع من قاعدة البيانات
+      try {
+        const branch = await BranchModel.findByBranchCode(finalBranchCode);
+        if (branch) {
+          // إضافة معلومات الفرع إلى النتيجة
+          (result as any).branchName = branch.branchName;
+          (result as any).routingNumber = branch.routingNumber;
+          console.log('✅ تم جلب معلومات الفرع:', {
+            code: finalBranchCode,
+            name: branch.branchName,
+            routing: branch.routingNumber
+          });
+        } else {
+          console.warn('⚠️ لم يتم العثور على الفرع في قاعدة البيانات:', finalBranchCode);
+        }
+      } catch (branchError) {
+        console.error('❌ خطأ في جلب معلومات الفرع:', branchError);
+        // لا نوقف العملية، فقط نسجل الخطأ
+      }
 
       res.json(result);
     } catch (error: any) {

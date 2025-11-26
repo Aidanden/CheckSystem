@@ -63,19 +63,24 @@ export default function PrintPage() {
         console.warn('تعذر تحميل إعدادات الطباعة المخصصة، سيتم استخدام القيم الافتراضية.', layoutError);
       }
 
-      let resolvedBranchName = `فرع ${soapResponse.accountBranch}`;
-      let resolvedRouting = soapResponse.accountBranch;
-      try {
-        const branch = await branchService.getByCode(soapResponse.accountBranch);
-        if (branch) {
-          resolvedBranchName = branch.branchName;
-          resolvedRouting = branch.routingNumber;
-          setBranchInfo({ name: branch.branchName, routing: branch.routingNumber });
+      // استخدام معلومات الفرع من استجابة SOAP إذا كانت موجودة
+      let resolvedBranchName = soapResponse.branchName || `فرع ${soapResponse.accountBranch}`;
+      let resolvedRouting = soapResponse.routingNumber || soapResponse.accountBranch;
+      
+      // إذا لم تكن معلومات الفرع موجودة في الاستجابة، نحاول جلبها من الخدمة
+      if (!soapResponse.branchName || !soapResponse.routingNumber) {
+        try {
+          const branch = await branchService.getByCode(soapResponse.accountBranch);
+          if (branch) {
+            resolvedBranchName = branch.branchName;
+            resolvedRouting = branch.routingNumber;
+          }
+        } catch (branchError) {
+          console.warn('تعذر العثور على بيانات الفرع، سيتم استخدام البيانات المتاحة.', branchError);
         }
-      } catch (branchError) {
-        console.warn('تعذر العثور على بيانات الفرع، سيتم استخدام رمز الفرع فقط.', branchError);
-        setBranchInfo({ name: resolvedBranchName, routing: resolvedRouting });
       }
+      
+      setBranchInfo({ name: resolvedBranchName, routing: resolvedRouting });
 
       const preview = buildPreviewFromSoap(soapResponse, {
         layout: resolvedLayout ?? undefined,
