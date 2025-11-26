@@ -311,12 +311,12 @@
 
 ✅ **Health Check**
 ```bash
-curl http://localhost:5000/api/health
+curl http://10.250.100.40:5000/api/health
 ```
 
 ✅ **Login**
 ```bash
-curl -X POST http://localhost:5000/api/auth/login \
+curl -X POST http://10.250.100.40:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "admin", "password": "[REDACTED]"}'
 ```
@@ -414,7 +414,7 @@ npm run seed
 # 7. Run
 npm run dev
 
-# ✅ Server running on http://localhost:5000
+# ✅ Server running on http://10.250.100.40:5000
 ```
 
 ---

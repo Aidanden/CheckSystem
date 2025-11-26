@@ -71,7 +71,7 @@ HOST=10.250.100.40
 ### 4. Client Configuration (CORS)
 ```typescript
 // في: server/src/index.ts
-origin: process.env.CLIENT_URL || 'http://localhost:3040'
+origin: process.env.CLIENT_URL || 'http://10.250.100.40:3040'
 ```
 
 **الاستخدام:**
@@ -79,7 +79,7 @@ origin: process.env.CLIENT_URL || 'http://localhost:3040'
 
 **مثال:**
 ```env
-CLIENT_URL=http://localhost:3040
+CLIENT_URL=http://10.250.100.40:3040
 ```
 
 ---
@@ -87,7 +87,7 @@ CLIENT_URL=http://localhost:3040
 ### 5. Banking API Configuration (اختياري)
 ```typescript
 // في: server/src/utils/bankAPI.ts
-this.baseUrl = process.env.BANK_API_URL || 'http://localhost:8000/api';
+this.baseUrl = process.env.BANK_API_URL || 'http://10.250.100.40:8000/api';
 this.apiKey = process.env.BANK_API_KEY || '';
 ```
 
@@ -97,7 +97,7 @@ this.apiKey = process.env.BANK_API_KEY || '';
 
 **مثال:**
 ```env
-BANK_API_URL=http://localhost:8000/api
+BANK_API_URL=http://10.250.100.40:8000/api
 BANK_API_KEY=test_bank_api_key
 ```
 
@@ -125,7 +125,7 @@ NODE_ENV=development
 ### 1. API URL
 ```typescript
 // في: client/src/lib/api/client.ts
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://10.250.100.40:5000/api';
 ```
 
 **الاستخدام:**
@@ -134,7 +134,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 **مثال:**
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
 ```
 
 **ملاحظة مهمة:**
@@ -158,10 +158,10 @@ PORT=5000
 HOST=10.250.100.40
 
 # Client Configuration
-CLIENT_URL=http://localhost:3040
+CLIENT_URL=http://10.250.100.40:3040
 
 # Banking API Configuration (Optional)
-BANK_API_URL=http://localhost:8000/api
+BANK_API_URL=http://10.250.100.40:8000/api
 BANK_API_KEY=test_bank_api_key
 
 # Environment Mode (optional)
@@ -175,7 +175,7 @@ NODE_ENV=development
 ```env
 # API Configuration
 # استخدم عنوان الـ backend server الخاص بك
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
 ```
 
 ---
@@ -248,7 +248,7 @@ npm run dev
 ✅ Database connected successfully
 🚀 Server is running on port 5000
 📝 Environment: development
-🌐 API URL: http://localhost:5000/api
+🌐 API URL: http://10.250.100.40:5000/api
 ```
 
 ### Frontend:
@@ -259,7 +259,7 @@ npm run dev
 
 **يجب أن ترى:**
 ```
-✓ Ready on http://localhost:3040
+✓ Ready on http://10.250.100.40:3040
 ```
 
 ---
@@ -301,11 +301,11 @@ npm run dev
 | `JWT_EXPIRES_IN` | Backend | مدة صلاحية token | ❌ لا | 24h |
 | `PORT` | Backend | منفذ السيرفر | ❌ لا | 5000 |
 | `HOST` | Backend | عنوان السيرفر | ❌ لا | localhost |
-| `CLIENT_URL` | Backend | عنوان Frontend (CORS) | ✅ نعم | http://localhost:3040 |
+| `CLIENT_URL` | Backend | عنوان Frontend (CORS) | ✅ نعم | http://10.250.100.40:3040 |
 | `BANK_API_URL` | Backend | API البنك الخارجي | ❌ لا | - |
 | `BANK_API_KEY` | Backend | مفتاح API البنك | ❌ لا | - |
 | `NODE_ENV` | Backend | بيئة التشغيل | ❌ لا | development |
-| `NEXT_PUBLIC_API_URL` | Frontend | عنوان Backend API | ✅ نعم | http://localhost:5000/api |
+| `NEXT_PUBLIC_API_URL` | Frontend | عنوان Backend API | ✅ نعم | http://10.250.100.40:5000/api |
 
 ---
 

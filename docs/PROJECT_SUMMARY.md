@@ -522,7 +522,7 @@ cd client
 npm run dev
 
 # Browser
-http://localhost:3040
+http://10.250.100.40:3040
 Username: admin
 Password: [REDACTED]
 ```

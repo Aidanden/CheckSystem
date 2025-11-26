@@ -132,14 +132,14 @@
 ```bash
 cd server
 npm run dev
-# Server: http://localhost:5000
+# Server: http://10.250.100.40:5000
 ```
 
 #### Frontend:
 ```bash
 cd client
 npm run dev
-# Client: http://localhost:3040
+# Client: http://10.250.100.40:3040
 ```
 
 ### 2. تسجيل الدخول
@@ -386,7 +386,7 @@ cd server && npm run dev
 cd client && npm run dev
 
 # 3. افتح المتصفح
-http://localhost:3040
+http://10.250.100.40:3040
 
 # 4. سجل الدخول
 Username: admin

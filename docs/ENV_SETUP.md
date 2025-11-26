@@ -28,10 +28,10 @@ PORT=5000
 HOST=10.250.100.40
 
 # Client Configuration
-CLIENT_URL=http://localhost:3040
+CLIENT_URL=http://10.250.100.40:3040
 
 # Banking API Configuration (Optional)
-BANK_API_URL=http://localhost:8000/api
+BANK_API_URL=http://10.250.100.40:8000/api
 BANK_API_KEY=test_bank_api_key
 ```
 
@@ -55,7 +55,7 @@ cp .env.local.example .env.local
 
 ```env
 # API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
 ```
 
 **ملاحظة مهمة:**
@@ -73,12 +73,12 @@ NEXT_PUBLIC_API_URL=http://localhost:5000/api
 ```env
 HOST=localhost
 PORT=5000
-CLIENT_URL=http://localhost:3040
+CLIENT_URL=http://10.250.100.40:3040
 ```
 
 **Client (.env.local):**
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
 ```
 
 ---
@@ -89,12 +89,12 @@ NEXT_PUBLIC_API_URL=http://localhost:5000/api
 ```env
 HOST=10.250.100.40
 PORT=5000
-CLIENT_URL=http://localhost:3000
+CLIENT_URL=http://10.250.100.40:3000
 ```
 
 **Client (.env.local):**
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
 ```
 
 ---
@@ -128,7 +128,7 @@ npm run dev
 ✅ Database connected successfully
 🚀 Server is running on port 5000
 📝 Environment: development
-🌐 API URL: http://localhost:5000/api
+🌐 API URL: http://10.250.100.40:5000/api
 ```
 
 ### 2. تشغيل Frontend:
@@ -137,7 +137,7 @@ cd client
 npm run dev
 ```
 
-يجب أن يعمل على `http://localhost:3040` ويتصل بالـ API بنجاح.
+يجب أن يعمل على `http://10.250.100.40:3040` ويتصل بالـ API بنجاح.
 
 ---
 
@@ -199,7 +199,7 @@ cp .env.local.example .env.local
 npm run dev
 
 # 3. افتح المتصفح
-# http://localhost:3040
+# http://10.250.100.40:3040
 ```
 
 ✨ **الآن النظام يستخدم متغيرات البيئة بشكل كامل!**

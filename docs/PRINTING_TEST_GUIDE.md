@@ -75,7 +75,7 @@ npm run dev
 ### الخطوة 2: طباعة من Frontend
 
 ```
-1. افتح: http://localhost:3040
+1. افتح: http://10.250.100.40:3040
 2. Login: admin / [REDACTED]
 3. اذهب إلى "المخزون"
 4. تأكد من وجود مخزون كافي (100 ورقة مثلاً)
@@ -140,7 +140,7 @@ $token = "YOUR_TOKEN"
 $headers = @{Authorization = "Bearer $token"}
 
 $body = @{account_number="100012345678901"} | ConvertTo-Json
-Invoke-RestMethod -Uri http://localhost:5000/api/printing/print -Method POST -Headers $headers -ContentType "application/json" -Body $body
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/printing/print -Method POST -Headers $headers -ContentType "application/json" -Body $body
 ```
 
 **المتوقع:**
@@ -153,7 +153,7 @@ Invoke-RestMethod -Uri http://localhost:5000/api/printing/print -Method POST -He
 
 ```powershell
 $body = @{account_number="200034567890123"} | ConvertTo-Json
-Invoke-RestMethod -Uri http://localhost:5000/api/printing/print -Method POST -Headers $headers -ContentType "application/json" -Body $body
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/printing/print -Method POST -Headers $headers -ContentType "application/json" -Body $body
 ```
 
 **المتوقع:**
@@ -167,7 +167,7 @@ Invoke-RestMethod -Uri http://localhost:5000/api/printing/print -Method POST -He
 ```powershell
 # اطبع للحساب 100012345678901 مرة أخرى
 $body = @{account_number="100012345678901"} | ConvertTo-Json
-Invoke-RestMethod -Uri http://localhost:5000/api/printing/print -Method POST -Headers $headers -ContentType "application/json" -Body $body
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/printing/print -Method POST -Headers $headers -ContentType "application/json" -Body $body
 ```
 
 **المتوقع:**
@@ -203,7 +203,7 @@ cd server
 npm run prisma:studio
 ```
 
-افتح: http://localhost:5555
+افتح: http://10.250.100.40:5555
 
 **تحقق من:**
 

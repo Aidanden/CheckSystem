@@ -79,7 +79,7 @@ VALUES ('الفرع الرئيسي', 'طرابلس', '1100000001', NOW(), NOW())
 ### 2. اختبار الطباعة
 
 #### من المتصفح:
-1. افتح `http://localhost:3040/print`
+1. افتح `http://10.250.100.40:3040/print`
 2. أدخل رقم حساب: `100012345678901`
 3. اضغط "استعلام"
 4. اضغط "طباعة"
@@ -87,7 +87,7 @@ VALUES ('الفرع الرئيسي', 'طرابلس', '1100000001', NOW(), NOW())
 #### من Console:
 ```javascript
 // في Developer Tools Console
-await fetch('http://localhost:5000/api/printing/print', {
+await fetch('http://10.250.100.40:5000/api/printing/print', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',

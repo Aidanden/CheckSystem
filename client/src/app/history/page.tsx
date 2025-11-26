@@ -52,7 +52,7 @@ export default function HistoryPage() {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/printing/history', {
+      const response = await fetch('http://10.250.100.40:5000/api/printing/history', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -112,7 +112,7 @@ export default function HistoryPage() {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/printing/print', {
+      const response = await fetch('http://10.250.100.40:5000/api/printing/print', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -136,7 +136,7 @@ export default function HistoryPage() {
       // Open PDF in new tab for printing (fetch with token, embed and auto-print)
       if (data.pdfPath) {
         const filename = data.pdfPath.split('\\').pop() || data.pdfPath.split('/').pop();
-        const downloadUrl = `http://localhost:5000/api/printing/download/${filename}`;
+        const downloadUrl = `http://10.250.100.40:5000/api/printing/download/${filename}`;
         try {
           const res = await fetch(downloadUrl, { headers: { 'Authorization': `Bearer ${token}` } });
           if (!res.ok) throw new Error('Failed to download PDF');

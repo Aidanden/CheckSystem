@@ -257,17 +257,17 @@ npm run dev
 **مثال سريع:**
 ```powershell
 # 1. Health Check
-Invoke-RestMethod http://localhost:5000/api/health
+Invoke-RestMethod http://10.250.100.40:5000/api/health
 
 # 2. Login
 $body = @{username="admin"; password="[REDACTED]"} | ConvertTo-Json
-$response = Invoke-RestMethod -Uri http://localhost:5000/api/auth/login `
+$response = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/auth/login `
     -Method POST -ContentType "application/json" -Body $body
 $token = $response.token
 
 # 3. Get Branches
 $headers = @{Authorization = "Bearer $token"}
-Invoke-RestMethod http://localhost:5000/api/branches -Headers $headers
+Invoke-RestMethod http://10.250.100.40:5000/api/branches -Headers $headers
 
 # ... إلخ (26+ endpoint في TESTING_GUIDE.md)
 ```

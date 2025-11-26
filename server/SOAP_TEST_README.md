@@ -28,7 +28,7 @@ Content-Type: text/xml
 
 ### 2. Health Check
 ```
-GET http://localhost:8080/health
+GET http://10.250.100.40:8080/health
 ```
 
 ## 📤 مثال على الطلب (Request)

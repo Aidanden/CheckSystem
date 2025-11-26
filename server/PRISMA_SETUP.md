@@ -130,7 +130,7 @@ npm run prisma:migrate:deploy
 ```powershell
 # Prisma Studio (GUI للبيانات)
 npm run prisma:studio
-# ثم افتح: http://localhost:5555
+# ثم افتح: http://10.250.100.40:5555
 ```
 
 ---
@@ -292,11 +292,11 @@ npm run prisma:generate
 
 ```powershell
 # Health check
-Invoke-RestMethod http://localhost:5000/api/health
+Invoke-RestMethod http://10.250.100.40:5000/api/health
 
 # Login
 $body = @{username="admin"; password="[REDACTED]"} | ConvertTo-Json
-Invoke-RestMethod -Uri http://localhost:5000/api/auth/login `
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/auth/login `
     -Method POST -ContentType "application/json" -Body $body
 ```
 
@@ -310,7 +310,7 @@ Invoke-RestMethod -Uri http://localhost:5000/api/auth/login `
 npm run prisma:studio
 ```
 
-ثم افتح: http://localhost:5555
+ثم افتح: http://10.250.100.40:5555
 
 يمكنك:
 - ✅ عرض جميع الجداول
