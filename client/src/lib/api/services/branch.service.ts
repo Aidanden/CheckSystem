@@ -18,6 +18,14 @@ export const branchService = {
     });
   },
 
+  // Get branch by core code
+  getByCode: async (code: string): Promise<Branch> => {
+    return request<Branch>({
+      url: `/branches/code/${code}`,
+      method: 'GET',
+    });
+  },
+
   // Create branch
   create: async (data: CreateBranchRequest): Promise<Branch> => {
     return request<Branch>({

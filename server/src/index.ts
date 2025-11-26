@@ -13,11 +13,12 @@ dotenv.config();
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || 'localhost';
 
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://10.250.100.40:3040',
+  origin: process.env.CLIENT_URL || 'http://localhost:3040',
   credentials: true,
 }));
 // Use secure logging configuration
@@ -42,7 +43,7 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`🚀 Server is running on port ${PORT}`);
       console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🌐 API URL: http://localhost:${PORT}/api`);
+      console.log(`🌐 API URL: http://${HOST}:${PORT}/api`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

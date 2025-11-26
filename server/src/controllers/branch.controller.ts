@@ -31,6 +31,26 @@ export class BranchController {
     }
   }
 
+  static async getByCode(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { code } = req.params;
+      const branch = await BranchService.getBranchByCode(code);
+
+      if (!branch) {
+        res.status(404).json({ error: 'Branch not found' });
+        return;
+      }
+
+      res.json(branch);
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(500).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: 'Failed to fetch branch by code' });
+      }
+    }
+  }
+
   static async create(req: AuthRequest, res: Response): Promise<void> {
     try {
       const data: CreateBranchRequest = req.body;

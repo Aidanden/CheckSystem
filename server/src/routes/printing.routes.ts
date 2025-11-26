@@ -15,9 +15,19 @@ router.post(
   '/print',
   requirePermission(PermissionCode.PRINTING),
   validate([
-    body('account_number').notEmpty().withMessage('Account number is required'),
-    body('serial_from').optional().isInt({ min: 1 }).withMessage('Serial from must be a positive integer'),
-    body('serial_to').optional().isInt({ min: 1 }).withMessage('Serial to must be a positive integer'),
+    body('account_number')
+      .notEmpty()
+      .withMessage('رقم الحساب مطلوب (Account number is required)')
+      .isString()
+      .withMessage('رقم الحساب يجب أن يكون نصاً (Account number must be a string)'),
+    body('serial_from')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('الرقم التسلسلي من يجب أن يكون رقماً صحيحاً موجباً (Serial from must be a positive integer)'),
+    body('serial_to')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('الرقم التسلسلي إلى يجب أن يكون رقماً صحيحاً موجباً (Serial to must be a positive integer)'),
   ]),
   PrintingController.printCheckbook
 );

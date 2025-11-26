@@ -15,6 +15,8 @@ model Branch {
   branchName     String   @map("branch_name")
   branchLocation String   @map("branch_location")
   routingNumber  String   @unique @map("routing_number")
+  branchNumber   String   @map("branch_number") @default("")
+  accountingNumber String @map("accounting_number") @default("")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
@@ -170,9 +172,31 @@ model PrintSettings {
   micrLineFontSize Int    @default(12) @map("micr_line_font_size")
   micrLineAlign    String @default("center") @map("micr_line_align")
 
+  // Account Number Position
+  accountNumberX        Float?  @map("account_number_x")
+  accountNumberY        Float?  @map("account_number_y")
+  accountNumberFontSize Int?    @default(12) @map("account_number_font_size")
+  accountNumberAlign    String? @default("left") @map("account_number_align")
+
+  // Check Sequence Position
+  checkSequenceX        Float?  @map("check_sequence_x")
+  checkSequenceY        Float?  @map("check_sequence_y")
+  checkSequenceFontSize Int?    @default(12) @map("check_sequence_font_size")
+  checkSequenceAlign    String? @default("left") @map("check_sequence_align")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([accountType])
   @@map("print_settings")
+}
+
+// System Settings Table
+model SystemSetting {
+  key       String   @id @map("setting_key")
+  value     String   @map("setting_value")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
 }

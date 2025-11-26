@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Settings as SettingsIcon, Save, RotateCcw } from 'lucide-react';
+import { Settings as SettingsIcon, Save, RotateCcw, Printer } from 'lucide-react';
 
 interface PrintPosition {
   x: number;
@@ -13,11 +13,13 @@ interface PrintPosition {
 
 interface PrintSettings {
   id?: number;
-  accountType: 1 | 2;
+  accountType: 1 | 2 | 3;
   checkWidth: number;
   checkHeight: number;
   branchName: PrintPosition;
   serialNumber: PrintPosition;
+  accountNumber: PrintPosition;
+  checkSequence: PrintPosition;
   accountHolderName: PrintPosition;
   micrLine: PrintPosition;
 }
@@ -26,8 +28,10 @@ const DEFAULT_INDIVIDUAL: PrintSettings = {
   accountType: 1,
   checkWidth: 235,
   checkHeight: 86,
-  branchName: { x: 117.5, y: 10, fontSize: 14, align: 'center' },
+  branchName: { x: 20, y: 10, fontSize: 14, align: 'left' },
   serialNumber: { x: 200, y: 18, fontSize: 12, align: 'right' },
+  accountNumber: { x: 117.5, y: 10, fontSize: 14, align: 'center' },
+  checkSequence: { x: 20, y: 18, fontSize: 12, align: 'left' },
   accountHolderName: { x: 20, y: 70, fontSize: 10, align: 'left' },
   micrLine: { x: 117.5, y: 80, fontSize: 12, align: 'center' },
 };
@@ -36,23 +40,53 @@ const DEFAULT_CORPORATE: PrintSettings = {
   accountType: 2,
   checkWidth: 240,
   checkHeight: 86,
-  branchName: { x: 120, y: 10, fontSize: 14, align: 'center' },
+  branchName: { x: 20, y: 10, fontSize: 14, align: 'left' },
   serialNumber: { x: 205, y: 18, fontSize: 12, align: 'right' },
+  accountNumber: { x: 120, y: 10, fontSize: 14, align: 'center' },
+  checkSequence: { x: 20, y: 18, fontSize: 12, align: 'left' },
   accountHolderName: { x: 20, y: 70, fontSize: 10, align: 'left' },
   micrLine: { x: 120, y: 80, fontSize: 12, align: 'center' },
 };
 
+const DEFAULT_BANK_STAFF: PrintSettings = {
+  accountType: 3,
+  checkWidth: 235,
+  checkHeight: 86,
+  branchName: { ...DEFAULT_INDIVIDUAL.branchName },
+  serialNumber: { ...DEFAULT_INDIVIDUAL.serialNumber },
+  accountNumber: { ...DEFAULT_INDIVIDUAL.accountNumber },
+  checkSequence: { ...DEFAULT_INDIVIDUAL.checkSequence },
+  accountHolderName: { ...DEFAULT_INDIVIDUAL.accountHolderName },
+  micrLine: { ...DEFAULT_INDIVIDUAL.micrLine },
+};
+
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<1 | 2>(1);
+  const [activeTab, setActiveTab] = useState<1 | 2 | 3>(1);
   const [individualSettings, setIndividualSettings] = useState<PrintSettings>(DEFAULT_INDIVIDUAL);
   const [corporateSettings, setCorporateSettings] = useState<PrintSettings>(DEFAULT_CORPORATE);
+  const [bankStaffSettings, setBankStaffSettings] = useState<PrintSettings>(DEFAULT_BANK_STAFF);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [initialLoading, setInitialLoading] = useState(true);
 
-  const currentSettings = activeTab === 1 ? individualSettings : corporateSettings;
-  const setCurrentSettings = activeTab === 1 ? setIndividualSettings : setCorporateSettings;
+  const getCurrentSettings = () => {
+    if (activeTab === 1) return individualSettings;
+    if (activeTab === 2) return corporateSettings;
+    return bankStaffSettings;
+  };
+
+  const setCurrentSettings = (updater: (prev: PrintSettings) => PrintSettings) => {
+    if (activeTab === 1) {
+      setIndividualSettings(updater);
+    } else if (activeTab === 2) {
+      setCorporateSettings(updater);
+    } else {
+      setBankStaffSettings(updater);
+    }
+  };
+
+  const currentSettings = getCurrentSettings();
 
   // Load settings from backend
   useEffect(() => {
@@ -76,8 +110,10 @@ export default function SettingsPage() {
         const data = await response.json();
         if (activeTab === 1) {
           setIndividualSettings(data);
-        } else {
+        } else if (activeTab === 2) {
           setCorporateSettings(data);
+        } else {
+          setBankStaffSettings(data);
         }
       }
     } catch (err) {
@@ -143,9 +179,112 @@ export default function SettingsPage() {
 
   const handleReset = () => {
     if (confirm('هل أنت متأكد من إعادة تعيين الإعدادات للقيم الافتراضية؟')) {
-      setCurrentSettings(activeTab === 1 ? DEFAULT_INDIVIDUAL : DEFAULT_CORPORATE);
+      const defaults = activeTab === 1
+        ? DEFAULT_INDIVIDUAL
+        : activeTab === 2
+          ? DEFAULT_CORPORATE
+          : DEFAULT_BANK_STAFF;
+      setCurrentSettings(() => defaults);
       setSuccess('تم إعادة تعيين الإعدادات');
     }
+  };
+
+  const handleTestPrint = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      setError('فشل فتح نافذة الطباعة. يرجى السماح بالنوافذ المنبثقة.');
+      return;
+    }
+
+    const checkWidthPx = currentSettings.checkWidth * 3.7795275591; // mm to px
+    const checkHeightPx = currentSettings.checkHeight * 3.7795275591;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>تجربة طباعة الشيك</title>
+        <style>
+          @page {
+            size: ${currentSettings.checkWidth}mm ${currentSettings.checkHeight}mm;
+            margin: 0;
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+          }
+          .check {
+            width: ${checkWidthPx}px;
+            height: ${checkHeightPx}px;
+            position: relative;
+            border: 1px solid #ccc;
+          }
+          .field {
+            position: absolute;
+          }
+          @media print {
+            .check {
+              border: none;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="check">
+          <div class="field" style="
+            left: ${currentSettings.branchName.x * 3.7795275591}px;
+            top: ${currentSettings.branchName.y * 3.7795275591}px;
+            font-size: ${currentSettings.branchName.fontSize}pt;
+            text-align: ${currentSettings.branchName.align};
+          ">الفرع الرئيسي</div>
+          
+          <div class="field" style="
+            ${currentSettings.serialNumber.align === 'right' ? 'right' : 'left'}: ${currentSettings.serialNumber.align === 'right' ? (currentSettings.checkWidth - currentSettings.serialNumber.x) * 3.7795275591 : currentSettings.serialNumber.x * 3.7795275591}px;
+            top: ${currentSettings.serialNumber.y * 3.7795275591}px;
+            font-size: ${currentSettings.serialNumber.fontSize}pt;
+            font-family: monospace;
+          ">000000001</div>
+          
+          <div class="field" style="
+            left: ${currentSettings.accountNumber.x * 3.7795275591}px;
+            top: ${currentSettings.accountNumber.y * 3.7795275591}px;
+            font-size: ${currentSettings.accountNumber.fontSize}pt;
+            text-align: ${currentSettings.accountNumber.align};
+            transform: ${currentSettings.accountNumber.align === 'center' ? 'translateX(-50%)' : 'none'};
+          ">001001000811217</div>
+          
+          <div class="field" style="
+            left: ${currentSettings.checkSequence.x * 3.7795275591}px;
+            top: ${currentSettings.checkSequence.y * 3.7795275591}px;
+            font-size: ${currentSettings.checkSequence.fontSize}pt;
+            font-family: monospace;
+          ">000000001</div>
+          
+          <div class="field" style="
+            left: ${currentSettings.accountHolderName.x * 3.7795275591}px;
+            top: ${currentSettings.accountHolderName.y * 3.7795275591}px;
+            font-size: ${currentSettings.accountHolderName.fontSize}pt;
+          ">أحمد محمد علي السيد</div>
+          
+          <div class="field" style="
+            left: ${currentSettings.micrLine.x * 3.7795275591}px;
+            top: ${currentSettings.micrLine.y * 3.7795275591}px;
+            font-size: ${currentSettings.micrLine.fontSize}pt;
+            font-family: monospace;
+            text-align: ${currentSettings.micrLine.align};
+            transform: ${currentSettings.micrLine.align === 'center' ? 'translateX(-50%)' : 'none'};
+          ">01 100012345678901 1100000001 000000001</div>
+        </div>
+        <script>
+          window.onload = function() {
+            window.print();
+          };
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   if (initialLoading) {
@@ -186,6 +325,15 @@ export default function SettingsPage() {
                 }`}
             >
               شيكات الشركات (50 ورقة)
+            </button>
+            <button
+              onClick={() => setActiveTab(3)}
+              className={`px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 3
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-800'
+                }`}
+            >
+              شيكات موظفي المصرف (10 ورقات)
             </button>
           </div>
         </div>
@@ -295,6 +443,58 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {/* Account Number Position */}
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="font-medium text-gray-700">رقم الحساب</h3>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">X (من اليسار)</label>
+                  <input
+                    type="number"
+                    value={currentSettings.accountNumber.x}
+                    onChange={(e) => updatePosition('accountNumber', 'x', parseFloat(e.target.value))}
+                    className="input w-full"
+                    step="0.1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">Y (من الأعلى)</label>
+                  <input
+                    type="number"
+                    value={currentSettings.accountNumber.y}
+                    onChange={(e) => updatePosition('accountNumber', 'y', parseFloat(e.target.value))}
+                    className="input w-full"
+                    step="0.1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                  <input
+                    type="number"
+                    value={currentSettings.accountNumber.fontSize}
+                    onChange={(e) => updatePosition('accountNumber', 'fontSize', parseInt(e.target.value))}
+                    className="input w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                  <select
+                    value={currentSettings.accountNumber.align}
+                    onChange={(e) => updatePosition('accountNumber', 'align', e.target.value)}
+                    className="input w-full"
+                  >
+                    <option value="left">يسار</option>
+                    <option value="center">وسط</option>
+                    <option value="right">يمين</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
             {/* Serial Number Position */}
             <div className="space-y-4 border-t pt-4">
               <h3 className="font-medium text-gray-700">الرقم التسلسلي</h3>
@@ -337,6 +537,58 @@ export default function SettingsPage() {
                   <select
                     value={currentSettings.serialNumber.align}
                     onChange={(e) => updatePosition('serialNumber', 'align', e.target.value)}
+                    className="input w-full"
+                  >
+                    <option value="left">يسار</option>
+                    <option value="center">وسط</option>
+                    <option value="right">يمين</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Check Sequence Position */}
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="font-medium text-gray-700">رقم التسلسل الثاني</h3>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">X (من اليسار)</label>
+                  <input
+                    type="number"
+                    value={currentSettings.checkSequence.x}
+                    onChange={(e) => updatePosition('checkSequence', 'x', parseFloat(e.target.value))}
+                    className="input w-full"
+                    step="0.1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">Y (من الأعلى)</label>
+                  <input
+                    type="number"
+                    value={currentSettings.checkSequence.y}
+                    onChange={(e) => updatePosition('checkSequence', 'y', parseFloat(e.target.value))}
+                    className="input w-full"
+                    step="0.1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                  <input
+                    type="number"
+                    value={currentSettings.checkSequence.fontSize}
+                    onChange={(e) => updatePosition('checkSequence', 'fontSize', parseInt(e.target.value))}
+                    className="input w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                  <select
+                    value={currentSettings.checkSequence.align}
+                    onChange={(e) => updatePosition('checkSequence', 'align', e.target.value)}
                     className="input w-full"
                   >
                     <option value="left">يسار</option>
@@ -463,22 +715,32 @@ export default function SettingsPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-4 border-t">
-              <button
-                onClick={handleSave}
-                disabled={loading}
-                className="flex-1 btn btn-primary flex items-center justify-center gap-2"
-              >
-                <Save className="w-5 h-5" />
-                حفظ الإعدادات
-              </button>
+            <div className="space-y-3 pt-4 border-t">
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSave}
+                  disabled={loading}
+                  className="flex-1 btn btn-primary flex items-center justify-center gap-2"
+                >
+                  <Save className="w-5 h-5" />
+                  حفظ الإعدادات
+                </button>
+
+                <button
+                  onClick={handleReset}
+                  className="btn bg-gray-200 hover:bg-gray-300 text-gray-800 flex items-center gap-2"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  إعادة تعيين
+                </button>
+              </div>
 
               <button
-                onClick={handleReset}
-                className="btn bg-gray-200 hover:bg-gray-300 text-gray-800 flex items-center gap-2"
+                onClick={handleTestPrint}
+                className="w-full btn bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2"
               >
-                <RotateCcw className="w-5 h-5" />
-                إعادة تعيين
+                <Printer className="w-5 h-5" />
+                تجربة الطباعة
               </button>
             </div>
           </div>
@@ -510,6 +772,21 @@ export default function SettingsPage() {
                 الفرع الرئيسي
               </div>
 
+              {/* Account Number */}
+              <div
+                className="absolute"
+                style={{
+                  left: `${currentSettings.accountNumber.x * 2}px`,
+                  top: `${currentSettings.accountNumber.y * 2}px`,
+                  fontSize: `${currentSettings.accountNumber.fontSize * 1.5}px`,
+                  textAlign: currentSettings.accountNumber.align,
+                  transform: currentSettings.accountNumber.align === 'center' ? 'translateX(-50%)' : 'none',
+                  fontFamily: 'monospace',
+                }}
+              >
+                001001000811217
+              </div>
+
               {/* Serial Number */}
               <div
                 className="absolute"
@@ -518,6 +795,19 @@ export default function SettingsPage() {
                   right: currentSettings.serialNumber.align === 'right' ? `${(currentSettings.checkWidth - currentSettings.serialNumber.x) * 2}px` : 'auto',
                   top: `${currentSettings.serialNumber.y * 2}px`,
                   fontSize: `${currentSettings.serialNumber.fontSize * 1.5}px`,
+                  fontFamily: 'monospace',
+                }}
+              >
+                000000001
+              </div>
+
+              {/* Check Sequence */}
+              <div
+                className="absolute"
+                style={{
+                  left: `${currentSettings.checkSequence.x * 2}px`,
+                  top: `${currentSettings.checkSequence.y * 2}px`,
+                  fontSize: `${currentSettings.checkSequence.fontSize * 1.5}px`,
                   fontFamily: 'monospace',
                 }}
               >

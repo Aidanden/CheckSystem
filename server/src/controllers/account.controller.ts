@@ -33,20 +33,24 @@ export class AccountController {
 
   static async queryAccount(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { account_number } = req.body as QueryAccountRequest;
-      const account = await AccountService.queryAccount(account_number);
+      const { account_number, branch_id, branch_core_code, source } = req.body as QueryAccountRequest;
+      const resolvedBranchId = branch_id ?? req.user?.branchId;
+      const resolvedSource: 'test' | 'bank' = source ?? 'bank';
 
-      // Enforce branch-level access: non-admin users cannot query accounts
-      // that are assigned to another branch.
+      const { account, checkbookDetails } = await AccountService.queryAccount(account_number, {
+        source: resolvedSource,
+        branchId: resolvedBranchId,
+        branchCoreCode: branch_core_code,
+      });
+
       if (req.user && !req.user.isAdmin) {
-        // If account has a branchId and it differs from the user's branch - deny
         if (account.branchId && req.user.branchId && account.branchId !== req.user.branchId) {
           res.status(403).json({ error: 'غير مسموح بالوصول لحساب تابع لفرع آخر' });
           return;
         }
       }
 
-      res.json(account);
+      res.json({ account, checkbookDetails });
     } catch (error) {
       if (error instanceof Error) {
         res.status(400).json({ error: error.message });

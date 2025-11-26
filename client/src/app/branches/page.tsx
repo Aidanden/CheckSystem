@@ -18,6 +18,8 @@ export default function BranchesPage() {
     branch_name: '',
     branch_location: '',
     routing_number: '',
+    branch_number: '',
+    accounting_number: '',
   });
 
   useEffect(() => {
@@ -57,6 +59,8 @@ export default function BranchesPage() {
         branch_name: '',
         branch_location: '',
         routing_number: '',
+        branch_number: '',
+        accounting_number: '',
       });
       loadBranches();
     } catch (error: any) {
@@ -70,6 +74,8 @@ export default function BranchesPage() {
       branch_name: branch.branchName,
       branch_location: branch.branchLocation,
       routing_number: branch.routingNumber,
+      branch_number: branch.branchNumber || '',
+      accounting_number: branch.accountingNumber || '',
     });
     setShowModal(true);
   };
@@ -107,6 +113,8 @@ export default function BranchesPage() {
                 branch_name: '',
                 branch_location: '',
                 routing_number: '',
+                branch_number: '',
+                accounting_number: '',
               });
               setShowModal(true);
             }}
@@ -140,6 +148,18 @@ export default function BranchesPage() {
                   <p className="text-xs text-gray-500">رقم التوجيه</p>
                   <p className="font-mono font-semibold text-gray-800">
                     {branch.routingNumber}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">رقم الفرع</p>
+                  <p className="font-mono font-semibold text-gray-800">
+                    {branch.branchNumber || 'غير محدد'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">الرقم المحاسبي</p>
+                  <p className="font-mono font-semibold text-gray-800">
+                    {branch.accountingNumber || 'غير محدد'}
                   </p>
                 </div>
               </div>
@@ -228,13 +248,37 @@ export default function BranchesPage() {
                   }
                   className="input"
                   required
-                  disabled={!!editingBranch}
                 />
-                {editingBranch && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    لا يمكن تعديل رقم التوجيه
-                  </p>
-                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  رقم الفرع
+                </label>
+                <input
+                  type="text"
+                  value={formData.branch_number}
+                  onChange={(e) =>
+                    setFormData({ ...formData, branch_number: e.target.value })
+                  }
+                  className="input"
+                  placeholder="مثال: 123"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  الرقم المحاسبي
+                </label>
+                <input
+                  type="text"
+                  value={formData.accounting_number}
+                  onChange={(e) =>
+                    setFormData({ ...formData, accounting_number: e.target.value })
+                  }
+                  className="input"
+                  placeholder="مثال: 001-2024"
+                />
               </div>
 
               <div className="flex gap-3 pt-4">

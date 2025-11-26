@@ -16,6 +16,8 @@ export interface Branch {
   branchName: string;
   branchLocation: string;
   routingNumber: string;
+  branchNumber?: string;
+  accountingNumber?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -143,6 +145,8 @@ export interface CreateBranchRequest {
   branch_name: string;
   branch_location: string;
   routing_number: string;
+  branch_number?: string;
+  accounting_number?: string;
 }
 
 // API Error Response

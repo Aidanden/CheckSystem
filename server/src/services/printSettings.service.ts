@@ -11,6 +11,8 @@ export class PrintSettingsService {
     checkHeight: number;
     branchName: { x: number; y: number; fontSize: number; align: string };
     serialNumber: { x: number; y: number; fontSize: number; align: string };
+    accountNumber: { x: number; y: number; fontSize: number; align: string };
+    checkSequence: { x: number; y: number; fontSize: number; align: string };
     accountHolderName: { x: number; y: number; fontSize: number; align: string };
     micrLine: { x: number; y: number; fontSize: number; align: string };
   }) {
@@ -26,6 +28,14 @@ export class PrintSettingsService {
       serialNumberY: data.serialNumber.y,
       serialNumberFontSize: data.serialNumber.fontSize,
       serialNumberAlign: data.serialNumber.align,
+      accountNumberX: data.accountNumber.x,
+      accountNumberY: data.accountNumber.y,
+      accountNumberFontSize: data.accountNumber.fontSize,
+      accountNumberAlign: data.accountNumber.align,
+      checkSequenceX: data.checkSequence.x,
+      checkSequenceY: data.checkSequence.y,
+      checkSequenceFontSize: data.checkSequence.fontSize,
+      checkSequenceAlign: data.checkSequence.align,
       accountHolderNameX: data.accountHolderName.x,
       accountHolderNameY: data.accountHolderName.y,
       accountHolderNameFontSize: data.accountHolderName.fontSize,

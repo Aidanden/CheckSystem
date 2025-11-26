@@ -15,6 +15,10 @@ export class BranchService {
     return branch;
   }
 
+  static async getBranchByCode(branchCode: string): Promise<Branch | null> {
+    return BranchModel.findByBranchCode(branchCode);
+  }
+
   static async createBranch(data: CreateBranchRequest): Promise<Branch> {
     // Check if routing number already exists
     const existing = await BranchModel.findByRoutingNumber(data.routing_number);
@@ -26,6 +30,8 @@ export class BranchService {
       branchName: data.branch_name,
       branchLocation: data.branch_location,
       routingNumber: data.routing_number,
+      branchNumber: data.branch_number ?? '',
+      accountingNumber: data.accounting_number ?? '',
     });
   }
 
@@ -51,6 +57,8 @@ export class BranchService {
       branchName: data.branch_name,
       branchLocation: data.branch_location,
       routingNumber: data.routing_number,
+      branchNumber: data.branch_number,
+      accountingNumber: data.accounting_number,
     });
     
     if (!updated) {

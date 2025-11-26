@@ -20,10 +20,29 @@ export class BranchModel {
     });
   }
 
+  static async findByBranchCode(branchCode: string): Promise<Branch | null> {
+    const trimmedCode = branchCode?.trim();
+    if (!trimmedCode) {
+      return null;
+    }
+
+    return prisma.branch.findFirst({
+      where: {
+        OR: [
+          { branchNumber: trimmedCode },
+          { routingNumber: { endsWith: trimmedCode } },
+        ],
+      },
+      orderBy: { id: 'asc' },
+    });
+  }
+
   static async create(branch: {
     branchName: string;
     branchLocation: string;
     routingNumber: string;
+    branchNumber?: string;
+    accountingNumber?: string;
   }): Promise<Branch> {
     return prisma.branch.create({
       data: branch,
@@ -36,6 +55,8 @@ export class BranchModel {
       branchName?: string;
       branchLocation?: string;
       routingNumber?: string;
+      branchNumber?: string;
+      accountingNumber?: string;
     }
   ): Promise<Branch | null> {
     return prisma.branch.update({

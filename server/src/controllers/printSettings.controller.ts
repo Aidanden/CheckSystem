@@ -7,7 +7,7 @@ export class PrintSettingsController {
     try {
       const accountType = parseInt(req.params.accountType);
       
-      if (![1, 2].includes(accountType)) {
+      if (![1, 2, 3].includes(accountType)) {
         res.status(400).json({ error: 'Invalid account type' });
         return;
       }
@@ -30,7 +30,7 @@ export class PrintSettingsController {
       const data = req.body;
       
       // Validate account type
-      if (![1, 2].includes(data.accountType)) {
+      if (![1, 2, 3].includes(data.accountType)) {
         res.status(400).json({ error: 'Invalid account type' });
         return;
       }

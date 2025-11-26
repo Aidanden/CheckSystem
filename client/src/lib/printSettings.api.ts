@@ -11,11 +11,13 @@ export interface PrintPosition {
 
 export interface PrintSettings {
   id?: number;
-  accountType: 1 | 2;
+  accountType: 1 | 2 | 3;
   checkWidth: number;
   checkHeight: number;
   branchName: PrintPosition;
   serialNumber: PrintPosition;
+  accountNumber: PrintPosition;
+  checkSequence: PrintPosition;
   accountHolderName: PrintPosition;
   micrLine: PrintPosition;
 }
@@ -26,7 +28,7 @@ class PrintSettingsAPI {
     return { Authorization: `Bearer ${token}` };
   }
 
-  async getSettings(accountType: 1 | 2): Promise<PrintSettings> {
+  async getSettings(accountType: 1 | 2 | 3): Promise<PrintSettings> {
     const response = await axios.get(`${API_URL}/${accountType}`, {
       headers: this.getAuthHeader(),
     });

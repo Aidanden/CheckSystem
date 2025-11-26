@@ -24,6 +24,14 @@ interface CheckData {
   serialNumberY?: number;
   serialNumberFontSize?: number;
   serialNumberAlign?: 'left' | 'center' | 'right';
+  accountNumberX?: number;
+  accountNumberY?: number;
+  accountNumberFontSize?: number;
+  accountNumberAlign?: 'left' | 'center' | 'right';
+  checkSequenceX?: number;
+  checkSequenceY?: number;
+  checkSequenceFontSize?: number;
+  checkSequenceAlign?: 'left' | 'center' | 'right';
   accountHolderNameX?: number;
   accountHolderNameY?: number;
   accountHolderNameFontSize?: number;
@@ -97,16 +105,24 @@ function renderCheckSection(check: CheckData): string {
   const widthPx = mmToPx(check.checkSize.width);
   const heightPx = mmToPx(check.checkSize.height);
 
-  const branchAlign = check.branchNameAlign ?? 'center';
+  const branchAlign = check.branchNameAlign ?? 'left';
   const serialAlign = check.serialNumberAlign ?? 'right';
+  const accountNumAlign = check.accountNumberAlign ?? 'center';
+  const checkSeqAlign = check.checkSequenceAlign ?? 'left';
   const accountAlign = check.accountHolderNameAlign ?? 'left';
   const micrAlign = check.micrLineAlign ?? 'center';
 
-  const branchX = mmToPx(check.branchNameX, check.checkSize.width / 2);
+  const branchX = mmToPx(check.branchNameX, 20);
   const branchY = mmToPx(check.branchNameY, 10);
+
+  const accountNumX = mmToPx(check.accountNumberX, check.checkSize.width / 2);
+  const accountNumY = mmToPx(check.accountNumberY, 10);
 
   const serialX = mmToPx(check.serialNumberX, check.checkSize.width - 20);
   const serialY = mmToPx(check.serialNumberY, 18);
+
+  const checkSeqX = mmToPx(check.checkSequenceX, 20);
+  const checkSeqY = mmToPx(check.checkSequenceY, 18);
 
   const accountX = mmToPx(check.accountHolderNameX, 15);
   const accountY = mmToPx(check.accountHolderNameY, check.checkSize.height - 20);
@@ -115,7 +131,9 @@ function renderCheckSection(check: CheckData): string {
   const micrY = mmToPx(check.micrLineY, check.checkSize.height - 5);
 
   const branchFont = (check.branchNameFontSize ?? 14) * 1.5;
+  const accountNumFont = (check.accountNumberFontSize ?? 14) * 1.5;
   const serialFont = (check.serialNumberFontSize ?? 12) * 1.4;
+  const checkSeqFont = (check.checkSequenceFontSize ?? 12) * 1.4;
   const accountFont = (check.accountHolderNameFontSize ?? 11) * 1.4;
   const micrFont = (check.micrLineFontSize ?? 12) * 1.8;
   const micrDisplay = reorderMicrLine(check.micrLine);
@@ -126,7 +144,13 @@ function renderCheckSection(check: CheckData): string {
       <div class="branch-name" style="left:${branchX}px;top:${branchY}px;font-size:${branchFont}px;text-align:${branchAlign};transform:${transformForAlign(branchAlign)};">
         ${escapeHtml(check.branchName)}
       </div>
+      <div class="account-number" style="left:${accountNumX}px;top:${accountNumY}px;font-size:${accountNumFont}px;text-align:${accountNumAlign};transform:${transformForAlign(accountNumAlign)};">
+        ${escapeHtml(check.accountNumber)}
+      </div>
       <div class="serial" style="left:${serialX}px;top:${serialY}px;font-size:${serialFont}px;text-align:${serialAlign};transform:${transformForAlign(serialAlign)};">
+        ${escapeHtml(check.serialNumber)}
+      </div>
+      <div class="check-sequence" style="left:${checkSeqX}px;top:${checkSeqY}px;font-size:${checkSeqFont}px;text-align:${checkSeqAlign};transform:${transformForAlign(checkSeqAlign)};">
         ${escapeHtml(check.serialNumber)}
       </div>
       <div class="account-holder" style="left:${accountX}px;top:${accountY}px;font-size:${accountFont}px;text-align:${accountAlign};transform:${transformForAlign(accountAlign)};">
@@ -146,7 +170,6 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
   }
 
   const micrFontUrl = new URL('/font/micrenc.ttf', window.location.origin).toString();
-  const cairoFontUrl = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap';
   const firstCheck = checkbookData.checks[0];
   const defaultWidthMm = firstCheck?.checkSize.width ?? 235;
   const defaultHeightMm = firstCheck?.checkSize.height ?? 86;
@@ -157,8 +180,11 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>معاينة دفتر الشيكات</title>
-  <link rel="stylesheet" href="${cairoFontUrl}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     @page {
       size: ${defaultWidthMm}mm ${defaultHeightMm}mm;
@@ -221,10 +247,23 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
       direction: rtl;
     }
 
-    .serial {
+    .branch-name,
+    .account-holder {
+      font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-weight: 600;
+      direction: rtl;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .account-number,
+    .serial,
+    .check-sequence {
       font-family: 'Courier New', Courier, monospace;
       letter-spacing: 0.12em;
       direction: ltr;
+      font-weight: bold;
     }
 
     .micr-line {

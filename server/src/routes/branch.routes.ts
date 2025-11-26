@@ -12,6 +12,9 @@ router.use(authenticate);
 // Get all branches
 router.get('/', BranchController.getAll);
 
+// Get branch by core code (branch number or routing suffix)
+router.get('/code/:code', BranchController.getByCode);
+
 // Get branch by id
 router.get('/:id', BranchController.getById);
 

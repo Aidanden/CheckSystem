@@ -42,7 +42,7 @@ npm run dev
 npm run dev
 ```
 
-الموقع سيعمل على: **http://localhost:3000**
+الموقع سيعمل على: **http://10.250.100.40:3040**
 
 ## 📁 الهيكل
 
@@ -396,7 +396,7 @@ cd ../client
 npm run dev
 
 # 4. Open browser
-http://localhost:3000
+http://10.250.100.40:3040
 
 # 5. Login with:
 # Username: admin

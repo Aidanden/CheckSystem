@@ -12,8 +12,18 @@ export const validate = (validations: ValidationChain[]) => {
       return;
     }
 
+    // Log validation errors for debugging
+    console.error('❌ Validation failed for request:', req.method, req.path);
+    console.error('Request body:', JSON.stringify(req.body, null, 2));
+    console.error('Validation errors:', JSON.stringify(errors.array(), null, 2));
+
+    // Get first error message
+    const firstError = errors.array()[0];
+    const errorMessage = firstError.msg || 'Validation failed';
+
     res.status(400).json({
-      error: 'Validation failed',
+      success: false,
+      error: errorMessage,
       details: errors.array(),
     });
   };

@@ -17,12 +17,17 @@ export class PrintingService {
     userId: number,
     branchId: number,
     customSerialFrom?: number,
-    customSerialTo?: number
+    customSerialTo?: number,
+    options: { source?: 'test' | 'bank'; branchCoreCode?: string } = {}
   ): Promise<PrintCheckbookResponse> {
     try {
       // Get account information BEFORE starting transaction
       // (queryAccount may create/update account records)
-      const account = await AccountService.queryAccount(accountNumber);
+      const { account, checkbookDetails } = await AccountService.queryAccount(accountNumber, {
+        source: options.source,
+        branchId,
+        branchCoreCode: options.branchCoreCode,
+      });
       if (!account) {
         throw new Error('Account not found');
       }
@@ -63,6 +68,8 @@ export class PrintingService {
             checkHeight: dbSettings.checkHeight,
             branchName: { x: dbSettings.branchNameX, y: dbSettings.branchNameY, fontSize: dbSettings.branchNameFontSize, align: dbSettings.branchNameAlign },
             serialNumber: { x: dbSettings.serialNumberX, y: dbSettings.serialNumberY, fontSize: dbSettings.serialNumberFontSize, align: dbSettings.serialNumberAlign },
+            accountNumber: { x: (dbSettings as any).accountNumberX, y: (dbSettings as any).accountNumberY, fontSize: (dbSettings as any).accountNumberFontSize, align: (dbSettings as any).accountNumberAlign },
+            checkSequence: { x: (dbSettings as any).checkSequenceX, y: (dbSettings as any).checkSequenceY, fontSize: (dbSettings as any).checkSequenceFontSize, align: (dbSettings as any).checkSequenceAlign },
             accountHolderName: { x: dbSettings.accountHolderNameX, y: dbSettings.accountHolderNameY, fontSize: dbSettings.accountHolderNameFontSize, align: dbSettings.accountHolderNameAlign },
             micrLine: { x: dbSettings.micrLineX, y: dbSettings.micrLineY, fontSize: dbSettings.micrLineFontSize, align: dbSettings.micrLineAlign },
           };
@@ -272,6 +279,16 @@ export class PrintingService {
         checkObj.serialNumberY = settings.serialNumber?.y;
         checkObj.serialNumberFontSize = settings.serialNumber?.fontSize;
         checkObj.serialNumberAlign = settings.serialNumber?.align;
+
+        checkObj.accountNumberX = settings.accountNumber?.x;
+        checkObj.accountNumberY = settings.accountNumber?.y;
+        checkObj.accountNumberFontSize = settings.accountNumber?.fontSize;
+        checkObj.accountNumberAlign = settings.accountNumber?.align;
+
+        checkObj.checkSequenceX = settings.checkSequence?.x;
+        checkObj.checkSequenceY = settings.checkSequence?.y;
+        checkObj.checkSequenceFontSize = settings.checkSequence?.fontSize;
+        checkObj.checkSequenceAlign = settings.checkSequence?.align;
 
         checkObj.accountHolderNameX = settings.accountHolderName?.x;
         checkObj.accountHolderNameY = settings.accountHolderName?.y;

@@ -32,12 +32,14 @@ export class AccountModel {
     accountNumber: string;
     accountHolderName: string;
     accountType: number;
+    branchId?: number | null;
   }): Promise<Account> {
     return prisma.account.create({
       data: {
         accountNumber: account.accountNumber,
         accountHolderName: account.accountHolderName,
         accountType: account.accountType,
+        branchId: account.branchId ?? null,
         lastPrintedSerial: 0,
       },
     });
@@ -47,6 +49,13 @@ export class AccountModel {
     return prisma.account.update({
       where: { accountNumber },
       data: { accountHolderName: newName },
+    });
+  }
+
+  static async updateBranch(accountNumber: string, branchId: number | null): Promise<Account | null> {
+    return prisma.account.update({
+      where: { accountNumber },
+      data: { branchId },
     });
   }
 

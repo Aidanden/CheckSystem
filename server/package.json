@@ -7,6 +7,7 @@
     "dev": "nodemon src/index.ts",
     "build": "prisma generate && tsc",
     "start": "node dist/index.js",
+    "soap:test": "node server_soap_test.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
@@ -26,7 +27,8 @@
     "express-validator": "^7.0.1",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -35,6 +37,7 @@
     "@types/jsonwebtoken": "^9.0.5",
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.19.25",
+    "@types/xml2js": "^0.4.14",
     "nodemon": "^3.0.2",
     "prisma": "^5.7.1",
     "ts-node": "^10.9.2",

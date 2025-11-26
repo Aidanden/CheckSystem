@@ -58,6 +58,24 @@ export interface BankAPIResponse {
   account_type: AccountType;
 }
 
+export interface ChequeStatusInfo {
+  chequeBookNumber: string;
+  chequeNumber: number;
+  status: string;
+}
+
+export interface CheckbookDetails {
+  accountNumber: string;
+  accountBranch: string;
+  firstChequeNumber?: number;
+  chequeLeaves?: number;
+  requestStatus?: string;
+  deliveryMode?: string;
+  checkBookType?: string;
+  languageCode?: string;
+  chequeStatuses: ChequeStatusInfo[];
+}
+
 // Request/Response Types
 export interface LoginRequest {
   username: string;
@@ -73,6 +91,8 @@ export interface CreateBranchRequest {
   branch_name: string;
   branch_location: string;
   routing_number: string;
+  branch_number?: string;
+  accounting_number?: string;
 }
 
 export interface CreateUserRequest {
@@ -102,12 +122,18 @@ export interface AddInventoryRequest {
 
 export interface QueryAccountRequest {
   account_number: string;
+  branch_id?: number;
+  branch_core_code?: string;
+  source?: 'test' | 'bank';
 }
 
 export interface PrintCheckbookRequest {
   account_number: string;
   serial_from?: number; // Optional: specify custom serial range
   serial_to?: number;   // Optional: specify custom serial range
+  source?: 'test' | 'bank';
+  branch_id?: number;
+  branch_core_code?: string;
 }
 
 export interface PrintCheckbookResponse {

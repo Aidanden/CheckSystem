@@ -30,6 +30,9 @@ router.post(
   requirePermission(PermissionCode.PRINTING),
   validate([
     body('account_number').notEmpty().withMessage('Account number is required'),
+    body('branch_id').optional().isInt({ min: 1 }).withMessage('branch_id must be a positive integer'),
+    body('branch_core_code').optional().isString().isLength({ min: 1, max: 10 }).withMessage('branch_core_code must be a string'),
+    body('source').optional().isIn(['test', 'bank']).withMessage('source must be test or bank'),
   ]),
   AccountController.queryAccount
 );

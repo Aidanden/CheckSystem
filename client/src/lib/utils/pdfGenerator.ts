@@ -7,6 +7,7 @@ import { addArabicFont } from './arabicFont';
 
 interface CheckData {
   serialNumber: string;
+  accountNumber?: string;
   accountHolderName: string;
   checkSize: { width: number; height: number; unit: string };
   branchNameX?: number;
@@ -17,6 +18,14 @@ interface CheckData {
   serialNumberY?: number;
   serialNumberFontSize?: number;
   serialNumberAlign?: string;
+  accountNumberX?: number;
+  accountNumberY?: number;
+  accountNumberFontSize?: number;
+  accountNumberAlign?: string;
+  checkSequenceX?: number;
+  checkSequenceY?: number;
+  checkSequenceFontSize?: number;
+  checkSequenceAlign?: string;
   accountHolderNameX?: number;
   accountHolderNameY?: number;
   accountHolderNameFontSize?: number;
@@ -116,6 +125,18 @@ export async function generateCheckbookPDF(checkbookData: CheckbookData): Promis
       pdf.text(branchName, x, y, { align: check.branchNameAlign as 'left' | 'center' | 'right' || 'center' });
     }
 
+    // Account Number
+    if (check.accountNumberX !== undefined && check.accountNumberY !== undefined && check.accountNumber) {
+      pdf.setFontSize(check.accountNumberFontSize || 12);
+      pdf.setFont('courier', 'bold');
+
+      const x = check.accountNumberX;
+      const y = check.accountNumberY;
+
+      // Always use the configured X as the anchor point
+      pdf.text(check.accountNumber, x, y, { align: check.accountNumberAlign as 'left' | 'center' | 'right' || 'center' });
+    }
+
     // Serial Number
     if (check.serialNumberX !== undefined && check.serialNumberY !== undefined) {
       pdf.setFontSize(check.serialNumberFontSize || 10);
@@ -126,6 +147,18 @@ export async function generateCheckbookPDF(checkbookData: CheckbookData): Promis
 
       // Always use the configured X as the anchor point
       pdf.text(check.serialNumber, x, y, { align: check.serialNumberAlign as 'left' | 'center' | 'right' || 'right' });
+    }
+
+    // Check Sequence (same as serial number)
+    if (check.checkSequenceX !== undefined && check.checkSequenceY !== undefined) {
+      pdf.setFontSize(check.checkSequenceFontSize || 10);
+      pdf.setFont('courier', 'bold');
+
+      const x = check.checkSequenceX;
+      const y = check.checkSequenceY;
+
+      // Use the same serial number as the main serial number
+      pdf.text(check.serialNumber, x, y, { align: check.checkSequenceAlign as 'left' | 'center' | 'right' || 'left' });
     }
 
     // Account Holder Name (Arabic - RTL)
