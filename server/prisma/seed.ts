@@ -49,21 +49,23 @@ async function main() {
   console.log('Creating branches for Tripoli and Misrata...');
   const tripoli = await prisma.branch.upsert({
     where: { routingNumber: '03100111' },
-    update: {},
+    update: { branchNumber: '100' },
     create: {
       branchName: 'الفرع الرئيسي - طرابلس',
       branchLocation: 'طرابلس - طريق السكة',
       routingNumber: '03100111',
+      branchNumber: '100',
     },
   });
 
   const misrata = await prisma.branch.upsert({
     where: { routingNumber: '03100231' },
-    update: {},
+    update: { branchNumber: '200' },
     create: {
       branchName: 'الفرع مصراته',
       branchLocation: 'مصراته - شارع بنغازي',
       routingNumber: '03100231',
+      branchNumber: '200',
     },
   });
 
