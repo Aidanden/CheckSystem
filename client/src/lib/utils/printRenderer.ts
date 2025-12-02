@@ -260,7 +260,7 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
     .micr-line {
       font-family: 'MICR', 'MICR E-13B', 'Courier New', monospace;
       letter-spacing: 0.15em;
-      direction: ltr;
+      direction: rtl;
     }
 
     @media print {

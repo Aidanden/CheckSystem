@@ -20,7 +20,7 @@ const navigation = [
   { name: 'طباعة شيك', href: '/print', icon: Printer },
 
   { name: 'سجلات الطباعة', href: '/print-logs', icon: ClipboardList },
-  { name: 'المخزون', href: '/inventory', icon: Package },
+
   { name: 'المستخدمين', href: '/users', icon: Users, adminOnly: true },
   { name: 'الفروع', href: '/branches', icon: Building2, adminOnly: true },
   { name: 'التقارير', href: '/reports', icon: FileText },
@@ -67,8 +67,8 @@ export default function Sidebar() {
               key={item.name}
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 ${isActive
-                  ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg transform scale-105'
-                  : 'text-gray-700 hover:bg-white hover:shadow-md'
+                ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg transform scale-105'
+                : 'text-gray-700 hover:bg-white hover:shadow-md'
                 }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'animate-pulse' : ''}`} />
