@@ -300,10 +300,11 @@ export class BankAPIClient {
     }
 
     const accountNode = custAccountFull[0];
-    const customerName = this.extractText(accountNode.CUSTNAME);
+    // Use ADESC as requested by user, fallback to CUSTNAME if not present
+    const customerName = this.extractText(accountNode.ADESC) || this.extractText(accountNode.CUSTNAME);
 
     if (!customerName) {
-      throw new Error('Customer name not found in response');
+      throw new Error('Customer name (ADESC) not found in response');
     }
 
     return {

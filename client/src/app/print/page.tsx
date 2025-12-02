@@ -67,7 +67,7 @@ export default function PrintPage() {
       // استخدام معلومات الفرع من استجابة SOAP إذا كانت موجودة
       let resolvedBranchName = soapResponse.branchName || `فرع ${soapResponse.accountBranch}`;
       let resolvedRouting = soapResponse.routingNumber || soapResponse.accountBranch;
-      
+
       // إذا لم تكن معلومات الفرع موجودة في الاستجابة، نحاول جلبها من الخدمة
       if (!soapResponse.branchName || !soapResponse.routingNumber) {
         try {
@@ -80,7 +80,7 @@ export default function PrintPage() {
           console.warn('تعذر العثور على بيانات الفرع، سيتم استخدام البيانات المتاحة.', branchError);
         }
       }
-      
+
       setBranchInfo({ name: resolvedBranchName, routing: resolvedRouting });
 
       // التحقق من الشيكات المطبوعة مسبقاً
@@ -90,7 +90,7 @@ export default function PrintPage() {
         const printed = printStatus
           .filter(s => s.isPrinted && !s.canReprint)
           .map(s => s.chequeNumber);
-        
+
         if (printed.length > 0) {
           setAlreadyPrintedCheques(printed);
           setError(`⚠️ تحذير: بعض الشيكات تم طباعتها مسبقاً (${printed.join(', ')}). لا يمكن طباعتها مرة أخرى إلا من شاشة السجلات.`);
@@ -270,6 +270,13 @@ export default function PrintPage() {
                 </div>
 
                 <div>
+                  <p className="text-sm text-gray-600">اسم صاحب الحساب</p>
+                  <p className="font-semibold text-gray-800 mt-1">
+                    {soapData.customerName || 'غير متوفر'}
+                  </p>
+                </div>
+
+                <div>
                   <p className="text-sm text-gray-600">رمز الفرع</p>
                   <p className="font-semibold text-gray-800 mt-1">
                     {soapData.accountBranch}
@@ -351,7 +358,7 @@ export default function PrintPage() {
                           <span className={`px-2 py-1 rounded-full text-xs font-semibold ${status.status === 'U'
                             ? 'bg-amber-100 text-amber-700'
                             : 'bg-green-100 text-green-700'
-                          }`}>
+                            }`}>
                             {status.status === 'U' ? 'مطبوع' : 'جديد'}
                           </span>
                         </td>

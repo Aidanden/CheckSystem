@@ -35,6 +35,7 @@ export interface SoapCheckbookResponse {
   accountBranch: string;
   branchName?: string;
   routingNumber?: string;
+  customerName?: string;
   firstChequeNumber?: number;
   chequeLeaves?: number;
   requestStatus?: string;
@@ -189,7 +190,7 @@ export function buildPreviewFromSoap(
 ): CheckbookData {
   const sortedStatuses = [...data.chequeStatuses].sort((a, b) => a.chequeNumber - b.chequeNumber);
   const accountType = data.accountNumber.startsWith('2') ? 2 : 1;
-  const accountHolderName = options.accountHolderName || 'صاحب الحساب';
+  const accountHolderName = options.accountHolderName || data.customerName || 'صاحب الحساب';
 
   const layout = options.layout;
   const positions = {
