@@ -26,12 +26,38 @@ export class BranchModel {
       return null;
     }
 
-    // البحث بشكل مباشر في branchNumber
-    return prisma.branch.findFirst({
+    // محاولة البحث بالرقم كما هو
+    let branch = await prisma.branch.findFirst({
       where: {
         branchNumber: trimmedCode,
       },
     });
+
+    if (branch) return branch;
+
+    // محاولة البحث بدون أصفار بادئة (مثلاً "001" -> "1")
+    const noZeros = trimmedCode.replace(/^0+/, '');
+    if (noZeros && noZeros !== trimmedCode) {
+      branch = await prisma.branch.findFirst({
+        where: {
+          branchNumber: noZeros,
+        },
+      });
+    }
+
+    if (branch) return branch;
+
+    // محاولة البحث مع أصفار بادئة (مثلاً "1" -> "001")
+    const padded = trimmedCode.padStart(3, '0');
+    if (padded !== trimmedCode) {
+      branch = await prisma.branch.findFirst({
+        where: {
+          branchNumber: padded,
+        },
+      });
+    }
+
+    return branch;
   }
 
   static async create(branch: {

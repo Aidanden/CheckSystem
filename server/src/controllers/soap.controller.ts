@@ -15,11 +15,11 @@ export class SoapController {
 
       const trimmedAccountNumber = accountNumber.trim();
 
-      // استخراج رقم الفرع من أول 3 أرقام من رقم الحساب
+      // استخراج رقم الفرع من أول 3 أرقام من رقم الحساب (كما طلب المستخدم)
       const extractedBranchCode = trimmedAccountNumber.substring(0, 3);
 
-      // استخدام رقم الفرع المستخرج أو المرسل أو القيمة الافتراضية
-      const finalBranchCode = branchCode?.trim() || extractedBranchCode || '001';
+      // الأولوية للرقم المستخرج من الحساب لضمان الدقة
+      const finalBranchCode = extractedBranchCode || branchCode?.trim() || '001';
 
       console.log('📋 SOAP Query Request:', {
         accountNumber: trimmedAccountNumber,
