@@ -127,6 +127,11 @@ export default function PrintLogsPage() {
         }
       }
 
+      // تحذير إذا لم يتم العثور على بيانات الفرع الحقيقية
+      if (resolvedRouting === soapResponse.accountBranch || resolvedBranchName.startsWith('فرع 0')) {
+        alert('⚠️ تنبيه: لم يتم العثور على بيانات الفرع (الاسم والرقم التوجيهي) في قاعدة البيانات. سيتم استخدام القيم الافتراضية وهذا قد يؤدي لطباعة خط MICR غير صحيح.');
+      }
+
       // بناء معاينة الطباعة
       const preview = buildPreviewFromSoap(soapResponse, {
         layout: resolvedLayout ?? undefined,
@@ -409,8 +414,8 @@ export default function PrintLogsPage() {
                         key={pageNum}
                         onClick={() => setPage(pageNum)}
                         className={`px-3 py-1 rounded ${page === pageNum
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                           }`}
                       >
                         {pageNum}

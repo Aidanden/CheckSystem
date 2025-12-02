@@ -18,7 +18,7 @@ import {
 const navigation = [
   { name: 'لوحة التحكم', href: '/dashboard', icon: Home },
   { name: 'طباعة شيك', href: '/print', icon: Printer },
-  { name: 'سجل العمليات', href: '/history', icon: FileText },
+
   { name: 'سجلات الطباعة', href: '/print-logs', icon: ClipboardList },
   { name: 'المخزون', href: '/inventory', icon: Package },
   { name: 'المستخدمين', href: '/users', icon: Users, adminOnly: true },
@@ -66,11 +66,10 @@ export default function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 ${
-                isActive
+              className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 ${isActive
                   ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg transform scale-105'
                   : 'text-gray-700 hover:bg-white hover:shadow-md'
-              }`}
+                }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'animate-pulse' : ''}`} />
               <span className="font-semibold">{item.name}</span>

@@ -83,6 +83,11 @@ export default function PrintPage() {
 
       setBranchInfo({ name: resolvedBranchName, routing: resolvedRouting });
 
+      // تحذير إذا لم يتم العثور على بيانات الفرع الحقيقية
+      if (resolvedRouting === soapResponse.accountBranch || resolvedBranchName.startsWith('فرع 0')) {
+        setError('⚠️ تنبيه: لم يتم العثور على بيانات الفرع (الاسم والرقم التوجيهي) في قاعدة البيانات. سيتم استخدام القيم الافتراضية (رقم الفرع) وهذا قد يؤدي لطباعة خط MICR غير صحيح. يرجى إضافة الفرع في صفحة "إدارة الفروع".');
+      }
+
       // التحقق من الشيكات المطبوعة مسبقاً
       const chequeNumbers = soapResponse.chequeStatuses.map(s => s.chequeNumber);
       try {
@@ -93,7 +98,7 @@ export default function PrintPage() {
 
         if (printed.length > 0) {
           setAlreadyPrintedCheques(printed);
-          setError(`⚠️ تحذير: بعض الشيكات تم طباعتها مسبقاً (${printed.join(', ')}). لا يمكن طباعتها مرة أخرى إلا من شاشة السجلات.`);
+          setError('⚠️ تنبيه: هذا الدفتر (أو بعض شيكاته) تمت طباعته مسبقاً. لا يمكن إعادة الطباعة من هنا، يرجى مراجعة سجلات الطباعة.');
         } else {
           setAlreadyPrintedCheques([]);
         }

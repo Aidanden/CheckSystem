@@ -6,8 +6,15 @@ const padNumber = (value: number, length = 9) => value.toString().padStart(lengt
 
 const buildMicrLine = (serial: string, accountNumber: string, routingNumber: string, accountType: 1 | 2) => {
   const typeCode = accountType === 1 ? '01' : '02';
-  const routing = routingNumber.padStart(3, '0');
-  return `"${serial}"  '${accountNumber}'  '${routing}'  ${typeCode}`;
+  // Ensure routing number is full length (8 digits) if possible, otherwise use what is provided
+  // User requested full routing number. If it's short (e.g. 001), it might be wrong, but we print what we have.
+  // The backend should provide the full routing number.
+  const routing = routingNumber;
+
+  // Order: Serial (Left) -> Routing -> Account -> Type (Right)
+  // This matches user request: "اخر شيء علي اليسار رقم التسلسل" (Serial is last on left)
+  // "من اليمين ... نوع الدفتر" (Type is first on right)
+  return `"${serial}"  '${routing}'  '${accountNumber}'  ${typeCode}`;
 };
 
 const getTextContent = (root: ParentNode | null, tagName: string): string => {
