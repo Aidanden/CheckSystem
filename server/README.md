@@ -229,7 +229,7 @@ psql -U postgres -c "CREATE DATABASE check_printing_system;"
 
 ```bash
 npm run prisma:studio
-# ثم افتح http://10.250.100.40:5555
+# ثم افتح http://10.250.100.40:5000:5555
 ```
 
 ## 📖 التالي

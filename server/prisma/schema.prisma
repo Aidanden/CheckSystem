@@ -55,6 +55,7 @@ model User {
   userPermissions       UserPermission[]
   inventoryTransactions InventoryTransaction[]
   printOperations       PrintOperation[]
+  printLogs             PrintLog[]
 
   @@map("users")
 }
@@ -199,4 +200,42 @@ model SystemSetting {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("system_settings")
+}
+
+// Print Logs Table
+model PrintLog {
+  id                Int      @id @default(autoincrement())
+  accountNumber     String   @map("account_number")
+  accountBranch     String   @map("account_branch")
+  branchName        String?  @map("branch_name")
+  firstChequeNumber Int      @map("first_cheque_number")
+  lastChequeNumber  Int      @map("last_cheque_number")
+  totalCheques      Int      @map("total_cheques")
+  accountType       Int      @map("account_type")
+  operationType     String   @map("operation_type") // 'print' or 'reprint'
+  printedBy         Int      @map("printed_by")
+  printedByName     String   @map("printed_by_name")
+  printDate         DateTime @default(now()) @map("print_date")
+  notes             String?
+  
+  user User @relation(fields: [printedBy], references: [id])
+
+  @@index([accountNumber])
+  @@index([printDate])
+  @@index([operationType])
+  @@map("print_logs")
+}
+
+// Printed Cheques Tracking Table
+model PrintedCheque {
+  id            Int      @id @default(autoincrement())
+  accountNumber String   @map("account_number")
+  chequeNumber  Int      @map("cheque_number")
+  printLogId    Int      @map("print_log_id")
+  printDate     DateTime @default(now()) @map("print_date")
+  canReprint    Boolean  @default(false) @map("can_reprint")
+
+  @@unique([accountNumber, chequeNumber])
+  @@index([accountNumber])
+  @@map("printed_cheques")
 }

@@ -26,14 +26,11 @@ export class BranchModel {
       return null;
     }
 
+    // البحث بشكل مباشر في branchNumber
     return prisma.branch.findFirst({
       where: {
-        OR: [
-          { branchNumber: trimmedCode },
-          { routingNumber: { endsWith: trimmedCode } },
-        ],
+        branchNumber: trimmedCode,
       },
-      orderBy: { id: 'asc' },
     });
   }
 

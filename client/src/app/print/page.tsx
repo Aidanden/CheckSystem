@@ -10,7 +10,7 @@ import {
   type SoapCheckbookResponse,
 } from '@/lib/soap/checkbook';
 import { printSettingsAPI, type PrintSettings } from '@/lib/printSettings.api';
-import { branchService, soapService } from '@/lib/api';
+import { branchService, soapService, printLogService } from '@/lib/api';
 
 export default function PrintPage() {
   const [accountNumber, setAccountNumber] = useState('');
@@ -23,6 +23,7 @@ export default function PrintPage() {
   const [error, setError] = useState<string | null>(null);
   const [branchInfo, setBranchInfo] = useState<{ name: string; routing: string } | null>(null);
   const [layout, setLayout] = useState<PrintSettings | null>(null);
+  const [alreadyPrintedCheques, setAlreadyPrintedCheques] = useState<number[]>([]);
 
   const resolveAccountType = (data: SoapCheckbookResponse): 1 | 2 | 3 => {
     if (data.chequeLeaves === 10) return 3;
@@ -82,6 +83,24 @@ export default function PrintPage() {
       
       setBranchInfo({ name: resolvedBranchName, routing: resolvedRouting });
 
+      // التحقق من الشيكات المطبوعة مسبقاً
+      const chequeNumbers = soapResponse.chequeStatuses.map(s => s.chequeNumber);
+      try {
+        const printStatus = await printLogService.checkStatus(accountNumber, chequeNumbers);
+        const printed = printStatus
+          .filter(s => s.isPrinted && !s.canReprint)
+          .map(s => s.chequeNumber);
+        
+        if (printed.length > 0) {
+          setAlreadyPrintedCheques(printed);
+          setError(`⚠️ تحذير: بعض الشيكات تم طباعتها مسبقاً (${printed.join(', ')}). لا يمكن طباعتها مرة أخرى إلا من شاشة السجلات.`);
+        } else {
+          setAlreadyPrintedCheques([]);
+        }
+      } catch (checkError) {
+        console.warn('تعذر التحقق من حالة الطباعة:', checkError);
+      }
+
       const preview = buildPreviewFromSoap(soapResponse, {
         layout: resolvedLayout ?? undefined,
         branchName: resolvedBranchName,
@@ -98,8 +117,14 @@ export default function PrintPage() {
   };
 
   const handlePrint = async () => {
-    if (!checkbookPreview) {
+    if (!checkbookPreview || !soapData) {
       setError('لا توجد بيانات جاهزة للطباعة. الرجاء إجراء الاستعلام أولاً.');
+      return;
+    }
+
+    // منع الطباعة إذا كانت هناك شيكات مطبوعة مسبقاً
+    if (alreadyPrintedCheques.length > 0) {
+      setError('لا يمكن الطباعة! بعض الشيكات تم طباعتها مسبقاً. يمكنك إعادة الطباعة فقط من شاشة السجلات.');
       return;
     }
 
@@ -121,6 +146,26 @@ export default function PrintPage() {
         printWindow.focus();
         printWindow.print();
       }, 300);
+
+      // تسجيل عملية الطباعة
+      try {
+        const chequeNumbers = soapData.chequeStatuses.map(s => s.chequeNumber);
+        await printLogService.create({
+          accountNumber: soapData.accountNumber,
+          accountBranch: soapData.accountBranch,
+          branchName: branchInfo?.name,
+          firstChequeNumber: Math.min(...chequeNumbers),
+          lastChequeNumber: Math.max(...chequeNumbers),
+          totalCheques: chequeNumbers.length,
+          accountType: checkbookPreview.operation.accountType,
+          operationType: 'print',
+          chequeNumbers,
+        });
+        console.log('✅ تم تسجيل عملية الطباعة بنجاح');
+      } catch (logError) {
+        console.error('فشل تسجيل عملية الطباعة:', logError);
+        // لا نوقف العملية، فقط نسجل الخطأ
+      }
 
       setSuccess(true);
     } catch (err: any) {

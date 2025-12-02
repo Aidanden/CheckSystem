@@ -231,7 +231,7 @@ npm run prisma:migrate
 
 # Open Prisma Studio (database GUI)
 npm run prisma:studio
-# Then open: http://10.250.100.40:5555
+# Then open: http://10.250.100.40:5000:5555
 
 # Reset database (⚠️ deletes all data)
 npx prisma migrate reset

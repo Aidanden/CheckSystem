@@ -318,7 +318,7 @@ export default function SettingsPage() {
             font-family: monospace;
             text-align: ${currentSettings.micrLine.align};
             transform: ${currentSettings.micrLine.align === 'center' ? 'translateX(-50%)' : 'none'};
-          ">01 100012345678901 1100000001 000000001</div>
+          ">01  1100000001  100012345678901  000000001</div>
         </div>
         <script>
           window.onload = function() {
@@ -356,7 +356,7 @@ export default function SettingsPage() {
               <p className="text-sm text-gray-600">يمكنك تغيير رابط خدمة SOAP لاختبار بيئات مختلفة دون الحاجة لإعادة نشر النظام.</p>
             </div>
             {soapApiMessage && (
-              <div className={`${soapApiMessage.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'} border px-3 py-2 rounded`}> 
+              <div className={`${soapApiMessage.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'} border px-3 py-2 rounded`}>
                 {soapApiMessage.text}
               </div>
             )}
@@ -372,7 +372,7 @@ export default function SettingsPage() {
             value={soapApiEndpoint}
             onChange={(e) => setSoapApiEndpoint(e.target.value)}
             disabled={soapApiLoading || soapApiSaving}
-            placeholder="http://10.250.100.40:8080/FCUBSAccService"
+            placeholder="http://10.250.100.40:5000:8080/FCUBSAccService"
           />
 
           <div className="flex flex-wrap gap-3">
@@ -417,8 +417,8 @@ export default function SettingsPage() {
             <button
               onClick={() => setActiveTab(1)}
               className={`px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 1
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-800'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
               شيكات الأفراد (25 ورقة)
@@ -426,8 +426,8 @@ export default function SettingsPage() {
             <button
               onClick={() => setActiveTab(2)}
               className={`px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 2
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-800'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
               شيكات الشركات (50 ورقة)
@@ -435,8 +435,8 @@ export default function SettingsPage() {
             <button
               onClick={() => setActiveTab(3)}
               className={`px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 3
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-800'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
               شيكات موظفي المصرف (10 ورقات)

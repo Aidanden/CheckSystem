@@ -13,7 +13,7 @@ export interface CheckSize {
 // MICR line components (RTL format - displayed right to left)
 export interface MICRComponents {
   serialNumber: string;      // 9 digits: "000000001" (leftmost)
-  routingNumber: string;     // 9 digits: "123456789"
+  routingNumber: string;     // 10 digits: "1100000001"
   accountNumber: string;     // 15 digits: "100012345678901"
   accountType: string;       // 2 digits: "01" or "02" (rightmost)
 }
@@ -150,8 +150,8 @@ export class CheckFormatter {
 
   /**
    * Generate complete MICR line (RTL format - starts from right)
-   * Format: [Account Type] [Account Number] [Routing Number] [Serial Number]
-   * With MICR delimiters: "serial"  'account'  'routing'  type
+   * Format (Right to Left): [Account Type] [Routing Number] [Account Number] [Serial Number]
+   * Example: 01  1100000001  100012345678901  000000001
    */
   static generateMICRLine(
     serialNumber: number,
@@ -162,9 +162,8 @@ export class CheckFormatter {
     const serial = this.formatSerialNumber(serialNumber);
     const type = this.formatAccountType(accountType);
 
-    // MICR format with proper delimiters (as per bank standard)
-    // " for serial number, ' for account and routing
-    return `"${serial}"  '${accountNumber}'  '${routingNumber}'  ${type}`;
+    // MICR format: Type (01/02) → Routing → Account → Serial (right to left)
+    return `${type}  ${routingNumber}  ${accountNumber}  ${serial}`;
   }
 
   /**

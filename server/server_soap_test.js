@@ -240,10 +240,10 @@ app.listen(PORT, () => {
    console.log('═══════════════════════════════════════════════════════════════');
    console.log('🚀 خادم SOAP التجريبي يعمل على المنفذ:', PORT);
    console.log('═══════════════════════════════════════════════════════════════');
-   console.log('📍 SOAP Endpoint: http://10.250.100.40:' + PORT + '/FCUBSAccService');
-   console.log('🏥 Health Check: http://10.250.100.40:' + PORT + '/health');
+   console.log('📍 SOAP Endpoint: http://10.250.100.40:5000:' + PORT + '/FCUBSAccService');
+   console.log('🏥 Health Check: http://10.250.100.40:5000:' + PORT + '/health');
    console.log('\n📝 مثال على الطلب:');
-   console.log('POST http://10.250.100.40:' + PORT + '/FCUBSAccService');
+   console.log('POST http://10.250.100.40:5000:' + PORT + '/FCUBSAccService');
    console.log('Content-Type: text/xml');
    console.log('\n📊 البيانات المتغيرة المطلوبة:');
    console.log('  - ACCOUNT_BRANCH (مثال: 001)');

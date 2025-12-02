@@ -12,12 +12,14 @@ import {
   Building2,
   FileText,
   Settings,
+  ClipboardList,
 } from 'lucide-react';
 
 const navigation = [
   { name: 'لوحة التحكم', href: '/dashboard', icon: Home },
   { name: 'طباعة شيك', href: '/print', icon: Printer },
   { name: 'سجل العمليات', href: '/history', icon: FileText },
+  { name: 'سجلات الطباعة', href: '/print-logs', icon: ClipboardList },
   { name: 'المخزون', href: '/inventory', icon: Package },
   { name: 'المستخدمين', href: '/users', icon: Users, adminOnly: true },
   { name: 'الفروع', href: '/branches', icon: Building2, adminOnly: true },

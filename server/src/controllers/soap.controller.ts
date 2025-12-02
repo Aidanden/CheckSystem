@@ -36,23 +36,35 @@ export class SoapController {
 
       // جلب معلومات الفرع من قاعدة البيانات
       try {
+        console.log('🔍 البحث عن الفرع برقم:', finalBranchCode);
         const branch = await BranchModel.findByBranchCode(finalBranchCode);
+        
         if (branch) {
           // إضافة معلومات الفرع إلى النتيجة
           (result as any).branchName = branch.branchName;
           (result as any).routingNumber = branch.routingNumber;
-          console.log('✅ تم جلب معلومات الفرع:', {
-            code: finalBranchCode,
-            name: branch.branchName,
-            routing: branch.routingNumber
+          console.log('✅ تم جلب معلومات الفرع بنجاح:', {
+            searchCode: finalBranchCode,
+            foundBranchNumber: branch.branchNumber,
+            branchName: branch.branchName,
+            routingNumber: branch.routingNumber
           });
         } else {
-          console.warn('⚠️ لم يتم العثور على الفرع في قاعدة البيانات:', finalBranchCode);
+          console.warn('⚠️ لم يتم العثور على الفرع في قاعدة البيانات!');
+          console.warn('   - رقم الفرع المطلوب:', finalBranchCode);
+          console.warn('   - تأكد من وجود فرع برقم (branchNumber) يطابق هذا الرقم');
         }
       } catch (branchError) {
         console.error('❌ خطأ في جلب معلومات الفرع:', branchError);
         // لا نوقف العملية، فقط نسجل الخطأ
       }
+
+      console.log('📤 إرسال النتيجة:', {
+        accountNumber: result.accountNumber,
+        accountBranch: result.accountBranch,
+        branchName: (result as any).branchName || 'غير محدد',
+        routingNumber: (result as any).routingNumber || 'غير محدد'
+      });
 
       res.json(result);
     } catch (error: any) {

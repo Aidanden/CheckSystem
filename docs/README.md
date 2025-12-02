@@ -165,7 +165,7 @@ npm install
 npm run dev
 ```
 
-✅ Frontend running on: `http://10.250.100.40:3040`
+✅ Frontend running on: `http://10.250.100.40:5000`
 
 ### 5. Login Credentials
 

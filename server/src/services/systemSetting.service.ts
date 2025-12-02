@@ -20,7 +20,7 @@ export class SystemSettingService {
     if (stored && stored.trim()) {
       return stored.trim();
     }
-    return process.env.BANK_API_URL || 'http://10.250.100.40:8080/FCUBSAccService';
+    return process.env.BANK_API_URL || 'http://10.250.100.40:5000:8080/FCUBSAccService';
   }
 
   static async updateSoapEndpoint(url: string) {

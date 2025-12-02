@@ -139,7 +139,7 @@ npm run dev
 ```bash
 cd client
 npm run dev
-# Client: http://10.250.100.40:3040
+# Client: http://10.250.100.40:5000
 ```
 
 ### 2. تسجيل الدخول
@@ -386,7 +386,7 @@ cd server && npm run dev
 cd client && npm run dev
 
 # 3. افتح المتصفح
-http://10.250.100.40:3040
+http://10.250.100.40:5000
 
 # 4. سجل الدخول
 Username: admin

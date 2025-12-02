@@ -130,7 +130,7 @@ npm run prisma:migrate:deploy
 ```powershell
 # Prisma Studio (GUI للبيانات)
 npm run prisma:studio
-# ثم افتح: http://10.250.100.40:5555
+# ثم افتح: http://10.250.100.40:5000:5555
 ```
 
 ---
@@ -310,7 +310,7 @@ Invoke-RestMethod -Uri http://10.250.100.40:5000/api/auth/login `
 npm run prisma:studio
 ```
 
-ثم افتح: http://10.250.100.40:5555
+ثم افتح: http://10.250.100.40:5000:5555
 
 يمكنك:
 - ✅ عرض جميع الجداول

@@ -28,10 +28,10 @@ PORT=5000
 HOST=10.250.100.40
 
 # Client Configuration
-CLIENT_URL=http://10.250.100.40:3040
+CLIENT_URL=http://10.250.100.40:5000
 
 # Banking API Configuration (Optional)
-BANK_API_URL=http://10.250.100.40:8000/api
+BANK_API_URL=http://10.250.100.40:5000:8000/api
 BANK_API_KEY=test_bank_api_key
 ```
 
@@ -73,7 +73,7 @@ NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
 ```env
 HOST=localhost
 PORT=5000
-CLIENT_URL=http://10.250.100.40:3040
+CLIENT_URL=http://10.250.100.40:5000
 ```
 
 **Client (.env.local):**
@@ -89,7 +89,7 @@ NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
 ```env
 HOST=10.250.100.40
 PORT=5000
-CLIENT_URL=http://10.250.100.40:3000
+CLIENT_URL=http://10.250.100.40:5000:3000
 ```
 
 **Client (.env.local):**
@@ -137,7 +137,7 @@ cd client
 npm run dev
 ```
 
-يجب أن يعمل على `http://10.250.100.40:3040` ويتصل بالـ API بنجاح.
+يجب أن يعمل على `http://10.250.100.40:5000` ويتصل بالـ API بنجاح.
 
 ---
 
@@ -199,7 +199,7 @@ cp .env.local.example .env.local
 npm run dev
 
 # 3. افتح المتصفح
-# http://10.250.100.40:3040
+# http://10.250.100.40:5000
 ```
 
 ✨ **الآن النظام يستخدم متغيرات البيئة بشكل كامل!**

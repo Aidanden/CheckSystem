@@ -76,16 +76,14 @@ const MICR_TRANSIT = '⑆';
 const MICR_ON_US = '⑈';
 
 const reorderMicrLine = (value: string) => {
-  const parts = value.match(/"[^"]*"|'[^']*'|[^\s]+/g);
+  // Parse the MICR line which now comes as: type routing account serial
+  const parts = value.trim().split(/\s+/);
   if (parts && parts.length >= 4) {
-    const [serial, account, routing, type] = parts;
-    const clean = (text: string) => text.replace(/^['"]|['"]$/g, '');
-    const serialClean = clean(serial);
-    const accountClean = clean(account);
-    const routingClean = clean(routing);
-    const typeClean = clean(type);
+    const [type, routing, account, serial] = parts;
 
-    return `${typeClean} ${MICR_ON_US}${accountClean}${MICR_ON_US} ${MICR_TRANSIT}${routingClean}${MICR_TRANSIT} ${MICR_ON_US}${serialClean}${MICR_ON_US}`;
+    // Format: Type Routing Account Serial (right to left)
+    // With MICR delimiters for proper formatting
+    return `${type} ${MICR_TRANSIT}${routing}${MICR_TRANSIT} ${MICR_ON_US}${account}${MICR_ON_US} ${MICR_ON_US}${serial}${MICR_ON_US}`;
   }
   return value;
 };
@@ -204,21 +202,25 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
       print-color-adjust: exact;
     }
 
-    body {
+    html, body {
       margin: 0;
       padding: 0;
+      width: ${defaultWidthMm}mm;
+      height: ${defaultHeightMm}mm;
       background: #fff;
       font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       color: #111827;
+      overflow: hidden;
     }
 
     .check-wrapper {
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      page-break-after: always;
+      margin: 0;
       padding: 0;
+      width: ${defaultWidthMm}mm;
+      height: ${defaultHeightMm}mm;
+      display: block;
+      page-break-after: always;
+      page-break-inside: avoid;
     }
 
     .check {
@@ -226,20 +228,9 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
       width: 100%;
       height: 100%;
       background: #fff;
-      border: 1px solid #d1d5db;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-      padding: 24px;
       overflow: hidden;
-    }
-
-    .check::after {
-      content: '';
-      position: absolute;
-      inset: 16px;
-      border: 1px dashed rgba(15, 23, 42, 0.1);
-      border-radius: 8px;
-      pointer-events: none;
+      margin: 0;
+      padding: 0;
     }
 
     .check div {
@@ -273,8 +264,38 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
     }
 
     @media print {
+      html, body {
+        width: ${defaultWidthMm}mm;
+        height: ${defaultHeightMm}mm;
+        margin: 0;
+        padding: 0;
+      }
+      
+      .check-wrapper {
+        width: ${defaultWidthMm}mm;
+        height: ${defaultHeightMm}mm;
+        margin: 0;
+        padding: 0;
+      }
+      
       .check {
         box-shadow: none;
+        border: none;
+      }
+    }
+    
+    @media screen {
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: #f3f4f6;
+        padding: 20px;
+      }
+      
+      .check-wrapper {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       }
     }
   </style>

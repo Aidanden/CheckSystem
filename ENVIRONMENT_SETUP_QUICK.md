@@ -14,7 +14,7 @@ DATABASE_URL="postgresql://postgres:your_password@localhost:5432/checksystem"
 JWT_SECRET=your_very_secure_secret_key_here
 PORT=5000
 HOST=10.250.100.40
-CLIENT_URL=http://10.250.100.40:3040
+CLIENT_URL=http://10.250.100.40:5000
 ```
 
 ### 2️⃣ Frontend Setup
@@ -46,7 +46,7 @@ cd client && npm run dev
 |---------|------|--------|
 | `DATABASE_URL` | `postgresql://user:pass@localhost:5432/db` | **مطلوب** |
 | `JWT_SECRET` | `my_secret_key_2024` | **مطلوب** - استخدم قيمة قوية |
-| `CLIENT_URL` | `http://10.250.100.40:3040` | **مطلوب** - للـ CORS |
+| `CLIENT_URL` | `http://10.250.100.40:5000` | **مطلوب** - للـ CORS |
 | `HOST` | `10.250.100.40` | اختياري (افتراضي: localhost) |
 | `PORT` | `5000` | اختياري (افتراضي: 5000) |
 
@@ -66,7 +66,7 @@ curl http://10.250.100.40:5000/api/health
 ```
 
 ### Frontend يتصل بـ Backend؟
-افتح: http://10.250.100.40:3040
+افتح: http://10.250.100.40:5000
 سجل الدخول: `admin` / `Admin@123`
 
 ---
@@ -77,7 +77,7 @@ curl http://10.250.100.40:5000/api/health
 **Backend:**
 ```env
 HOST=localhost
-CLIENT_URL=http://10.250.100.40:3040
+CLIENT_URL=http://10.250.100.40:5000
 ```
 
 **Frontend:**
@@ -89,7 +89,7 @@ NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
 **Backend:**
 ```env
 HOST=10.250.100.40
-CLIENT_URL=http://10.250.100.40:3000
+CLIENT_URL=http://10.250.100.40:5000:3000
 ```
 
 **Frontend:**

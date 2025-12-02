@@ -98,13 +98,13 @@ npm install
 npm run dev
 ```
 
-**✅ Frontend يعمل الآن على:** `http://10.250.100.40:3040`
+**✅ Frontend يعمل الآن على:** `http://10.250.100.40:5000`
 
 ---
 
 ### الخطوة 4️⃣: تسجيل الدخول
 
-افتح المتصفح: **http://10.250.100.40:3040**
+افتح المتصفح: **http://10.250.100.40:5000**
 
 ```
 👤 Admin Account:
@@ -383,7 +383,7 @@ Terminal 2: Frontend (client)
 ```powershell
 cd server
 npm run prisma:studio
-# سيفتح على: http://10.250.100.40:5555
+# سيفتح على: http://10.250.100.40:5000:5555
 ```
 
 ### 3. Redux DevTools
@@ -445,7 +445,7 @@ cd G:\Code\CheckSystem\client
 npm run dev
 
 # Browser
-http://10.250.100.40:3040
+http://10.250.100.40:5000
 Login: admin / [REDACTED]
 ```
 

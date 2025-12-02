@@ -8,6 +8,7 @@ import printingRoutes from './printing.routes';
 import printSettingsRoutes from './printSettings.routes';
 import systemSettingsRoutes from './systemSettings.routes';
 import soapRoutes from './soap.routes';
+import printLogRoutes from './printLog.routes';
 
 const router = Router();
 
@@ -26,6 +27,7 @@ router.use('/printing', printingRoutes);
 router.use('/print-settings', printSettingsRoutes);
 router.use('/system-settings', systemSettingsRoutes);
 router.use('/soap', soapRoutes);
+router.use('/print-logs', printLogRoutes);
 
 export default router;
 
