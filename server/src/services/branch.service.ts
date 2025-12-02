@@ -19,6 +19,12 @@ export class BranchService {
     return BranchModel.findByBranchCode(branchCode);
   }
 
+  static async getBranchByAccountNumber(accountNumber: string): Promise<Branch | null> {
+    if (!accountNumber || accountNumber.length < 3) return null;
+    const branchCode = accountNumber.substring(0, 3);
+    return BranchModel.findByBranchCode(branchCode);
+  }
+
   static async createBranch(data: CreateBranchRequest): Promise<Branch> {
     // Check if routing number already exists
     const existing = await BranchModel.findByRoutingNumber(data.routing_number);
@@ -60,7 +66,7 @@ export class BranchService {
       branchNumber: data.branch_number,
       accountingNumber: data.accounting_number,
     });
-    
+
     if (!updated) {
       throw new Error('Failed to update branch');
     }

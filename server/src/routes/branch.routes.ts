@@ -15,6 +15,9 @@ router.get('/', BranchController.getAll);
 // Get branch by core code (branch number or routing suffix)
 router.get('/code/:code', BranchController.getByCode);
 
+// Get branch by account number (extracts first 3 digits)
+router.get('/account/:accountNumber', BranchController.getByAccountNumber);
+
 // Get branch by id
 router.get('/:id', BranchController.getById);
 

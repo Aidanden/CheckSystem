@@ -65,16 +65,16 @@ export default function PrintPage() {
       }
 
       // استخراج رمز الفرع من أول 3 أرقام من رقم الحساب (كما طلب المستخدم)
-      const extractedBranchCode = accountNumber.substring(0, 3);
+      // سيتم استخدام الدالة الجديدة في الـ Backend التي تقوم بهذا تلقائياً
 
       let resolvedBranchName = soapResponse.branchName;
       let resolvedRouting = soapResponse.routingNumber;
 
-      // إذا لم تأتِ البيانات من الـ Backend، أو للتأكد، نقوم بالبحث عنها هنا
+      // استخدام الدالة الجديدة من الـ Backend لجلب بيانات الفرع بناءً على رقم الحساب
       if (!resolvedBranchName || !resolvedRouting || resolvedBranchName.startsWith('فرع 0')) {
         try {
-          console.log(`🔍 جلب بيانات الفرع للرمز المستخرج: ${extractedBranchCode}`);
-          const branch = await branchService.getByCode(extractedBranchCode);
+          console.log(`🔍 جلب بيانات الفرع من الـ Backend لرقم الحساب: ${accountNumber}`);
+          const branch = await branchService.getByAccountNumber(accountNumber);
           if (branch) {
             resolvedBranchName = branch.branchName;
             resolvedRouting = branch.routingNumber;

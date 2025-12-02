@@ -26,6 +26,14 @@ export const branchService = {
     });
   },
 
+  // Get branch by account number (extracts first 3 digits automatically in backend)
+  getByAccountNumber: async (accountNumber: string): Promise<Branch> => {
+    return request<Branch>({
+      url: `/branches/account/${accountNumber}`,
+      method: 'GET',
+    });
+  },
+
   // Create branch
   create: async (data: CreateBranchRequest): Promise<Branch> => {
     return request<Branch>({

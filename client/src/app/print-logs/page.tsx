@@ -111,15 +111,14 @@ export default function PrintLogsPage() {
         console.warn('تعذر تحميل إعدادات الطباعة المخصصة، سيتم استخدام القيم الافتراضية.', layoutError);
       }
 
-      // استخراج رمز الفرع من أول 3 أرقام من رقم الحساب
-      const extractedBranchCode = log.accountNumber.substring(0, 3);
+      // استخدام الدالة الجديدة من الـ Backend لجلب بيانات الفرع بناءً على رقم الحساب
 
       let resolvedBranchName = soapResponse.branchName || log.branchName;
       let resolvedRouting = soapResponse.routingNumber;
 
       if (!resolvedBranchName || !resolvedRouting || resolvedBranchName.startsWith('فرع 0')) {
         try {
-          const branch = await branchService.getByCode(extractedBranchCode);
+          const branch = await branchService.getByAccountNumber(log.accountNumber);
           if (branch) {
             resolvedBranchName = branch.branchName;
             resolvedRouting = branch.routingNumber;
