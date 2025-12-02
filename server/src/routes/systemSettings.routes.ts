@@ -24,4 +24,21 @@ router.post(
   SystemSettingController.updateSoapEndpoint
 );
 
+// SOAP IA Service endpoint routes
+router.get('/soap-ia-endpoint', SystemSettingController.getSoapIAEndpoint);
+
+router.post(
+  '/soap-ia-endpoint',
+  requireAdmin,
+  validate([
+    body('endpoint')
+      .isString()
+      .withMessage('رابط SOAP IA يجب أن يكون نصاً')
+      .trim()
+      .isLength({ min: 5 })
+      .withMessage('رابط SOAP IA غير صالح'),
+  ]),
+  SystemSettingController.updateSoapIAEndpoint
+);
+
 export default router;

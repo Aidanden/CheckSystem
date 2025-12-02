@@ -75,6 +75,11 @@ export default function SettingsPage() {
   const [soapApiSaving, setSoapApiSaving] = useState(false);
   const [soapApiMessage, setSoapApiMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const [soapIAEndpoint, setSoapIAEndpoint] = useState('');
+  const [soapIAApiLoading, setSoapIAApiLoading] = useState(true);
+  const [soapIAApiSaving, setSoapIAApiSaving] = useState(false);
+  const [soapIAApiMessage, setSoapIAApiMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const getCurrentSettings = () => {
     if (activeTab === 1) return individualSettings;
     if (activeTab === 2) return corporateSettings;
@@ -99,6 +104,27 @@ export default function SettingsPage() {
       setSoapApiMessage({ type: 'error', text: apiError || 'فشل في حفظ رابط SOAP.' });
     } finally {
       setSoapApiSaving(false);
+    }
+  };
+
+  const handleSoapIAEndpointSave = async () => {
+    const value = soapIAEndpoint.trim();
+    if (!value) {
+      setSoapIAApiMessage({ type: 'error', text: 'الرجاء إدخال رابط SOAP IA صالح.' });
+      return;
+    }
+
+    setSoapIAApiSaving(true);
+    setSoapIAApiMessage(null);
+    try {
+      const { endpoint } = await systemSettingsService.updateSoapIAEndpoint(value);
+      setSoapIAEndpoint(endpoint);
+      setSoapIAApiMessage({ type: 'success', text: 'تم حفظ رابط SOAP IA بنجاح.' });
+    } catch (err: any) {
+      const apiError = err?.response?.data?.error;
+      setSoapIAApiMessage({ type: 'error', text: apiError || 'فشل في حفظ رابط SOAP IA.' });
+    } finally {
+      setSoapIAApiSaving(false);
     }
   };
 
@@ -128,8 +154,23 @@ export default function SettingsPage() {
     }
   };
 
+  const fetchSoapIAEndpoint = async () => {
+    setSoapIAApiLoading(true);
+    setSoapIAApiMessage(null);
+    try {
+      const { endpoint } = await systemSettingsService.getSoapIAEndpoint();
+      setSoapIAEndpoint(endpoint);
+    } catch (err) {
+      console.error('فشل تحميل رابط SOAP IA:', err);
+      setSoapIAApiMessage({ type: 'error', text: 'تعذر تحميل رابط SOAP IA الحالي، سيتم استخدام القيمة الافتراضية.' });
+    } finally {
+      setSoapIAApiLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchSoapEndpoint();
+    fetchSoapIAEndpoint();
   }, []);
 
   // Load settings from backend
@@ -407,6 +448,68 @@ export default function SettingsPage() {
 
             <div className="text-xs text-gray-500 flex items-center">
               {soapApiLoading ? 'جاري تحميل الرابط من الخادم...' : 'آخر قيمة محمّلة من الخادم'}
+            </div>
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <div className="flex flex-col gap-2">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-800">رابط SOAP API (الأسماء)</h2>
+                <p className="text-sm text-gray-600">رابط خدمة SOAP الخاصة بجلب أسماء أصحاب الحسابات (FCUBSIAService).</p>
+              </div>
+              {soapIAApiMessage && (
+                <div className={`${soapIAApiMessage.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'} border px-3 py-2 rounded`}>
+                  {soapIAApiMessage.text}
+                </div>
+              )}
+            </div>
+
+            <label className="block text-sm text-gray-600 mt-3" htmlFor="soap-ia-endpoint-input">
+              رابط SOAP IA الحالي
+            </label>
+            <input
+              id="soap-ia-endpoint-input"
+              type="text"
+              className="input w-full mt-1"
+              value={soapIAEndpoint}
+              onChange={(e) => setSoapIAEndpoint(e.target.value)}
+              disabled={soapIAApiLoading || soapIAApiSaving}
+              placeholder="http://fcubsuatapp1.aiib.ly:9005/FCUBSIAService/FCUBSIAService"
+            />
+
+            <div className="flex flex-wrap gap-3 mt-3">
+              <button
+                type="button"
+                onClick={handleSoapIAEndpointSave}
+                disabled={soapIAApiSaving || soapIAApiLoading}
+                className="btn btn-primary flex items-center gap-2 disabled:opacity-50"
+              >
+                {soapIAApiSaving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    جاري الحفظ...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    حفظ الرابط
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={fetchSoapIAEndpoint}
+                disabled={soapIAApiLoading}
+                className="btn bg-gray-100 text-gray-800 hover:bg-gray-200 flex items-center gap-2 disabled:opacity-50"
+              >
+                <RefreshCw className={soapIAApiLoading ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />
+                إعادة تحميل الرابط
+              </button>
+
+              <div className="text-xs text-gray-500 flex items-center">
+                {soapIAApiLoading ? 'جاري تحميل الرابط من الخادم...' : 'آخر قيمة محمّلة من الخادم'}
+              </div>
             </div>
           </div>
         </div>

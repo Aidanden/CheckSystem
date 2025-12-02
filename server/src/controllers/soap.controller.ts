@@ -14,10 +14,10 @@ export class SoapController {
       }
 
       const trimmedAccountNumber = accountNumber.trim();
-      
+
       // استخراج رقم الفرع من أول 3 أرقام من رقم الحساب
       const extractedBranchCode = trimmedAccountNumber.substring(0, 3);
-      
+
       // استخدام رقم الفرع المستخرج أو المرسل أو القيمة الافتراضية
       const finalBranchCode = branchCode?.trim() || extractedBranchCode || '001';
 
@@ -34,44 +34,69 @@ export class SoapController {
         firstChequeNumber: firstChequeNumber ? parseInt(firstChequeNumber, 10) : undefined,
       });
 
+      // جلب اسم صاحب الحساب من API الثاني
+      let customerName: string | undefined;
+      try {
+        console.log('👤 جلب اسم صاحب الحساب من FCUBSIAService...');
+        const accountInfo = await bankAPI.queryAccountInfo(trimmedAccountNumber);
+        customerName = accountInfo.customerName;
+        console.log('✅ تم جلب اسم صاحب الحساب بنجاح:', customerName);
+      } catch (accountInfoError: any) {
+        console.error('❌ خطأ في جلب اسم صاحب الحساب:', accountInfoError.message);
+        console.warn('⚠️ سيتم المتابعة بدون اسم صاحب الحساب');
+        // لا نوقف العملية، فقط نسجل الخطأ
+      }
+
       // جلب معلومات الفرع من قاعدة البيانات
       try {
         console.log('🔍 البحث عن الفرع برقم:', finalBranchCode);
         const branch = await BranchModel.findByBranchCode(finalBranchCode);
-        
+
         if (branch) {
-          // إضافة معلومات الفرع إلى النتيجة
+          // إضافة معلومات الفرع واسم صاحب الحساب إلى النتيجة
           (result as any).branchName = branch.branchName;
           (result as any).routingNumber = branch.routingNumber;
+          if (customerName) {
+            (result as any).customerName = customerName;
+          }
           console.log('✅ تم جلب معلومات الفرع بنجاح:', {
             searchCode: finalBranchCode,
             foundBranchNumber: branch.branchNumber,
             branchName: branch.branchName,
-            routingNumber: branch.routingNumber
+            routingNumber: branch.routingNumber,
+            customerName: customerName || 'غير متوفر'
           });
         } else {
+          // حتى لو لم نجد الفرع، نضيف اسم صاحب الحساب
+          if (customerName) {
+            (result as any).customerName = customerName;
+          }
           console.warn('⚠️ لم يتم العثور على الفرع في قاعدة البيانات!');
           console.warn('   - رقم الفرع المطلوب:', finalBranchCode);
           console.warn('   - تأكد من وجود فرع برقم (branchNumber) يطابق هذا الرقم');
         }
       } catch (branchError) {
         console.error('❌ خطأ في جلب معلومات الفرع:', branchError);
-        // لا نوقف العملية، فقط نسجل الخطأ
+        // حتى لو فشل جلب الفرع، نضيف اسم صاحب الحساب إن وجد
+        if (customerName) {
+          (result as any).customerName = customerName;
+        }
       }
 
       console.log('📤 إرسال النتيجة:', {
         accountNumber: result.accountNumber,
         accountBranch: result.accountBranch,
         branchName: (result as any).branchName || 'غير محدد',
-        routingNumber: (result as any).routingNumber || 'غير محدد'
+        routingNumber: (result as any).routingNumber || 'غير محدد',
+        customerName: (result as any).customerName || 'غير محدد'
       });
 
       res.json(result);
     } catch (error: any) {
       console.error('SOAP query error:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'فشل الاستعلام عن دفتر الشيكات',
-        details: error.message 
+        details: error.message
       });
     }
   }

@@ -1,6 +1,7 @@
 import { SystemSettingModel } from '../models/SystemSetting.model';
 
 const SOAP_ENDPOINT_KEY = 'soap_api_url';
+const SOAP_IA_ENDPOINT_KEY = 'soap_ia_api_url';
 
 export class SystemSettingService {
   static async getValue(key: string): Promise<string | null> {
@@ -25,5 +26,17 @@ export class SystemSettingService {
 
   static async updateSoapEndpoint(url: string) {
     return this.setValue(SOAP_ENDPOINT_KEY, url.trim());
+  }
+
+  static async getSoapIAEndpoint(): Promise<string> {
+    const stored = await this.getValue(SOAP_IA_ENDPOINT_KEY);
+    if (stored && stored.trim()) {
+      return stored.trim();
+    }
+    return process.env.BANK_IA_API_URL || 'http://fcubsuatapp1.aiib.ly:9005/FCUBSIAService/FCUBSIAService';
+  }
+
+  static async updateSoapIAEndpoint(url: string) {
+    return this.setValue(SOAP_IA_ENDPOINT_KEY, url.trim());
   }
 }

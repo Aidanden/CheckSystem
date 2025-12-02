@@ -185,6 +185,133 @@ export class BankAPIClient {
     };
   }
 
+  /**
+   * Build SOAP envelope for querying account information (customer name)
+   */
+  private buildAccountInfoSoapEnvelope(accountNumber: string, branchCode: string): string {
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fcub="http://fcubs.ofss.com/service/FCUBSIAService">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <fcub:QUERYIACUSTACC_IOFS_REQ>
+         <fcub:FCUBS_HEADER>
+            <fcub:SOURCE>FCAT</fcub:SOURCE>
+            <fcub:UBSCOMP>FCUBS</fcub:UBSCOMP>
+            <fcub:USERID>${process.env.BANK_API_USER || 'FCATOP'}</fcub:USERID>
+            <fcub:BRANCH>${branchCode}</fcub:BRANCH>
+            <fcub:SERVICE>FCUBSIAService</fcub:SERVICE>
+            <fcub:OPERATION>QueryIACustAcc</fcub:OPERATION>
+            <fcub:SOURCE_OPERATION>QueryIACustAcc</fcub:SOURCE_OPERATION>
+         </fcub:FCUBS_HEADER>
+         <fcub:FCUBS_BODY>
+            <fcub:Cust-Account-IO>
+               <fcub:BRN>${branchCode}</fcub:BRN>
+               <fcub:ACC>${accountNumber}</fcub:ACC>
+            </fcub:Cust-Account-IO>
+         </fcub:FCUBS_BODY>
+      </fcub:QUERYIACUSTACC_IOFS_REQ>
+   </soapenv:Body>
+</soapenv:Envelope>`;
+  }
+
+  /**
+   * Post SOAP request to FCUBSIAService endpoint
+   */
+  private async postAccountInfoSoapRequest(envelope: string): Promise<string> {
+    try {
+      // Get the IA Service endpoint from settings or use default
+      let endpoint: string;
+      try {
+        endpoint = await SystemSettingService.getSoapIAEndpoint();
+      } catch (error) {
+        console.warn('Failed to get SOAP IA endpoint from settings, using default:', error);
+        endpoint = 'http://fcubsuatapp1.aiib.ly:9005/FCUBSIAService/FCUBSIAService';
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/xml;charset=UTF-8',
+        },
+        body: envelope,
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Bank SOAP error: ${response.status} - ${text}`);
+      }
+
+      return response.text();
+    } catch (error: any) {
+      if (error.cause?.code === 'ECONNREFUSED') {
+        console.error(`❌ Cannot connect to FCUBS IA Service endpoint`);
+        console.error('   Make sure the SOAP server is running and accessible.');
+        throw new Error(`FCUBS IA Service is not accessible. Please check your network connection and server configuration.`);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Query account information to get customer name
+   */
+  async queryAccountInfo(accountNumber: string): Promise<{ customerName: string; accountNumber: string }> {
+    // Extract branch code from account number (first 3 digits from left)
+    const branchCode = accountNumber.substring(0, 3);
+
+    const envelope = this.buildAccountInfoSoapEnvelope(accountNumber, branchCode);
+    console.log('📤 Sending Account Info SOAP Request:', envelope);
+
+    const xmlResponse = await this.postAccountInfoSoapRequest(envelope);
+    console.log('📥 Received Account Info SOAP Response:', xmlResponse);
+
+    // Parse XML response
+    const parsed = await parseStringPromise(xmlResponse, {
+      explicitArray: true,
+      ignoreAttrs: false,
+      tagNameProcessors: [require('xml2js').processors.stripPrefix]
+    });
+
+    console.log('📊 Parsed Account Info XML:', JSON.stringify(parsed, null, 2));
+
+    // Navigate through the structure
+    const envelopeNode = parsed['Envelope'];
+    const body = envelopeNode?.['Body']?.[0];
+
+    if (!body) throw new Error('Invalid SOAP response: missing body');
+
+    // Handle Faults
+    if (body['Fault']) {
+      const fault = body['Fault'][0];
+      const faultString = this.extractText(fault['faultstring']) || 'Unknown SOAP Fault';
+      const detail = fault['detail']?.[0]?.['message']?.[0] || '';
+      throw new Error(`SOAP Fault: ${faultString} - ${detail}`);
+    }
+
+    const response = body['QUERYIACUSTACC_IOFS_RES'];
+    if (!response) {
+      throw new Error('Invalid SOAP response: missing QUERYIACUSTACC_IOFS_RES');
+    }
+
+    const fcubsBody = response[0]?.FCUBS_BODY?.[0];
+    const custAccountFull = fcubsBody?.['Cust-Account-Full'];
+    if (!custAccountFull) {
+      throw new Error('No account information returned from banking system');
+    }
+
+    const accountNode = custAccountFull[0];
+    const customerName = this.extractText(accountNode.CUSTNAME);
+
+    if (!customerName) {
+      throw new Error('Customer name not found in response');
+    }
+
+    return {
+      customerName,
+      accountNumber: this.extractText(accountNode.ACC) || accountNumber,
+    };
+  }
+
   // Mock method for development/testing
   async getAccountInfoMock(accountNumber: string): Promise<BankAPIResponse> {
     // Simulate API delay
