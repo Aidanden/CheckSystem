@@ -1,5 +1,3 @@
-const MM_TO_PX = 3.7795275591;
-
 interface CheckSize {
   width: number;
   height: number;
@@ -59,11 +57,6 @@ export interface CheckbookData {
   checks: CheckData[];
 }
 
-const mmToPx = (value?: number, fallback = 0) => {
-  const source = value ?? fallback;
-  return source * MM_TO_PX;
-};
-
 const escapeHtml = (value: string) =>
   value
     .replace(/&/g, '&amp;')
@@ -100,8 +93,9 @@ const transformForAlign = (align: 'left' | 'center' | 'right' = 'left') => {
 };
 
 function renderCheckSection(check: CheckData): string {
-  const widthPx = mmToPx(check.checkSize.width);
-  const heightPx = mmToPx(check.checkSize.height);
+  // استخدام mm مباشرة للطباعة الدقيقة
+  const widthMm = check.checkSize.width;
+  const heightMm = check.checkSize.height;
 
   const branchAlign = check.branchNameAlign ?? 'left';
   const serialAlign = check.serialNumberAlign ?? 'right';
@@ -110,51 +104,53 @@ function renderCheckSection(check: CheckData): string {
   const accountAlign = check.accountHolderNameAlign ?? 'left';
   const micrAlign = check.micrLineAlign ?? 'center';
 
-  const branchX = mmToPx(check.branchNameX, 20);
-  const branchY = mmToPx(check.branchNameY, 10);
+  // المواقع بالمليمتر
+  const branchX = check.branchNameX ?? 20;
+  const branchY = check.branchNameY ?? 10;
 
-  const accountNumX = mmToPx(check.accountNumberX, check.checkSize.width / 2);
-  const accountNumY = mmToPx(check.accountNumberY, 10);
+  const accountNumX = check.accountNumberX ?? (widthMm / 2);
+  const accountNumY = check.accountNumberY ?? 10;
 
-  const serialX = mmToPx(check.serialNumberX, check.checkSize.width - 20);
-  const serialY = mmToPx(check.serialNumberY, 18);
+  const serialX = check.serialNumberX ?? (widthMm - 20);
+  const serialY = check.serialNumberY ?? 18;
 
-  const checkSeqX = mmToPx(check.checkSequenceX, 20);
-  const checkSeqY = mmToPx(check.checkSequenceY, 18);
+  const checkSeqX = check.checkSequenceX ?? 20;
+  const checkSeqY = check.checkSequenceY ?? 18;
 
-  const accountX = mmToPx(check.accountHolderNameX, 15);
-  const accountY = mmToPx(check.accountHolderNameY, check.checkSize.height - 20);
+  const accountX = check.accountHolderNameX ?? 15;
+  const accountY = check.accountHolderNameY ?? (heightMm - 20);
 
-  const micrX = mmToPx(check.micrLineX, check.checkSize.width / 2);
-  const micrY = mmToPx(check.micrLineY, check.checkSize.height - 5);
+  const micrX = check.micrLineX ?? (widthMm / 2);
+  const micrY = check.micrLineY ?? (heightMm - 5);
 
-  const branchFont = (check.branchNameFontSize ?? 14) * 1.5;
-  const accountNumFont = (check.accountNumberFontSize ?? 14) * 1.5;
-  const serialFont = (check.serialNumberFontSize ?? 12) * 1.4;
-  const checkSeqFont = (check.checkSequenceFontSize ?? 12) * 1.4;
-  const accountFont = (check.accountHolderNameFontSize ?? 11) * 1.4;
-  const micrFont = (check.micrLineFontSize ?? 12) * 1.8;
+  // أحجام الخطوط بالنقاط (pt)
+  const branchFont = check.branchNameFontSize ?? 14;
+  const accountNumFont = check.accountNumberFontSize ?? 14;
+  const serialFont = check.serialNumberFontSize ?? 12;
+  const checkSeqFont = check.checkSequenceFontSize ?? 12;
+  const accountFont = check.accountHolderNameFontSize ?? 11;
+  const micrFont = check.micrLineFontSize ?? 12;
   const micrDisplay = reorderMicrLine(check.micrLine);
 
   return `
-    <div class="check-wrapper" style="width:${widthPx}px;height:${heightPx}px;">
-      <section class="check">
-      <div class="branch-name" style="left:${branchX}px;top:${branchY}px;font-size:${branchFont}px;text-align:${branchAlign};transform:${transformForAlign(branchAlign)};">
+    <div class="check-wrapper" style="width:${widthMm}mm;height:${heightMm}mm;">
+      <section class="check" style="width:${widthMm}mm;height:${heightMm}mm;">
+      <div class="branch-name" style="left:${branchX}mm;top:${branchY}mm;font-size:${branchFont}pt;text-align:${branchAlign};transform:${transformForAlign(branchAlign)};">
         ${escapeHtml(check.branchName)}
       </div>
-      <div class="account-number" style="left:${accountNumX}px;top:${accountNumY}px;font-size:${accountNumFont}px;text-align:${accountNumAlign};transform:${transformForAlign(accountNumAlign)};">
+      <div class="account-number" style="left:${accountNumX}mm;top:${accountNumY}mm;font-size:${accountNumFont}pt;text-align:${accountNumAlign};transform:${transformForAlign(accountNumAlign)};">
         ${escapeHtml(check.accountNumber)}
       </div>
-      <div class="serial" style="left:${serialX}px;top:${serialY}px;font-size:${serialFont}px;text-align:${serialAlign};transform:${transformForAlign(serialAlign)};">
+      <div class="serial" style="left:${serialX}mm;top:${serialY}mm;font-size:${serialFont}pt;text-align:${serialAlign};transform:${transformForAlign(serialAlign)};">
         ${escapeHtml(check.serialNumber)}
       </div>
-      <div class="check-sequence" style="left:${checkSeqX}px;top:${checkSeqY}px;font-size:${checkSeqFont}px;text-align:${checkSeqAlign};transform:${transformForAlign(checkSeqAlign)};">
+      <div class="check-sequence" style="left:${checkSeqX}mm;top:${checkSeqY}mm;font-size:${checkSeqFont}pt;text-align:${checkSeqAlign};transform:${transformForAlign(checkSeqAlign)};">
         ${escapeHtml(check.serialNumber)}
       </div>
-      <div class="account-holder" style="left:${accountX}px;top:${accountY}px;font-size:${accountFont}px;text-align:${accountAlign};transform:${transformForAlign(accountAlign)};">
+      <div class="account-holder" style="left:${accountX}mm;top:${accountY}mm;font-size:${accountFont}pt;text-align:${accountAlign};transform:${transformForAlign(accountAlign)};">
         ${escapeHtml(check.accountHolderName)}
       </div>
-      <div class="micr-line" style="left:${micrX}px;top:${micrY}px;font-size:${micrFont}px;text-align:${micrAlign};transform:${transformForAlign(micrAlign)};">
+      <div class="micr-line" style="left:${micrX}mm;top:${micrY}mm;font-size:${micrFont}pt;text-align:${micrAlign};transform:${transformForAlign(micrAlign)};">
         ${escapeHtml(micrDisplay)}
       </div>
       </section>
@@ -179,7 +175,7 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>معاينة دفتر الشيكات</title>
+  <title>طباعة دفتر الشيكات</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
@@ -205,12 +201,9 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
     html, body {
       margin: 0;
       padding: 0;
-      width: ${defaultWidthMm}mm;
-      height: ${defaultHeightMm}mm;
       background: #fff;
       font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       color: #111827;
-      overflow: hidden;
     }
 
     .check-wrapper {
@@ -221,12 +214,18 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
       display: block;
       page-break-after: always;
       page-break-inside: avoid;
+      overflow: hidden;
+    }
+
+    /* إزالة page-break من آخر شيك */
+    .check-wrapper:last-child {
+      page-break-after: auto;
     }
 
     .check {
       position: relative;
-      width: 100%;
-      height: 100%;
+      width: ${defaultWidthMm}mm;
+      height: ${defaultHeightMm}mm;
       background: #fff;
       overflow: hidden;
       margin: 0;
@@ -265,10 +264,10 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
 
     @media print {
       html, body {
-        width: ${defaultWidthMm}mm;
-        height: ${defaultHeightMm}mm;
         margin: 0;
         padding: 0;
+        width: auto;
+        height: auto;
       }
       
       .check-wrapper {
@@ -276,19 +275,28 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
         height: ${defaultHeightMm}mm;
         margin: 0;
         padding: 0;
+        page-break-after: always;
+        page-break-inside: avoid;
+      }
+
+      .check-wrapper:last-child {
+        page-break-after: auto;
       }
       
       .check {
         box-shadow: none;
         border: none;
+        width: ${defaultWidthMm}mm;
+        height: ${defaultHeightMm}mm;
       }
     }
     
     @media screen {
       body {
         display: flex;
-        justify-content: center;
+        flex-direction: column;
         align-items: center;
+        gap: 20px;
         min-height: 100vh;
         background: #f3f4f6;
         padding: 20px;
@@ -296,6 +304,8 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
       
       .check-wrapper {
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
+        background: #fff;
       }
     }
   </style>

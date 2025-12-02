@@ -14,7 +14,7 @@ const buildMicrLine = (serial: string, accountNumber: string, routingNumber: str
   // Order: Serial (Left) -> Routing -> Account -> Type (Right)
   // This matches user request: "اخر شيء علي اليسار رقم التسلسل" (Serial is last on left)
   // "من اليمين ... نوع الدفتر" (Type is first on right)
-  return `"${serial}"  '${routing}'  '${accountNumber}'  ${typeCode}`;
+  return `${typeCode}  '${accountNumber}'  '${routing}'  "${serial}"`;
 };
 
 const getTextContent = (root: ParentNode | null, tagName: string): string => {
