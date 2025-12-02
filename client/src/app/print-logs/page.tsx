@@ -111,21 +111,27 @@ export default function PrintLogsPage() {
         console.warn('تعذر تحميل إعدادات الطباعة المخصصة، سيتم استخدام القيم الافتراضية.', layoutError);
       }
 
-      // جلب معلومات الفرع
-      let resolvedBranchName = soapResponse.branchName || log.branchName || `فرع ${soapResponse.accountBranch}`;
-      let resolvedRouting = soapResponse.routingNumber || soapResponse.accountBranch;
+      // استخراج رمز الفرع من أول 3 أرقام من رقم الحساب
+      const extractedBranchCode = log.accountNumber.substring(0, 3);
 
-      if (!soapResponse.branchName || !soapResponse.routingNumber) {
+      let resolvedBranchName = soapResponse.branchName || log.branchName;
+      let resolvedRouting = soapResponse.routingNumber;
+
+      if (!resolvedBranchName || !resolvedRouting || resolvedBranchName.startsWith('فرع 0')) {
         try {
-          const branch = await branchService.getByCode(soapResponse.accountBranch);
+          const branch = await branchService.getByCode(extractedBranchCode);
           if (branch) {
             resolvedBranchName = branch.branchName;
             resolvedRouting = branch.routingNumber;
           }
         } catch (branchError) {
-          console.warn('تعذر العثور على بيانات الفرع، سيتم استخدام البيانات المتاحة.', branchError);
+          console.warn('تعذر العثور على بيانات الفرع:', branchError);
         }
       }
+
+      // قيم افتراضية
+      resolvedBranchName = resolvedBranchName || `فرع ${soapResponse.accountBranch}`;
+      resolvedRouting = resolvedRouting || soapResponse.accountBranch;
 
       // تحذير إذا لم يتم العثور على بيانات الفرع الحقيقية
       if (resolvedRouting === soapResponse.accountBranch || resolvedBranchName.startsWith('فرع 0')) {

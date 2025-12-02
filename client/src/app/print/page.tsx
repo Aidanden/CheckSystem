@@ -64,22 +64,32 @@ export default function PrintPage() {
         console.warn('تعذر تحميل إعدادات الطباعة المخصصة، سيتم استخدام القيم الافتراضية.', layoutError);
       }
 
-      // استخدام معلومات الفرع من استجابة SOAP إذا كانت موجودة
-      let resolvedBranchName = soapResponse.branchName || `فرع ${soapResponse.accountBranch}`;
-      let resolvedRouting = soapResponse.routingNumber || soapResponse.accountBranch;
+      // استخراج رمز الفرع من أول 3 أرقام من رقم الحساب (كما طلب المستخدم)
+      const extractedBranchCode = accountNumber.substring(0, 3);
 
-      // إذا لم تكن معلومات الفرع موجودة في الاستجابة، نحاول جلبها من الخدمة
-      if (!soapResponse.branchName || !soapResponse.routingNumber) {
+      let resolvedBranchName = soapResponse.branchName;
+      let resolvedRouting = soapResponse.routingNumber;
+
+      // إذا لم تأتِ البيانات من الـ Backend، أو للتأكد، نقوم بالبحث عنها هنا
+      if (!resolvedBranchName || !resolvedRouting || resolvedBranchName.startsWith('فرع 0')) {
         try {
-          const branch = await branchService.getByCode(soapResponse.accountBranch);
+          console.log(`🔍 جلب بيانات الفرع للرمز المستخرج: ${extractedBranchCode}`);
+          const branch = await branchService.getByCode(extractedBranchCode);
           if (branch) {
             resolvedBranchName = branch.branchName;
             resolvedRouting = branch.routingNumber;
+            console.log('✅ تم العثور على الفرع:', branch);
+          } else {
+            console.warn('⚠️ لم يتم العثور على الفرع في قاعدة البيانات');
           }
         } catch (branchError) {
-          console.warn('تعذر العثور على بيانات الفرع، سيتم استخدام البيانات المتاحة.', branchError);
+          console.warn('تعذر العثور على بيانات الفرع:', branchError);
         }
       }
+
+      // قيم افتراضية في حال الفشل التام
+      resolvedBranchName = resolvedBranchName || `فرع ${soapResponse.accountBranch}`;
+      resolvedRouting = resolvedRouting || soapResponse.accountBranch;
 
       setBranchInfo({ name: resolvedBranchName, routing: resolvedRouting });
 
