@@ -12,10 +12,22 @@ export const printingService = {
   },
 
   // Get print history
-  getHistory: async (branchId?: number, limit?: number): Promise<PrintOperation[]> => {
+  getHistory: async (filters?: {
+    branchId?: number;
+    userId?: number;
+    accountNumber?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    limit?: number;
+  }): Promise<PrintOperation[]> => {
     const params: any = {};
-    if (branchId !== undefined) params.branch_id = branchId;
-    if (limit) params.limit = limit;
+
+    if (filters?.branchId !== undefined) params.branch_id = filters.branchId;
+    if (filters?.userId !== undefined) params.user_id = filters.userId;
+    if (filters?.accountNumber) params.account_number = filters.accountNumber;
+    if (filters?.dateFrom) params.date_from = filters.dateFrom;
+    if (filters?.dateTo) params.date_to = filters.dateTo;
+    if (filters?.limit) params.limit = filters.limit;
 
     return request<PrintOperation[]>({
       url: '/printing/history',

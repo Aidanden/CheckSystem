@@ -101,7 +101,7 @@ npm start
 ✅ Database connected successfully
 🚀 Server is running on port 5000
 📝 Environment: development
-🌐 API URL: http://10.250.100.40:5000/api
+🌐 API URL: http://localhost:5000/api
 ```
 
 ## اختبار API
@@ -109,7 +109,7 @@ npm start
 ### 1. فحص صحة الخادم
 
 ```bash
-curl http://10.250.100.40:5000/api/health
+curl http://localhost:5000/api/health
 ```
 
 يجب أن تحصل على:
@@ -123,7 +123,7 @@ curl http://10.250.100.40:5000/api/health
 ### 2. تسجيل الدخول
 
 ```bash
-curl -X POST http://10.250.100.40:5000/api/auth/login \
+curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "admin",
@@ -136,7 +136,7 @@ curl -X POST http://10.250.100.40:5000/api/auth/login \
 ### 3. الحصول على قائمة الفروع
 
 ```bash
-curl http://10.250.100.40:5000/api/branches \
+curl http://localhost:5000/api/branches \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 

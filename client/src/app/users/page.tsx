@@ -15,7 +15,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  
+
   const [formData, setFormData] = useState<CreateUserRequest>({
     username: '',
     password: '',
@@ -53,7 +53,7 @@ export default function UsersPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       if (editingUser) {
         await userService.update(editingUser.id, {
@@ -66,7 +66,7 @@ export default function UsersPage() {
       } else {
         await userService.create(formData);
       }
-      
+
       setShowModal(false);
       setEditingUser(null);
       setFormData({
@@ -96,7 +96,7 @@ export default function UsersPage() {
 
   const handleDelete = async (userId: number) => {
     if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
-    
+
     try {
       await userService.delete(userId);
       loadData();
@@ -191,22 +191,20 @@ export default function UsersPage() {
                     </td>
                     <td className="py-3 px-4">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.isAdmin
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${user.isAdmin
                             ? 'bg-purple-100 text-purple-700'
                             : 'bg-gray-100 text-gray-700'
-                        }`}
+                          }`}
                       >
                         {user.isAdmin ? 'مسؤول' : 'مستخدم'}
                       </span>
                     </td>
                     <td className="py-3 px-4">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.isActive
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${user.isActive
                             ? 'bg-green-100 text-green-700'
                             : 'bg-red-100 text-red-700'
-                        }`}
+                          }`}
                       >
                         {user.isActive ? 'نشط' : 'معطل'}
                       </span>
@@ -243,7 +241,7 @@ export default function UsersPage() {
             <h2 className="text-xl font-bold text-gray-800 mb-4">
               {editingUser ? 'تعديل مستخدم' : 'إضافة مستخدم جديد'}
             </h2>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -311,32 +309,39 @@ export default function UsersPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   الصلاحيات
                 </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded">
-                  {permissions.map((perm) => (
-                    <label key={perm.id} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.permission_ids.includes(perm.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({
-                              ...formData,
-                              permission_ids: [...formData.permission_ids, perm.id],
-                            });
-                          } else {
-                            setFormData({
-                              ...formData,
-                              permission_ids: formData.permission_ids.filter(
-                                (id) => id !== perm.id
-                              ),
-                            });
-                          }
-                        }}
-                        className="rounded"
-                      />
-                      <span className="text-sm">{perm.permissionName}</span>
-                    </label>
-                  ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 border rounded">
+                  {permissions
+                    .filter(p => !p.permissionCode.includes('INVENTORY'))
+                    .map((perm) => (
+                      <label key={perm.id} className="flex items-start gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                        <input
+                          type="checkbox"
+                          checked={formData.permission_ids.includes(perm.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({
+                                ...formData,
+                                permission_ids: [...formData.permission_ids, perm.id],
+                              });
+                            } else {
+                              setFormData({
+                                ...formData,
+                                permission_ids: formData.permission_ids.filter(
+                                  (id) => id !== perm.id
+                                ),
+                              });
+                            }
+                          }}
+                          className="mt-1 rounded"
+                        />
+                        <div>
+                          <span className="text-sm font-medium block">{perm.permissionName}</span>
+                          {perm.description && (
+                            <span className="text-xs text-gray-500 block">{perm.description}</span>
+                          )}
+                        </div>
+                      </label>
+                    ))}
                 </div>
               </div>
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { printLogService, soapService, branchService } from '@/lib/api';
 import { useAppSelector } from '@/store/hooks';
-import { FileText, Printer, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, Printer, Search, Filter, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import renderCheckbookHtml, { type CheckbookData } from '@/lib/utils/printRenderer';
 import { buildPreviewFromSoap, type SoapCheckbookResponse } from '@/lib/soap/checkbook';
 import { printSettingsAPI, type PrintSettings } from '@/lib/printSettings.api';
@@ -38,6 +38,12 @@ export default function PrintLogsPage() {
   const [operationType, setOperationType] = useState<'all' | 'print' | 'reprint'>('all');
   const [accountNumber, setAccountNumber] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Reprint Modal State
+  const [reprintModalOpen, setReprintModalOpen] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<PrintLog | null>(null);
+  const [reprintStartSerial, setReprintStartSerial] = useState<number>(0);
+  const [reprintEndSerial, setReprintEndSerial] = useState<number>(0);
 
   // التحقق من صلاحية إعادة الطباعة
   const canReprint = currentUser?.isAdmin || currentUser?.permissions?.some(p => p.permissionCode === 'REPRINT');
@@ -82,13 +88,28 @@ export default function PrintLogsPage() {
     return data.accountNumber.startsWith('2') ? 2 : 1;
   };
 
-  const handleReprint = async (log: PrintLog) => {
+  const openReprintModal = (log: PrintLog) => {
     if (!canReprint) {
       alert('ليس لديك صلاحية إعادة الطباعة. يرجى التواصل مع المسؤول.');
       return;
     }
+    setSelectedLog(log);
+    setReprintStartSerial(log.firstChequeNumber);
+    setReprintEndSerial(log.lastChequeNumber);
+    setReprintModalOpen(true);
+  };
 
-    if (!confirm(`هل أنت متأكد من إعادة طباعة دفتر الشيكات؟\n\nرقم الحساب: ${log.accountNumber}\nنطاق الشيكات: ${log.firstChequeNumber} - ${log.lastChequeNumber}`)) {
+  const handleConfirmReprint = async () => {
+    if (!selectedLog) return;
+
+    // Validation
+    if (reprintStartSerial < selectedLog.firstChequeNumber || reprintEndSerial > selectedLog.lastChequeNumber) {
+      alert(`الرجاء اختيار نطاق ضمن النطاق الأصلي (${selectedLog.firstChequeNumber} - ${selectedLog.lastChequeNumber})`);
+      return;
+    }
+
+    if (reprintStartSerial > reprintEndSerial) {
+      alert('رقم البداية يجب أن يكون أصغر من أو يساوي رقم النهاية');
       return;
     }
 
@@ -97,9 +118,23 @@ export default function PrintLogsPage() {
     try {
       // جلب البيانات من SOAP
       const soapResponse = await soapService.queryCheckbook({
-        accountNumber: log.accountNumber,
-        firstChequeNumber: log.firstChequeNumber,
+        accountNumber: selectedLog.accountNumber,
+        firstChequeNumber: selectedLog.firstChequeNumber,
       }) as SoapCheckbookResponse;
+
+      // تصفية الشيكات بناءً على النطاق المحدد
+      const filteredStatuses = soapResponse.chequeStatuses.filter(
+        c => c.chequeNumber >= reprintStartSerial && c.chequeNumber <= reprintEndSerial
+      );
+
+      if (filteredStatuses.length === 0) {
+        throw new Error('لم يتم العثور على شيكات في النطاق المحدد');
+      }
+
+      const filteredSoapResponse = {
+        ...soapResponse,
+        chequeStatuses: filteredStatuses
+      };
 
       const accountType = resolveAccountType(soapResponse);
 
@@ -111,14 +146,13 @@ export default function PrintLogsPage() {
         console.warn('تعذر تحميل إعدادات الطباعة المخصصة، سيتم استخدام القيم الافتراضية.', layoutError);
       }
 
-      // استخدام الدالة الجديدة من الـ Backend لجلب بيانات الفرع بناءً على رقم الحساب
-
-      let resolvedBranchName = soapResponse.branchName || log.branchName;
+      // تحديد الفرع
+      let resolvedBranchName = soapResponse.branchName || selectedLog.branchName;
       let resolvedRouting = soapResponse.routingNumber;
 
       if (!resolvedBranchName || !resolvedRouting || resolvedBranchName.startsWith('فرع 0')) {
         try {
-          const branch = await branchService.getByAccountNumber(log.accountNumber);
+          const branch = await branchService.getByAccountNumber(selectedLog.accountNumber);
           if (branch) {
             resolvedBranchName = branch.branchName;
             resolvedRouting = branch.routingNumber;
@@ -128,17 +162,11 @@ export default function PrintLogsPage() {
         }
       }
 
-      // قيم افتراضية
       resolvedBranchName = resolvedBranchName || `فرع ${soapResponse.accountBranch}`;
       resolvedRouting = resolvedRouting || soapResponse.accountBranch;
 
-      // تحذير إذا لم يتم العثور على بيانات الفرع الحقيقية
-      if (resolvedRouting === soapResponse.accountBranch || resolvedBranchName.startsWith('فرع 0')) {
-        alert('⚠️ تنبيه: لم يتم العثور على بيانات الفرع (الاسم والرقم التوجيهي) في قاعدة البيانات. سيتم استخدام القيم الافتراضية وهذا قد يؤدي لطباعة خط MICR غير صحيح.');
-      }
-
       // بناء معاينة الطباعة
-      const preview = buildPreviewFromSoap(soapResponse, {
+      const preview = buildPreviewFromSoap(filteredSoapResponse, {
         layout: resolvedLayout ?? undefined,
         branchName: resolvedBranchName,
         routingNumber: resolvedRouting,
@@ -161,7 +189,7 @@ export default function PrintLogsPage() {
 
       // تسجيل عملية إعادة الطباعة
       try {
-        const chequeNumbers = soapResponse.chequeStatuses.map(s => s.chequeNumber);
+        const chequeNumbers = filteredStatuses.map(s => s.chequeNumber);
         await printLogService.create({
           accountNumber: soapResponse.accountNumber,
           accountBranch: soapResponse.accountBranch,
@@ -174,14 +202,13 @@ export default function PrintLogsPage() {
           chequeNumbers,
         });
         console.log('✅ تم تسجيل عملية إعادة الطباعة بنجاح');
-
-        // إعادة تحميل السجلات
         loadLogs();
       } catch (logError) {
         console.error('فشل تسجيل عملية إعادة الطباعة:', logError);
       }
 
-      alert('✅ تمت إعادة الطباعة بنجاح!');
+      setReprintModalOpen(false);
+      // alert('✅ تمت إعادة الطباعة بنجاح!'); // Removed alert to be less intrusive
     } catch (error: any) {
       console.error('Reprint failed:', error);
       alert(`فشل في إعادة الطباعة: ${error.message || 'خطأ غير معروف'}`);
@@ -380,7 +407,7 @@ export default function PrintLogsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       {canReprint && (
                         <button
-                          onClick={() => handleReprint(log)}
+                          onClick={() => openReprintModal(log)}
                           disabled={reprinting}
                           className="text-blue-600 hover:text-blue-800 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                           title="إعادة الطباعة"
@@ -398,44 +425,89 @@ export default function PrintLogsPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                عرض {(page - 1) * limit + 1} إلى {Math.min(page * limit, total)} من {total} سجل
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="btn btn-secondary flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                  السابق
-                </button>
-                <div className="flex items-center gap-2">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const pageNum = i + 1;
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setPage(pageNum)}
-                        className={`px-3 py-1 rounded ${page === pageNum
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* Page Info */}
+                <div className="text-sm text-gray-700">
+                  عرض <span className="font-medium">{(page - 1) * limit + 1}</span> إلى{' '}
+                  <span className="font-medium">{Math.min(page * limit, total)}</span> من{' '}
+                  <span className="font-medium">{total}</span> سجل
                 </div>
-                <button
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="btn btn-secondary flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  التالي
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
+
+                {/* Pagination Controls */}
+                <div className="flex items-center gap-2">
+                  {/* Previous Button */}
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                    <span className="hidden sm:inline">السابق</span>
+                  </button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {/* First Page */}
+                    {page > 3 && (
+                      <>
+                        <button
+                          onClick={() => setPage(1)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          1
+                        </button>
+                        {page > 4 && (
+                          <span className="px-2 text-gray-500">...</span>
+                        )}
+                      </>
+                    )}
+
+                    {/* Pages around current page */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(pageNum => {
+                        // Show current page and 2 pages before and after
+                        return pageNum >= page - 2 && pageNum <= page + 2;
+                      })
+                      .map(pageNum => (
+                        <button
+                          key={pageNum}
+                          onClick={() => setPage(pageNum)}
+                          className={`px-3 py-2 border rounded-lg transition-colors ${page === pageNum
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+
+                    {/* Last Page */}
+                    {page < totalPages - 2 && (
+                      <>
+                        {page < totalPages - 3 && (
+                          <span className="px-2 text-gray-500">...</span>
+                        )}
+                        <button
+                          onClick={() => setPage(totalPages)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          {totalPages}
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Next Button */}
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                  >
+                    <span className="hidden sm:inline">التالي</span>
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -449,6 +521,92 @@ export default function PrintLogsPage() {
           </div>
         )}
       </div>
+      {/* Reprint Modal */}
+      {reprintModalOpen && selectedLog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+              <h3 className="text-lg font-semibold text-gray-800">
+                إعادة طباعة شيكات
+              </h3>
+              <button
+                onClick={() => setReprintModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                <p className="font-medium mb-1">تفاصيل الدفتر الأصلي:</p>
+                <p>رقم الحساب: <span className="font-mono font-bold">{selectedLog.accountNumber}</span></p>
+                <p>النطاق: <span className="font-mono font-bold">{selectedLog.firstChequeNumber} - {selectedLog.lastChequeNumber}</span></p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    من شيك رقم
+                  </label>
+                  <input
+                    type="number"
+                    value={reprintStartSerial}
+                    onChange={(e) => setReprintStartSerial(parseInt(e.target.value) || 0)}
+                    className="input w-full"
+                    min={selectedLog.firstChequeNumber}
+                    max={selectedLog.lastChequeNumber}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    إلى شيك رقم
+                  </label>
+                  <input
+                    type="number"
+                    value={reprintEndSerial}
+                    onChange={(e) => setReprintEndSerial(parseInt(e.target.value) || 0)}
+                    className="input w-full"
+                    min={selectedLog.firstChequeNumber}
+                    max={selectedLog.lastChequeNumber}
+                  />
+                </div>
+              </div>
+
+              <div className="text-sm text-gray-500">
+                عدد الشيكات المحدد: <span className="font-bold text-gray-900">{Math.max(0, reprintEndSerial - reprintStartSerial + 1)}</span>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={() => setReprintModalOpen(false)}
+                className="btn bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                disabled={reprinting}
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={handleConfirmReprint}
+                className="btn btn-primary flex items-center gap-2"
+                disabled={reprinting}
+              >
+                {reprinting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    جاري الطباعة...
+                  </>
+                ) : (
+                  <>
+                    <Printer className="w-4 h-4" />
+                    تأكيد الطباعة
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

@@ -40,6 +40,7 @@ export class AuthService {
         username: user.username,
         isAdmin: user.isAdmin,
         branchId: user.branchId,
+        branchNumber: userWithDetails.branch?.branchNumber,
       },
       this.JWT_SECRET,
       { expiresIn: this.JWT_EXPIRES_IN } as jwt.SignOptions

@@ -6,41 +6,60 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Starting database seeding...');
 
+  // Delete old permissions and their associations
+  console.log('Cleaning up old permissions...');
+  await prisma.userPermission.deleteMany({});
+  await prisma.permission.deleteMany({});
+  console.log('✅ Old permissions cleaned up');
+
   // Create default permissions
   const permissions = [
+    // إدارة النظام
     {
-      permissionName: 'إدارة المستخدمين والفروع',
-      permissionCode: 'MANAGE_USERS_BRANCHES',
-      description: 'القدرة على إضافة/تعديل المستخدمين والفروع',
+      permissionName: 'إدارة المستخدمين',
+      permissionCode: 'MANAGE_USERS',
+      description: 'القدرة على إضافة/تعديل/حذف المستخدمين',
     },
     {
-      permissionName: 'طباعة',
-      permissionCode: 'PRINTING',
-      description: 'السماح للمستخدم بتنفيذ عملية طباعة الشيكات',
+      permissionName: 'إدارة الفروع',
+      permissionCode: 'MANAGE_BRANCHES',
+      description: 'القدرة على إضافة/تعديل الفروع',
     },
     {
-      permissionName: 'تسليم دفاتر الشيكات',
-      permissionCode: 'HANDOVER',
-      description: 'السماح للمستخدم بتسجيل أن الدفتر المطبوع قد تم تسليمه للعميل',
+      permissionName: 'إعدادات الطباعة',
+      permissionCode: 'SYSTEM_SETTINGS',
+      description: 'الوصول إلى شاشة إعدادات الطباعة وتخطيط الشيكات',
+    },
+
+    // الشاشات الرئيسية
+    {
+      permissionName: 'شاشة الطباعة',
+      permissionCode: 'SCREEN_PRINT',
+      description: 'الوصول إلى شاشة طباعة الشيكات',
     },
     {
-      permissionName: 'عرض التقارير',
-      permissionCode: 'REPORTING',
-      description: 'السماح للمستخدم بالاطلاع على تقارير الطباعة والمخزون',
+      permissionName: 'شاشة سجلات الطباعة',
+      permissionCode: 'SCREEN_PRINT_LOGS',
+      description: 'الوصول إلى شاشة سجلات الطباعة',
     },
     {
-      permissionName: 'إدارة المخزون',
-      permissionCode: 'INVENTORY_MANAGEMENT',
-      description: 'السماح للمستخدم بإضافة أرصدة دفاتر الشيكات الخام',
+      permissionName: 'شاشة التقارير',
+      permissionCode: 'SCREEN_REPORTS',
+      description: 'الوصول إلى شاشة التقارير',
+    },
+
+    // عمليات خاصة
+    {
+      permissionName: 'إعادة الطباعة',
+      permissionCode: 'REPRINT',
+      description: 'القدرة على إعادة طباعة الشيكات من شاشة سجلات الطباعة',
     },
   ];
 
   console.log('Creating permissions...');
   for (const perm of permissions) {
-    await prisma.permission.upsert({
-      where: { permissionCode: perm.permissionCode },
-      update: {},
-      create: perm,
+    await prisma.permission.create({
+      data: perm,
     });
   }
   console.log('✅ Permissions created');
@@ -48,24 +67,24 @@ async function main() {
   // Create two branches: Tripoli (main) and Misrata
   console.log('Creating branches for Tripoli and Misrata...');
   const tripoli = await prisma.branch.upsert({
-    where: { routingNumber: '03100111' },
-    update: { branchNumber: '100' },
+    where: { routingNumber: '02800116' },
+    update: { branchNumber: '001' },
     create: {
-      branchName: 'الفرع الرئيسي - طرابلس',
+      branchName: 'فرع طرابلس',
       branchLocation: 'طرابلس - طريق السكة',
-      routingNumber: '03100111',
-      branchNumber: '100',
+      routingNumber: '02800116',
+      branchNumber: '001',
     },
   });
 
   const misrata = await prisma.branch.upsert({
-    where: { routingNumber: '03100231' },
-    update: { branchNumber: '200' },
+    where: { routingNumber: '02800219' },
+    update: { branchNumber: '002' },
     create: {
-      branchName: 'الفرع مصراته',
-      branchLocation: 'مصراته - شارع بنغازي',
-      routingNumber: '03100231',
-      branchNumber: '200',
+      branchName: 'فرع مصراته',
+      branchLocation: 'مصراته ',
+      routingNumber: '02800219',
+      branchNumber: '002',
     },
   });
 
@@ -158,44 +177,52 @@ async function main() {
   });
   console.log('✅ Misrata users created');
 
-  // Assign permissions: only global admin gets MANAGE_USERS_BRANCHES; branch users get PRINTING and REPORTING
+  // Assign permissions
   const allPermissions = await prisma.permission.findMany();
-  const managePerm = await prisma.permission.findUnique({ where: { permissionCode: 'MANAGE_USERS_BRANCHES' } });
-  const printingPerm = await prisma.permission.findUnique({ where: { permissionCode: 'PRINTING' } });
-  const reportingPerm = await prisma.permission.findUnique({ where: { permissionCode: 'REPORTING' } });
 
-  if (allPermissions.length > 0) {
-    for (const permission of allPermissions) {
-      if (managePerm && permission.id === managePerm.id) {
-        // grant manage permission only to global admin
-        await prisma.userPermission.upsert({
-          where: { userId_permissionId: { userId: adminUser.id, permissionId: permission.id } },
-          update: {},
-          create: { userId: adminUser.id, permissionId: permission.id },
-        });
-      }
-    }
+  // Admin gets ALL permissions
+  console.log('Assigning all permissions to admin...');
+  for (const permission of allPermissions) {
+    await prisma.userPermission.upsert({
+      where: { userId_permissionId: { userId: adminUser.id, permissionId: permission.id } },
+      update: {},
+      create: { userId: adminUser.id, permissionId: permission.id },
+    });
   }
+  console.log('✅ Admin granted all permissions');
 
-  // Grant printing/reporting to branch users
+  // Branch users get specific permissions
+  console.log('Assigning permissions to branch users...');
+  const screenPrintPerm = await prisma.permission.findUnique({ where: { permissionCode: 'SCREEN_PRINT' } });
+  const screenLogsPerm = await prisma.permission.findUnique({ where: { permissionCode: 'SCREEN_PRINT_LOGS' } });
+  const screenReportsPerm = await prisma.permission.findUnique({ where: { permissionCode: 'SCREEN_REPORTS' } });
+
   const branchUsers = [tripManager, tripOperator, msrManager, msrOperator];
   for (const u of branchUsers) {
-    if (printingPerm) {
+    // Grant screen access permissions
+    if (screenPrintPerm) {
       await prisma.userPermission.upsert({
-        where: { userId_permissionId: { userId: u.id, permissionId: printingPerm.id } },
+        where: { userId_permissionId: { userId: u.id, permissionId: screenPrintPerm.id } },
         update: {},
-        create: { userId: u.id, permissionId: printingPerm.id },
+        create: { userId: u.id, permissionId: screenPrintPerm.id },
       });
     }
-    if (reportingPerm) {
+    if (screenLogsPerm) {
       await prisma.userPermission.upsert({
-        where: { userId_permissionId: { userId: u.id, permissionId: reportingPerm.id } },
+        where: { userId_permissionId: { userId: u.id, permissionId: screenLogsPerm.id } },
         update: {},
-        create: { userId: u.id, permissionId: reportingPerm.id },
+        create: { userId: u.id, permissionId: screenLogsPerm.id },
+      });
+    }
+    if (screenReportsPerm) {
+      await prisma.userPermission.upsert({
+        where: { userId_permissionId: { userId: u.id, permissionId: screenReportsPerm.id } },
+        update: {},
+        create: { userId: u.id, permissionId: screenReportsPerm.id },
       });
     }
   }
-  console.log('✅ Permissions assigned to branch users and admin');
+  console.log('✅ Permissions assigned to branch users');
 
   // Set all non-admin users' password to '123' (hashed), leave admin unchanged
   console.log('Updating passwords: setting password "123" for all non-admin users...');
@@ -231,6 +258,8 @@ async function main() {
   console.log('Creating test accounts...');
 
   // Create accounts for Tripoli (branchId = tripoli.id)
+
+  /*
   await prisma.account.upsert({
     where: { accountNumber: '100031100000001' },
     update: {},
@@ -303,7 +332,7 @@ async function main() {
       lastPrintedSerial: 0,
     },
   });
-
+*/
   console.log('✅ Test accounts created for Tripoli and Misrata (each linked to their branch)');
 
   // 8. Create default print settings
@@ -317,27 +346,27 @@ async function main() {
       checkHeight: 86,
       branchNameX: 100,
       branchNameY: 20,
-      branchNameFontSize: 6,
+      branchNameFontSize: 7,
       branchNameAlign: 'center',
       accountNumberX: 117.5,
       accountNumberY: 0,
-      accountNumberFontSize: 6,
+      accountNumberFontSize: 7,
       accountNumberAlign: 'center',
       serialNumberX: 215,
       serialNumberY: 18,
-      serialNumberFontSize: 6,
+      serialNumberFontSize: 7,
       serialNumberAlign: 'right',
       checkSequenceX: 15,
       checkSequenceY: 18,
-      checkSequenceFontSize: 6,
+      checkSequenceFontSize: 7,
       checkSequenceAlign: 'left',
-      accountHolderNameX: 70,
+      accountHolderNameX: 90,
       accountHolderNameY: 50,
       accountHolderNameFontSize: 7,
       accountHolderNameAlign: 'center',
       micrLineX: 117.5,
       micrLineY: 70,
-      micrLineFontSize: 7,
+      micrLineFontSize: 9,
       micrLineAlign: 'center',
     },
     create: {
@@ -346,27 +375,27 @@ async function main() {
       checkHeight: 86,
       branchNameX: 100,
       branchNameY: 20,
-      branchNameFontSize: 6,
+      branchNameFontSize: 7,
       branchNameAlign: 'center',
       accountNumberX: 117.5,
       accountNumberY: 0,
-      accountNumberFontSize: 6,
+      accountNumberFontSize: 7,
       accountNumberAlign: 'center',
       serialNumberX: 215,
       serialNumberY: 18,
-      serialNumberFontSize: 6,
+      serialNumberFontSize: 7,
       serialNumberAlign: 'right',
       checkSequenceX: 15,
       checkSequenceY: 18,
-      checkSequenceFontSize: 6,
+      checkSequenceFontSize: 7,
       checkSequenceAlign: 'left',
-      accountHolderNameX: 70,
+      accountHolderNameX: 90,
       accountHolderNameY: 50,
       accountHolderNameFontSize: 7,
       accountHolderNameAlign: 'center',
       micrLineX: 117.5,
       micrLineY: 70,
-      micrLineFontSize: 7,
+      micrLineFontSize: 9,
       micrLineAlign: 'center',
     },
   });
@@ -379,27 +408,27 @@ async function main() {
       checkHeight: 86,
       branchNameX: 100,
       branchNameY: 20,
-      branchNameFontSize: 6,
+      branchNameFontSize: 7,
       branchNameAlign: 'center',
       accountNumberX: 117.5,
       accountNumberY: 0,
-      accountNumberFontSize: 6,
+      accountNumberFontSize: 7,
       accountNumberAlign: 'center',
       serialNumberX: 215,
       serialNumberY: 18,
-      serialNumberFontSize: 6,
+      serialNumberFontSize: 7,
       serialNumberAlign: 'right',
       checkSequenceX: 15,
       checkSequenceY: 18,
-      checkSequenceFontSize: 6,
+      checkSequenceFontSize: 7,
       checkSequenceAlign: 'left',
-      accountHolderNameX: 70,
+      accountHolderNameX: 90,
       accountHolderNameY: 50,
       accountHolderNameFontSize: 7,
       accountHolderNameAlign: 'center',
       micrLineX: 117.5,
       micrLineY: 70,
-      micrLineFontSize: 7,
+      micrLineFontSize: 9,
       micrLineAlign: 'center',
     },
     create: {

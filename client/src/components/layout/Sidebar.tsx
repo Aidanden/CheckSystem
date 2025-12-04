@@ -17,23 +17,32 @@ import {
 
 const navigation = [
   { name: 'لوحة التحكم', href: '/dashboard', icon: Home },
-  { name: 'طباعة شيك', href: '/print', icon: Printer },
-
-  { name: 'سجلات الطباعة', href: '/print-logs', icon: ClipboardList },
-
-  { name: 'المستخدمين', href: '/users', icon: Users, adminOnly: true },
-  { name: 'الفروع', href: '/branches', icon: Building2, adminOnly: true },
-  { name: 'التقارير', href: '/reports', icon: FileText },
-  { name: 'إعدادات الطباعة', href: '/settings', icon: Settings, adminOnly: true },
+  { name: 'طباعة شيك', href: '/print', icon: Printer, permission: 'SCREEN_PRINT' },
+  { name: 'سجلات الطباعة', href: '/print-logs', icon: ClipboardList, permission: 'SCREEN_PRINT_LOGS' },
+  { name: 'المستخدمين', href: '/users', icon: Users, permission: 'MANAGE_USERS' },
+  { name: 'الفروع', href: '/branches', icon: Building2, permission: 'MANAGE_BRANCHES' },
+  { name: 'التقارير', href: '/reports', icon: FileText, permission: 'SCREEN_REPORTS' },
+  { name: 'إعدادات الطباعة', href: '/settings', icon: Settings, permission: 'SYSTEM_SETTINGS' },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useAppSelector((state) => state.auth);
 
-  const filteredNavigation = navigation.filter(
-    (item) => !item.adminOnly || user?.isAdmin
-  );
+  const filteredNavigation = navigation.filter((item) => {
+    // Dashboard is always visible
+    if (item.href === '/dashboard') return true;
+
+    // Admin sees everything
+    if (user?.isAdmin) return true;
+
+    // Check permissions for other users
+    if (item.permission) {
+      return user?.permissions?.some(p => p.permissionCode === item.permission);
+    }
+
+    return true;
+  });
 
   return (
     <div className="fixed right-0 top-0 bottom-0 w-72 bg-gradient-to-b from-white to-secondary-50 border-l border-gray-200 shadow-xl">

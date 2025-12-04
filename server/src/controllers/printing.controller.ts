@@ -15,9 +15,9 @@ export class PrintingController {
       const { account_number, serial_from, serial_to } = req.body as PrintCheckbookRequest;
 
       if (!account_number) {
-        res.status(400).json({ 
+        res.status(400).json({
           success: false,
-          error: 'Account number is required' 
+          error: 'Account number is required'
         });
         return;
       }
@@ -52,7 +52,7 @@ export class PrintingController {
         }
         branchId = branches[0].id;
       }
-      
+
       const result = await PrintingService.printCheckbook(
         account_number,
         req.user.userId,
@@ -71,12 +71,12 @@ export class PrintingController {
       if (error instanceof Error) {
         console.error('   التفاصيل:', error.message);
         console.error('   Stack:', error.stack);
-        res.status(400).json({ 
+        res.status(400).json({
           success: false,
           error: error.message,
         });
       } else {
-        res.status(500).json({ 
+        res.status(500).json({
           success: false,
           error: 'Failed to print checkbook',
         });
@@ -86,18 +86,48 @@ export class PrintingController {
 
   static async getPrintHistory(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const branchId = req.query.branch_id 
-        ? parseInt(req.query.branch_id as string)
+      if (!req.user) {
+        res.status(401).json({ error: 'Not authenticated' });
+        return;
+      }
+
+      // Parse query parameters
+      const userId = req.query.user_id
+        ? parseInt(req.query.user_id as string)
         : undefined;
-      const limit = req.query.limit 
+      const accountNumber = req.query.account_number as string | undefined;
+      const dateFrom = req.query.date_from as string | undefined;
+      const dateTo = req.query.date_to as string | undefined;
+      const limit = req.query.limit
         ? parseInt(req.query.limit as string)
         : 100;
 
-      const history = await PrintingService.getPrintHistory(
-        undefined,
+      // Branch filtering with permissions
+      let branchId: number | undefined;
+
+      if (req.user.isAdmin) {
+        // Admin can filter by any branch or see all
+        branchId = req.query.branch_id
+          ? parseInt(req.query.branch_id as string)
+          : undefined;
+      } else {
+        // Non-admin users can only see their own branch
+        if (!req.user.branchId) {
+          res.status(403).json({ error: 'المستخدم غير مرتبط بفرع' });
+          return;
+        }
+        branchId = req.user.branchId;
+      }
+
+      const history = await PrintingService.getPrintHistory({
+        userId,
         branchId,
-        limit
-      );
+        accountNumber,
+        dateFrom,
+        dateTo,
+        limit,
+      });
+
       res.json(history);
     } catch (error) {
       if (error instanceof Error) {
@@ -110,9 +140,26 @@ export class PrintingController {
 
   static async getStatistics(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const branchId = req.query.branch_id 
-        ? parseInt(req.query.branch_id as string)
-        : undefined;
+      if (!req.user) {
+        res.status(401).json({ error: 'Not authenticated' });
+        return;
+      }
+
+      let branchId: number | undefined;
+
+      if (req.user.isAdmin) {
+        // Admin can filter by any branch or see all
+        branchId = req.query.branch_id
+          ? parseInt(req.query.branch_id as string)
+          : undefined;
+      } else {
+        // Non-admin users can only see their own branch
+        if (!req.user.branchId) {
+          res.status(403).json({ error: 'المستخدم غير مرتبط بفرع' });
+          return;
+        }
+        branchId = req.user.branchId;
+      }
 
       const stats = await PrintingService.getPrintStatistics(branchId);
       res.json(stats);
@@ -130,7 +177,7 @@ export class PrintingController {
       const { filename } = req.params;
       const path = require('path');
       const fs = require('fs');
-      
+
       // Validate filename to prevent directory traversal
       if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
         res.status(400).json({ error: 'Invalid filename' });
@@ -138,7 +185,7 @@ export class PrintingController {
       }
 
       const filepath = path.join(process.cwd(), 'output', 'checkbooks', filename);
-      
+
       // Check if file exists
       if (!fs.existsSync(filepath)) {
         res.status(404).json({ error: 'File not found' });

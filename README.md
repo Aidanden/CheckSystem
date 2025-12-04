@@ -54,8 +54,8 @@ npm run dev
 ```
 
 #### 4. الوصول للنظام
-- **Frontend**: http://10.250.100.40:5000
-- **Backend API**: http://10.250.100.40:5000/api
+- **Frontend**: http://localhost:5000
+- **Backend API**: http://localhost:5000/api
 
 **بيانات الدخول الافتراضية:**
 - Username: `admin`
@@ -181,12 +181,12 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/checksystem
 JWT_SECRET=your_secret_key
 PORT=5000
 HOST=localhost
-CLIENT_URL=http://10.250.100.40:5000
+CLIENT_URL=http://localhost:5000
 ```
 
 ### Frontend (client/.env.local):
 ```env
-NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
 ```
 
 راجع [ENV_SETUP.md](./docs/ENV_SETUP.md) للتفاصيل الكاملة.

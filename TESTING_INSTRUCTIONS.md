@@ -19,7 +19,7 @@ npm run dev
 ```
 
 ### 2. افتح التطبيق
-1. افتح `http://10.250.100.40:5000/print`
+1. افتح `http://localhost:5000/print`
 2. افتح Developer Tools (F12)
 3. اختر tab "Console"
 
@@ -74,7 +74,7 @@ console.log('Account:', account);
 ```javascript
 const token = localStorage.getItem('token');
 
-fetch('http://10.250.100.40:5000/api/printing/print', {
+fetch('http://localhost:5000/api/printing/print', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',

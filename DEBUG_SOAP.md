@@ -9,6 +9,7 @@
 ```env
 # يجب أن يكون هكذا لاستخدام الخادم المحلي
 BANK_API_URL=http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService
+BANK_ACC_NAME=http://fcubsuatapp1.aiib.ly:9005/FCUBSIAService/FCUBSIAService
 ```
 
 ## 2. مراقبة السجلات (Logs)

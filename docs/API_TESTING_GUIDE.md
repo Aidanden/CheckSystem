@@ -32,7 +32,7 @@ npm run db:seed
 npm run dev
 ```
 
-Server سيعمل على: `http://10.250.100.40:5000`
+Server سيعمل على: `http://localhost:5000`
 
 ---
 
@@ -47,7 +47,7 @@ $body = @{
     password = "[REDACTED]"
 } | ConvertTo-Json
 
-$response = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/auth/login `
+$response = Invoke-RestMethod -Uri http://localhost:5000/api/auth/login `
     -Method POST `
     -ContentType "application/json" `
     -Body $body
@@ -78,7 +78,7 @@ $headers = @{
     Authorization = "Bearer $token"
 }
 
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/users/me `
+Invoke-RestMethod -Uri http://localhost:5000/api/users/me `
     -Method GET `
     -Headers $headers
 ```
@@ -90,7 +90,7 @@ Invoke-RestMethod -Uri http://10.250.100.40:5000/api/users/me `
 ### Get All Branches
 
 ```powershell
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/branches `
+Invoke-RestMethod -Uri http://localhost:5000/api/branches `
     -Method GET `
     -Headers $headers
 ```
@@ -118,7 +118,7 @@ $body = @{
     routing_number = "987654321"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/branches `
+Invoke-RestMethod -Uri http://localhost:5000/api/branches `
     -Method POST `
     -Headers $headers `
     -ContentType "application/json" `
@@ -134,7 +134,7 @@ $body = @{
     branch_location = "North District Updated"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/branches/$branchId" `
+Invoke-RestMethod -Uri "http://localhost:5000/api/branches/$branchId" `
     -Method PUT `
     -Headers $headers `
     -ContentType "application/json" `
@@ -145,7 +145,7 @@ Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/branches/$branchId" `
 
 ```powershell
 $branchId = 2
-Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/branches/$branchId" `
+Invoke-RestMethod -Uri "http://localhost:5000/api/branches/$branchId" `
     -Method DELETE `
     -Headers $headers
 ```
@@ -157,7 +157,7 @@ Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/branches/$branchId" `
 ### Get All Users
 
 ```powershell
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/users `
+Invoke-RestMethod -Uri http://localhost:5000/api/users `
     -Method GET `
     -Headers $headers
 ```
@@ -166,7 +166,7 @@ Invoke-RestMethod -Uri http://10.250.100.40:5000/api/users `
 
 ```powershell
 $userId = 1
-Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/users/$userId" `
+Invoke-RestMethod -Uri "http://localhost:5000/api/users/$userId" `
     -Method GET `
     -Headers $headers
 ```
@@ -182,7 +182,7 @@ $body = @{
     permission_ids = @(2, 3)  # PRINT_CHECKBOOK, VIEW_INVENTORY
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/users `
+Invoke-RestMethod -Uri http://localhost:5000/api/users `
     -Method POST `
     -Headers $headers `
     -ContentType "application/json" `
@@ -199,7 +199,7 @@ $body = @{
     permission_ids = @(2, 3, 4)
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/users/$userId" `
+Invoke-RestMethod -Uri "http://localhost:5000/api/users/$userId" `
     -Method PUT `
     -Headers $headers `
     -ContentType "application/json" `
@@ -210,7 +210,7 @@ Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/users/$userId" `
 
 ```powershell
 $userId = 3
-Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/users/$userId" `
+Invoke-RestMethod -Uri "http://localhost:5000/api/users/$userId" `
     -Method DELETE `
     -Headers $headers
 ```
@@ -218,7 +218,7 @@ Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/users/$userId" `
 ### Get All Permissions
 
 ```powershell
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/users/permissions `
+Invoke-RestMethod -Uri http://localhost:5000/api/users/permissions `
     -Method GET `
     -Headers $headers
 ```
@@ -243,7 +243,7 @@ Invoke-RestMethod -Uri http://10.250.100.40:5000/api/users/permissions `
 ### Get All Inventory
 
 ```powershell
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/inventory `
+Invoke-RestMethod -Uri http://localhost:5000/api/inventory `
     -Method GET `
     -Headers $headers
 ```
@@ -265,7 +265,7 @@ Invoke-RestMethod -Uri http://10.250.100.40:5000/api/inventory `
 
 ```powershell
 $stockType = 1  # Individual
-Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/inventory/$stockType" `
+Invoke-RestMethod -Uri "http://localhost:5000/api/inventory/$stockType" `
     -Method GET `
     -Headers $headers
 ```
@@ -279,7 +279,7 @@ $body = @{
     notes = "Initial stock for individual checks"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/inventory/add `
+Invoke-RestMethod -Uri http://localhost:5000/api/inventory/add `
     -Method POST `
     -Headers $headers `
     -ContentType "application/json" `
@@ -290,12 +290,12 @@ Invoke-RestMethod -Uri http://10.250.100.40:5000/api/inventory/add `
 
 ```powershell
 # All transactions
-Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/inventory/transactions/history" `
+Invoke-RestMethod -Uri "http://localhost:5000/api/inventory/transactions/history" `
     -Method GET `
     -Headers $headers
 
 # Filter by stock type
-Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/inventory/transactions/history?stock_type=1&limit=10" `
+Invoke-RestMethod -Uri "http://localhost:5000/api/inventory/transactions/history?stock_type=1&limit=10" `
     -Method GET `
     -Headers $headers
 ```
@@ -311,7 +311,7 @@ $body = @{
     account_number = "1234567890"
 } | ConvertTo-Json
 
-$account = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/accounts/query `
+$account = Invoke-RestMethod -Uri http://localhost:5000/api/accounts/query `
     -Method POST `
     -Headers $headers `
     -ContentType "application/json" `
@@ -336,7 +336,7 @@ Write-Host "Account: $($account | ConvertTo-Json)"
 ### Get All Accounts
 
 ```powershell
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/accounts `
+Invoke-RestMethod -Uri http://localhost:5000/api/accounts `
     -Method GET `
     -Headers $headers
 ```
@@ -345,7 +345,7 @@ Invoke-RestMethod -Uri http://10.250.100.40:5000/api/accounts `
 
 ```powershell
 $accountId = 1
-Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/accounts/$accountId" `
+Invoke-RestMethod -Uri "http://localhost:5000/api/accounts/$accountId" `
     -Method GET `
     -Headers $headers
 ```
@@ -363,7 +363,7 @@ $body = @{
     quantity = 100
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/inventory/add `
+Invoke-RestMethod -Uri http://localhost:5000/api/inventory/add `
     -Method POST `
     -Headers $headers `
     -ContentType "application/json" `
@@ -374,7 +374,7 @@ $body = @{
     account_number = "1234567890"
 } | ConvertTo-Json
 
-$printResult = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/printing/print `
+$printResult = Invoke-RestMethod -Uri http://localhost:5000/api/printing/print `
     -Method POST `
     -Headers $headers `
     -ContentType "application/json" `
@@ -405,12 +405,12 @@ Write-Host "Print Result: $($printResult | ConvertTo-Json)"
 
 ```powershell
 # All history
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/printing/history `
+Invoke-RestMethod -Uri http://localhost:5000/api/printing/history `
     -Method GET `
     -Headers $headers
 
 # Filter by branch and limit
-Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/printing/history?branch_id=1&limit=10" `
+Invoke-RestMethod -Uri "http://localhost:5000/api/printing/history?branch_id=1&limit=10" `
     -Method GET `
     -Headers $headers
 ```
@@ -419,12 +419,12 @@ Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/printing/history?branch_id
 
 ```powershell
 # All branches
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/printing/statistics `
+Invoke-RestMethod -Uri http://localhost:5000/api/printing/statistics `
     -Method GET `
     -Headers $headers
 
 # Specific branch
-Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/printing/statistics?branch_id=1" `
+Invoke-RestMethod -Uri "http://localhost:5000/api/printing/statistics?branch_id=1" `
     -Method GET `
     -Headers $headers
 ```
@@ -449,31 +449,31 @@ Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/printing/statistics?branch
 ```powershell
 # 1. Login
 $body = @{username="admin"; password="[REDACTED]"} | ConvertTo-Json
-$response = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/auth/login -Method POST -ContentType "application/json" -Body $body
+$response = Invoke-RestMethod -Uri http://localhost:5000/api/auth/login -Method POST -ContentType "application/json" -Body $body
 $token = $response.token
 $headers = @{Authorization = "Bearer $token"}
 
 # 2. Add Inventory
 $body = @{stock_type=1; quantity=100; notes="Test stock"} | ConvertTo-Json
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/inventory/add -Method POST -Headers $headers -ContentType "application/json" -Body $body
+Invoke-RestMethod -Uri http://localhost:5000/api/inventory/add -Method POST -Headers $headers -ContentType "application/json" -Body $body
 
 # 3. Query Account
 $body = @{account_number="1234567890"} | ConvertTo-Json
-$account = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/accounts/query -Method POST -Headers $headers -ContentType "application/json" -Body $body
+$account = Invoke-RestMethod -Uri http://localhost:5000/api/accounts/query -Method POST -Headers $headers -ContentType "application/json" -Body $body
 Write-Host "Account: $($account.accountHolderName)"
 
 # 4. Print Checkbook
 $body = @{account_number="1234567890"} | ConvertTo-Json
-$print = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/printing/print -Method POST -Headers $headers -ContentType "application/json" -Body $body
+$print = Invoke-RestMethod -Uri http://localhost:5000/api/printing/print -Method POST -Headers $headers -ContentType "application/json" -Body $body
 Write-Host "Printed: $($print.message)"
 
 # 5. Check Statistics
-$stats = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/printing/statistics -Method GET -Headers $headers
+$stats = Invoke-RestMethod -Uri http://localhost:5000/api/printing/statistics -Method GET -Headers $headers
 Write-Host "Total Operations: $($stats.total_operations)"
 Write-Host "Total Sheets: $($stats.total_sheets_printed)"
 
 # 6. View History
-$history = Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/printing/history?limit=5" -Method GET -Headers $headers
+$history = Invoke-RestMethod -Uri "http://localhost:5000/api/printing/history?limit=5" -Method GET -Headers $headers
 Write-Host "Recent operations: $($history.Length)"
 ```
 

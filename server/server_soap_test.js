@@ -4,6 +4,22 @@ const xml2js = require('xml2js');
 const app = express();
 const PORT = 8080;
 
+// بيانات الحسابات التجريبية
+const TEST_ACCOUNTS = [
+   // فرع طرابلس 001
+   { branch: '001', account: '001001000100001', name: 'شركة ليبيا للاتصالات', startCheck: '1001' },
+   { branch: '001', account: '001001000100002', name: 'محمد علي أحمد', startCheck: '2001' },
+   { branch: '001', account: '001001000100003', name: 'سالم عمر خالد', startCheck: '3001' },
+   { branch: '001', account: '001001000100004', name: 'شركة الأفق للتجارة', startCheck: '4001' },
+   { branch: '001', account: '001001000100005', name: 'فاطمة حسن محمود', startCheck: '5001' },
+   // فرع مصراته 002
+   { branch: '002', account: '002001000200001', name: 'شركة مصراتة القابضة', startCheck: '6001' },
+   { branch: '002', account: '002001000200002', name: 'علي مصطفى علي', startCheck: '7001' },
+   { branch: '002', account: '002001000200003', name: 'خالد عبدالسلام محمد', startCheck: '8001' },
+   { branch: '002', account: '002001000200004', name: 'شركة البحر المتوسط', startCheck: '9001' },
+   { branch: '002', account: '002001000200005', name: 'هدى إبراهيم يوسف', startCheck: '10001' }
+];
+
 // CORS يجب أن يكون أولاً
 app.use((req, res, next) => {
    res.header('Access-Control-Allow-Origin', '*');
@@ -17,8 +33,8 @@ app.use((req, res, next) => {
 
 // Custom middleware لقراءة raw body - يجب أن يكون قبل أي middleware آخر
 app.use((req, res, next) => {
-   // فقط للـ SOAP endpoint
-   if (req.path === '/FCUBSAccService' && req.method === 'POST') {
+   // فقط للـ SOAP endpoints
+   if ((req.path === '/FCUBSAccService' || req.path === '/FCUBSIAService') && req.method === 'POST') {
       let data = '';
       req.setEncoding('utf8');
       req.on('data', chunk => {
@@ -77,20 +93,15 @@ function generateChequeStatuses(firstChequeNumber, numberOfLeaves = 10) {
    return statuses;
 }
 
-// Endpoint رئيسي للـ SOAP API
-app.post('/FCUBSAccService', async (req, res) => {
+// معالج طلبات SOAP الموحد
+const soapHandler = async (req, res) => {
    try {
-      console.log('\n📨 تم استلام طلب SOAP');
-      console.log('Content-Type:', req.headers['content-type'] || 'غير محدد');
-      console.log('Body Type:', typeof req.body);
-      console.log('Body Length:', req.body ? req.body.length : 0);
+      console.log(`\n📨 تم استلام طلب SOAP على المسار: ${req.path}`);
 
       // التحقق من وجود البيانات
       if (!req.body || typeof req.body !== 'string' || req.body.trim().length === 0) {
          throw new Error('لم يتم استلام بيانات XML صالحة. تأكد من إرسال XML في الـ body');
       }
-
-      console.log('Body Preview:', req.body.substring(0, 200) + '...');
 
       // تحليل XML الوارد
       const parser = new xml2js.Parser({
@@ -100,39 +111,53 @@ app.post('/FCUBSAccService', async (req, res) => {
       });
 
       const result = await parser.parseStringPromise(req.body);
-
       console.log('📊 XML Structure:', JSON.stringify(result, null, 2).substring(0, 500));
 
-      // استخراج البيانات من الطلب - دعم الحالتين
-      let accountBranch, account, firstChequeNumber;
+      let operation = '';
+      let accountBranch = '';
+      let account = '';
 
-      // الحالة 1: XML كامل مع Envelope
-      if (result.Envelope && result.Envelope.Body && result.Envelope.Body.QUERYCHECKBOOK_IOFS_REQ) {
-         const requestBody = result.Envelope.Body.QUERYCHECKBOOK_IOFS_REQ;
-         accountBranch = requestBody.FCUBS_BODY['Chq-Bk-Details-IO'].ACCOUNT_BRANCH;
-         account = requestBody.FCUBS_BODY['Chq-Bk-Details-IO'].ACCOUNT;
-         firstChequeNumber = requestBody.FCUBS_BODY['Chq-Bk-Details-IO'].FIRST_CHEQUE_NUMBER || '734';
-      }
-      // الحالة 2: جزء من XML فقط (البيانات مباشرة)
-      else if (result.ACCOUNT_BRANCH || result.ACCOUNT) {
-         accountBranch = result.ACCOUNT_BRANCH || '001';
-         account = result.ACCOUNT;
-         firstChequeNumber = result.FIRST_CHEQUE_NUMBER || '734';
-      }
-      else {
-         throw new Error('تنسيق XML غير صحيح. يرجى إرسال SOAP Envelope كامل');
+      // تحديد نوع العملية
+      if (result.Envelope && result.Envelope.Body) {
+         if (result.Envelope.Body.QUERYCHECKBOOK_IOFS_REQ) {
+            operation = 'QueryCheckBook';
+            const requestBody = result.Envelope.Body.QUERYCHECKBOOK_IOFS_REQ;
+            accountBranch = requestBody.FCUBS_BODY['Chq-Bk-Details-IO'].ACCOUNT_BRANCH;
+            account = requestBody.FCUBS_BODY['Chq-Bk-Details-IO'].ACCOUNT;
+         } else if (result.Envelope.Body.QUERYIACUSTACC_IOFS_REQ) {
+            operation = 'QueryCustomerName';
+            const requestBody = result.Envelope.Body.QUERYIACUSTACC_IOFS_REQ;
+            // لاحظ اختلاف الهيكل هنا حسب bankAPI.ts
+            accountBranch = requestBody.FCUBS_BODY['Cust-Account-IO'].BRN;
+            account = requestBody.FCUBS_BODY['Cust-Account-IO'].ACC;
+         }
       }
 
-      console.log('📋 البيانات المستخرجة:');
+      // Fallback for simple XML (testing)
+      if (!operation && (result.ACCOUNT_BRANCH || result.ACCOUNT || result.ACC)) {
+         accountBranch = result.ACCOUNT_BRANCH || result.BRN || '001';
+         account = result.ACCOUNT || result.ACC;
+         operation = result.OPERATION || 'QueryCheckBook';
+      }
+
+      console.log(`📋 العملية المطلوبة: ${operation}`);
       console.log('  - فرع الحساب:', accountBranch);
       console.log('  - رقم الحساب:', account);
-      console.log('  - رقم الشيك الأول:', firstChequeNumber);
 
-      // توليد قائمة الشيكات
-      const chequeStatuses = generateChequeStatuses(firstChequeNumber);
+      // البحث عن الحساب
+      const accountData = TEST_ACCOUNTS.find(acc => acc.account === account);
 
-      // بناء الـ Response
-      const responseXml = `<?xml version="1.0" encoding="UTF-8"?>
+      if (!accountData) {
+         throw new Error(`الحساب رقم ${account} غير موجود في قاعدة البيانات التجريبية`);
+      }
+
+      let responseXml = '';
+
+      if (operation === 'QueryCheckBook') {
+         const firstChequeNumber = accountData.startCheck;
+         const chequeStatuses = generateChequeStatuses(firstChequeNumber);
+
+         responseXml = `<?xml version="1.0" encoding="UTF-8"?>
 <S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
    <S:Body>
       <QUERYCHECKBOOK_IOFS_RES xmlns="http://fcubs.ofss.com/service/FCUBSAccService">
@@ -143,7 +168,7 @@ app.post('/FCUBSAccService', async (req, res) => {
             <CORRELID>null</CORRELID>
             <USERID>ADMINUSER1</USERID>
             <ENTITY>null</ENTITY>
-            <BRANCH>001</BRANCH>
+            <BRANCH>${accountBranch}</BRANCH>
             <MODULEID>CA</MODULEID>
             <SERVICE>FCUBSAccService</SERVICE>
             <OPERATION>QueryCheckBook</OPERATION>
@@ -168,7 +193,7 @@ app.post('/FCUBSAccService', async (req, res) => {
                <REQUEST_STATUS>Delivered</REQUEST_STATUS>
                <REQUEST_MODE>FLEXCUBE</REQUEST_MODE>
                <APPLY_CHG>Y</APPLY_CHG>
-               <ISSBRN>001</ISSBRN>
+               <ISSBRN>${accountBranch}</ISSBRN>
                <MAKER>ZAHIDJAVED1</MAKER>
                <MAKERSTAMP>${getCurrentTimestamp()}</MAKERSTAMP>
                <CHECKER>ZAHIDJAVED1</CHECKER>
@@ -197,6 +222,51 @@ app.post('/FCUBSAccService', async (req, res) => {
    </S:Body>
 </S:Envelope>`;
 
+      } else if (operation === 'QueryCustomerName') {
+         responseXml = `<?xml version="1.0" encoding="UTF-8"?>
+<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
+   <S:Body>
+      <QUERYIACUSTACC_IOFS_RES xmlns="http://fcubs.ofss.com/service/FCUBSIAService">
+         <FCUBS_HEADER>
+            <SOURCE>FCAT</SOURCE>
+            <UBSCOMP>FCUBS</UBSCOMP>
+            <MSGID>${generateMsgId()}</MSGID>
+            <CORRELID>null</CORRELID>
+            <USERID>ADMINUSER1</USERID>
+            <ENTITY>null</ENTITY>
+            <BRANCH>${accountBranch}</BRANCH>
+            <MODULEID>ST</MODULEID>
+            <SERVICE>FCUBSIAService</SERVICE>
+            <OPERATION>QueryIACustAcc</OPERATION>
+            <DESTINATION>FCAT</DESTINATION>
+            <FUNCTIONID>STDCUS</FUNCTIONID>
+            <ACTION>EXECUTEQUERY</ACTION>
+            <MSGSTAT>SUCCESS</MSGSTAT>
+         </FCUBS_HEADER>
+         <FCUBS_BODY>
+            <Cust-Account-Full>
+               <BRN>${accountBranch}</BRN>
+               <ACC>${account}</ACC>
+               <CUSTNAME>${accountData.name}</CUSTNAME>
+               <ADESC>${accountData.name}</ADESC>
+               <CUSTNO>123456</CUSTNO>
+               <ACCCLS>CURRENT</ACCCLS>
+               <CCY>LYD</CCY>
+            </Cust-Account-Full>
+            <FCUBS_WARNING_RESP>
+               <WARNING>
+                  <WCODE>ST-SAVE-023</WCODE>
+                  <WDESC>Record Successfully Retrieved</WDESC>
+               </WARNING>
+            </FCUBS_WARNING_RESP>
+         </FCUBS_BODY>
+      </QUERYIACUSTACC_IOFS_RES>
+   </S:Body>
+</S:Envelope>`;
+      } else {
+         throw new Error(`العملية ${operation} غير مدعومة`);
+      }
+
       console.log('✅ تم إنشاء الاستجابة بنجاح\n');
 
       // إرسال الاستجابة
@@ -205,7 +275,6 @@ app.post('/FCUBSAccService', async (req, res) => {
 
    } catch (error) {
       console.error('❌ خطأ في معالجة الطلب:', error.message);
-      console.error('Stack:', error.stack);
 
       // إرسال استجابة خطأ SOAP
       const errorResponse = `<?xml version="1.0" encoding="UTF-8"?>
@@ -224,14 +293,19 @@ app.post('/FCUBSAccService', async (req, res) => {
       res.status(500).set('Content-Type', 'text/xml; charset=utf-8');
       res.send(errorResponse);
    }
-});
+};
+
+// تسجيل الـ Endpoints
+app.post('/FCUBSAccService', soapHandler);
+app.post('/FCUBSIAService', soapHandler);
 
 // Endpoint للتحقق من صحة الخادم
 app.get('/health', (req, res) => {
    res.json({
       status: 'OK',
       service: 'FCUBS SOAP Test Server',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      accounts_count: TEST_ACCOUNTS.length
    });
 });
 
@@ -240,14 +314,15 @@ app.listen(PORT, () => {
    console.log('═══════════════════════════════════════════════════════════════');
    console.log('🚀 خادم SOAP التجريبي يعمل على المنفذ:', PORT);
    console.log('═══════════════════════════════════════════════════════════════');
-   console.log('📍 SOAP Endpoint: http://10.250.100.40:5000:' + PORT + '/FCUBSAccService');
-   console.log('🏥 Health Check: http://10.250.100.40:5000:' + PORT + '/health');
-   console.log('\n📝 مثال على الطلب:');
-   console.log('POST http://10.250.100.40:5000:' + PORT + '/FCUBSAccService');
-   console.log('Content-Type: text/xml');
-   console.log('\n📊 البيانات المتغيرة المطلوبة:');
-   console.log('  - ACCOUNT_BRANCH (مثال: 001)');
-   console.log('  - ACCOUNT (مثال: 001001000811217)');
-   console.log('  - FIRST_CHEQUE_NUMBER (اختياري، افتراضي: 734)');
+   console.log('📍 CheckBook Endpoint: http://localhost:' + PORT + '/FCUBSAccService');
+   console.log('📍 CustomerName Endpoint: http://localhost:' + PORT + '/FCUBSIAService');
+   console.log('🏥 Health Check: http://localhost:' + PORT + '/health');
+   console.log('\n📝 العمليات المدعومة:');
+   console.log('1. QueryCheckBook (للحصول على بيانات الشيكات)');
+   console.log('2. QueryIACustAcc (للحصول على اسم العميل)');
+   console.log('\n📊 الحسابات المتوفرة:');
+   TEST_ACCOUNTS.forEach(acc => {
+      console.log(`  - ${acc.account} (${acc.name}) - فرع ${acc.branch}`);
+   });
    console.log('═══════════════════════════════════════════════════════════════\n');
 });

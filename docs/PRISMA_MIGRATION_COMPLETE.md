@@ -231,7 +231,7 @@ npm run prisma:migrate
 
 # Open Prisma Studio (database GUI)
 npm run prisma:studio
-# Then open: http://10.250.100.40:5000:5555
+# Then open: http://localhost:5000:5555
 
 # Reset database (⚠️ deletes all data)
 npx prisma migrate reset
@@ -348,16 +348,16 @@ prisma.branch.      // ✅ Shows: findMany, findUnique, create, etc.
 
 ```powershell
 # Health check
-Invoke-RestMethod http://10.250.100.40:5000/api/health
+Invoke-RestMethod http://localhost:5000/api/health
 
 # Login
 $body = @{username="admin"; password="[REDACTED]"} | ConvertTo-Json
-$response = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/auth/login `
+$response = Invoke-RestMethod -Uri http://localhost:5000/api/auth/login `
     -Method POST -ContentType "application/json" -Body $body
 
 # Get branches
 $headers = @{Authorization = "Bearer $($response.token)"}
-Invoke-RestMethod http://10.250.100.40:5000/api/branches -Headers $headers
+Invoke-RestMethod http://localhost:5000/api/branches -Headers $headers
 ```
 
 ---

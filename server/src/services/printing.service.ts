@@ -207,18 +207,63 @@ export class PrintingService {
     }
   }
 
-  static async getPrintHistory(
-    userId?: number,
-    branchId?: number,
-    limit: number = 100
-  ): Promise<any[]> {
+  static async getPrintHistory(filters: {
+    userId?: number;
+    branchId?: number;
+    accountNumber?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    limit?: number;
+  }): Promise<any[]> {
+    const { userId, branchId, accountNumber, dateFrom, dateTo, limit = 100 } = filters;
+
+    // Build where clause
+    const where: any = {};
+
     if (userId) {
-      return PrintOperationModel.findByUserId(userId, limit);
+      where.userId = userId;
     }
+
     if (branchId) {
-      return PrintOperationModel.findByBranchId(branchId, limit);
+      where.branchId = branchId;
     }
-    return PrintOperationModel.findAll(limit);
+
+    if (accountNumber) {
+      where.accountNumber = accountNumber;
+    }
+
+    if (dateFrom || dateTo) {
+      where.printDate = {};
+      if (dateFrom) {
+        where.printDate.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        // Add one day to include the entire end date
+        const endDate = new Date(dateTo);
+        endDate.setDate(endDate.getDate() + 1);
+        where.printDate.lt = endDate;
+      }
+    }
+
+    return prisma.printOperation.findMany({
+      where,
+      orderBy: { printDate: 'desc' },
+      take: limit,
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        branch: {
+          select: {
+            id: true,
+            branchName: true,
+          },
+        },
+      },
+    });
   }
 
   static async getPrintStatistics(branchId?: number): Promise<any> {

@@ -47,6 +47,34 @@ export default function PrintPage() {
     setLayout(null);
 
     try {
+      // الحصول على معلومات المستخدم الحالي
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('يجب تسجيل الدخول أولاً');
+      }
+
+      // فك تشفير الـ token للحصول على معلومات المستخدم
+      const tokenParts = token.split('.');
+      if (tokenParts.length !== 3) {
+        throw new Error('رمز المصادقة غير صالح');
+      }
+
+      const payload = JSON.parse(atob(tokenParts[1]));
+      const currentUser = payload;
+
+      // التحقق من رقم الفرع إذا لم يكن المستخدم مديراً
+      if (!currentUser.isAdmin && currentUser.branchNumber) {
+        // استخراج أول 3 أرقام من رقم الحساب
+        const accountBranchCode = accountNumber.substring(0, 3);
+
+        // التحقق من تطابق رقم الفرع
+        if (accountBranchCode !== currentUser.branchNumber) {
+          setError(`❌ هذا الحساب تابع لفرع آخر (${accountBranchCode}). أنت مخول فقط للاستعلام عن حسابات فرع ${currentUser.branchNumber}.`);
+          setLoading(false);
+          return;
+        }
+      }
+
       // استخدام الخدمة الجديدة التي تمر عبر الخادم
       // رقم الفرع سيتم استخراجه تلقائياً من أول 3 أرقام من رقم الحساب في الخادم
       const soapResponse = await soapService.queryCheckbook({

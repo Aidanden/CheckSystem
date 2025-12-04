@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://10.250.100.40:5000/api/print-settings';
+const API_URL = 'http://localhost:5000/api/print-settings';
 
 export interface PrintPosition {
   x: number;

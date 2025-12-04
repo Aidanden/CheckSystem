@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Settings as SettingsIcon, Save, RotateCcw, Printer, RefreshCw } from 'lucide-react';
 import { systemSettingsService } from '@/lib/api';
+import renderCheckbookHtml from '@/lib/utils/printRenderer';
 
 interface PrintPosition {
   x: number;
@@ -185,7 +186,7 @@ export default function SettingsPage() {
 
       if (!token) return;
 
-      const response = await fetch(`http://10.250.100.40:5000/api/print-settings/${activeTab}`, {
+      const response = await fetch(`http://localhost:5000/api/print-settings/${activeTab}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -238,7 +239,7 @@ export default function SettingsPage() {
         return;
       }
 
-      const response = await fetch('http://10.250.100.40:5000/api/print-settings', {
+      const response = await fetch('http://localhost:5000/api/print-settings', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -275,101 +276,78 @@ export default function SettingsPage() {
   };
 
   const handleTestPrint = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      setError('فشل فتح نافذة الطباعة. يرجى السماح بالنوافذ المنبثقة.');
-      return;
+    // استخدام نفس نظام الطباعة الفعلي
+    const testCheckData = {
+      checkNumber: 1,
+      serialNumber: '000000001',
+      accountHolderName: 'أحمد محمد علي السيد',
+      accountNumber: '001001000811217',
+      accountType: activeTab === 1 ? 'فردي' : activeTab === 2 ? 'شركة' : 'موظف',
+      routingNumber: '1100000001',
+      branchName: 'الفرع الرئيسي',
+      micrLine: `0${activeTab} 1100000001 001001000811217 000000001`,
+      checkSize: {
+        width: currentSettings.checkWidth,
+        height: currentSettings.checkHeight,
+        unit: 'mm'
+      },
+      branchNameX: currentSettings.branchName.x,
+      branchNameY: currentSettings.branchName.y,
+      branchNameFontSize: currentSettings.branchName.fontSize,
+      branchNameAlign: currentSettings.branchName.align,
+      serialNumberX: currentSettings.serialNumber.x,
+      serialNumberY: currentSettings.serialNumber.y,
+      serialNumberFontSize: currentSettings.serialNumber.fontSize,
+      serialNumberAlign: currentSettings.serialNumber.align,
+      accountNumberX: currentSettings.accountNumber.x,
+      accountNumberY: currentSettings.accountNumber.y,
+      accountNumberFontSize: currentSettings.accountNumber.fontSize,
+      accountNumberAlign: currentSettings.accountNumber.align,
+      checkSequenceX: currentSettings.checkSequence.x,
+      checkSequenceY: currentSettings.checkSequence.y,
+      checkSequenceFontSize: currentSettings.checkSequence.fontSize,
+      checkSequenceAlign: currentSettings.checkSequence.align,
+      accountHolderNameX: currentSettings.accountHolderName.x,
+      accountHolderNameY: currentSettings.accountHolderName.y,
+      accountHolderNameFontSize: currentSettings.accountHolderName.fontSize,
+      accountHolderNameAlign: currentSettings.accountHolderName.align,
+      micrLineX: currentSettings.micrLine.x,
+      micrLineY: currentSettings.micrLine.y,
+      micrLineFontSize: currentSettings.micrLine.fontSize,
+      micrLineAlign: currentSettings.micrLine.align,
+    };
+
+    const checkbookData = {
+      operation: {
+        accountNumber: '001001000811217',
+        accountHolderName: 'أحمد محمد علي السيد',
+        accountType: activeTab,
+        branchName: 'الفرع الرئيسي',
+        routingNumber: '1100000001',
+        serialFrom: 1,
+        serialTo: 1,
+        sheetsPrinted: 1,
+        printDate: new Date().toISOString(),
+      },
+      checks: [testCheckData],
+    };
+
+    try {
+      // استخدام renderCheckbookHtml من printRenderer
+      const htmlContent = renderCheckbookHtml(checkbookData);
+
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        setError('فشل فتح نافذة الطباعة. يرجى السماح بالنوافذ المنبثقة.');
+        return;
+      }
+
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+    } catch (err) {
+      console.error('Error in test print:', err);
+      setError('فشل في إنشاء معاينة الطباعة');
     }
-
-    const checkWidthPx = currentSettings.checkWidth * 3.7795275591; // mm to px
-    const checkHeightPx = currentSettings.checkHeight * 3.7795275591;
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>تجربة طباعة الشيك</title>
-        <style>
-          @page {
-            size: ${currentSettings.checkWidth}mm ${currentSettings.checkHeight}mm;
-            margin: 0;
-          }
-          body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-          }
-          .check {
-            width: ${checkWidthPx}px;
-            height: ${checkHeightPx}px;
-            position: relative;
-            border: 1px solid #ccc;
-          }
-          .field {
-            position: absolute;
-          }
-          @media print {
-            .check {
-              border: none;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="check">
-          <div class="field" style="
-            left: ${currentSettings.branchName.x * 3.7795275591}px;
-            top: ${currentSettings.branchName.y * 3.7795275591}px;
-            font-size: ${currentSettings.branchName.fontSize}pt;
-            text-align: ${currentSettings.branchName.align};
-          ">الفرع الرئيسي</div>
-          
-          <div class="field" style="
-            ${currentSettings.serialNumber.align === 'right' ? 'right' : 'left'}: ${currentSettings.serialNumber.align === 'right' ? (currentSettings.checkWidth - currentSettings.serialNumber.x) * 3.7795275591 : currentSettings.serialNumber.x * 3.7795275591}px;
-            top: ${currentSettings.serialNumber.y * 3.7795275591}px;
-            font-size: ${currentSettings.serialNumber.fontSize}pt;
-            font-family: monospace;
-          ">000000001</div>
-          
-          <div class="field" style="
-            left: ${currentSettings.accountNumber.x * 3.7795275591}px;
-            top: ${currentSettings.accountNumber.y * 3.7795275591}px;
-            font-size: ${currentSettings.accountNumber.fontSize}pt;
-            text-align: ${currentSettings.accountNumber.align};
-            transform: ${currentSettings.accountNumber.align === 'center' ? 'translateX(-50%)' : 'none'};
-          ">001001000811217</div>
-          
-          <div class="field" style="
-            left: ${currentSettings.checkSequence.x * 3.7795275591}px;
-            top: ${currentSettings.checkSequence.y * 3.7795275591}px;
-            font-size: ${currentSettings.checkSequence.fontSize}pt;
-            font-family: monospace;
-          ">000000001</div>
-          
-          <div class="field" style="
-            left: ${currentSettings.accountHolderName.x * 3.7795275591}px;
-            top: ${currentSettings.accountHolderName.y * 3.7795275591}px;
-            font-size: ${currentSettings.accountHolderName.fontSize}pt;
-          ">أحمد محمد علي السيد</div>
-          
-          <div class="field" style="
-            left: ${currentSettings.micrLine.x * 3.7795275591}px;
-            top: ${currentSettings.micrLine.y * 3.7795275591}px;
-            font-size: ${currentSettings.micrLine.fontSize}pt;
-            font-family: monospace;
-            text-align: ${currentSettings.micrLine.align};
-            transform: ${currentSettings.micrLine.align === 'center' ? 'translateX(-50%)' : 'none'};
-          ">01  1100000001  100012345678901  000000001</div>
-        </div>
-        <script>
-          window.onload = function() {
-            window.print();
-          };
-        </script>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
   };
 
   if (initialLoading) {
@@ -413,7 +391,7 @@ export default function SettingsPage() {
             value={soapApiEndpoint}
             onChange={(e) => setSoapApiEndpoint(e.target.value)}
             disabled={soapApiLoading || soapApiSaving}
-            placeholder="http://10.250.100.40:5000:8080/FCUBSAccService"
+            placeholder="http://localhost:5000:8080/FCUBSAccService"
           />
 
           <div className="flex flex-wrap gap-3">
@@ -1047,6 +1025,7 @@ export default function SettingsPage() {
                   textAlign: currentSettings.micrLine.align,
                   transform: currentSettings.micrLine.align === 'center' ? 'translateX(-50%)' : 'none',
                   letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 01 100012345678901 1100000001 000000001
