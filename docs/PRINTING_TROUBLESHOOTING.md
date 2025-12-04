@@ -72,7 +72,7 @@ const token = localStorage.getItem('token');
 console.log('Token:', token);
 
 // اختبر الطباعة
-fetch('http://localhost:5000/api/printing/print', {
+fetch('http://10.250.100.40:5000/api/printing/print', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',

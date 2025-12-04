@@ -103,7 +103,7 @@ npm run dev
 
 ### الخطوة 3: التجربة!
 
-افتح: **http://localhost:5000**
+افتح: **http://10.250.100.40:5000**
 
 ```
 1. Login: admin / [REDACTED]
@@ -202,7 +202,7 @@ npm run dev
 ```powershell
 cd server
 npm run prisma:studio
-# يفتح على: http://localhost:5000:5555
+# يفتح على: http://10.250.100.40:5000:5555
 ```
 
 ### من API مباشرة:

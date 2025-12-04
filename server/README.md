@@ -26,7 +26,7 @@ npm run db:seed
 npm run dev
 ```
 
-الخادم سيعمل على: **http://localhost:5000**
+الخادم سيعمل على: **http://10.250.100.40:5000**
 
 ## ✨ الجديد: Prisma ORM
 
@@ -229,7 +229,7 @@ psql -U postgres -c "CREATE DATABASE check_printing_system;"
 
 ```bash
 npm run prisma:studio
-# ثم افتح http://localhost:5000:5555
+# ثم افتح http://10.250.100.40:5000:5555
 ```
 
 ## 📖 التالي

@@ -65,7 +65,7 @@ npm run dev
 
 ### الطلب
 ```powershell
-Invoke-RestMethod -Uri http://localhost:5000/api/health -Method GET
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/health -Method GET
 ```
 
 ### النتيجة المتوقعة
@@ -92,7 +92,7 @@ $body = @{
     password = "[REDACTED]"
 } | ConvertTo-Json
 
-$response = Invoke-RestMethod -Uri http://localhost:5000/api/auth/login `
+$response = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/auth/login `
     -Method POST `
     -ContentType "application/json" `
     -Body $body
@@ -169,7 +169,7 @@ $headers = @{
     Authorization = "Bearer $token"
 }
 
-Invoke-RestMethod -Uri http://localhost:5000/api/branches `
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/branches `
     -Method GET `
     -Headers $headers
 ```
@@ -200,7 +200,7 @@ Invoke-RestMethod -Uri http://localhost:5000/api/branches `
 #### الطلب
 ```powershell
 $branchId = 1
-Invoke-RestMethod -Uri "http://localhost:5000/api/branches/$branchId" `
+Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/branches/$branchId" `
     -Method GET `
     -Headers $headers
 ```
@@ -239,7 +239,7 @@ $body = @{
     routing_number = "1100000002"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri http://localhost:5000/api/branches `
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/branches `
     -Method POST `
     -Headers $headers `
     -ContentType "application/json" `
@@ -313,7 +313,7 @@ $body = @{
     branch_location = "الرياض - حي النخيل"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:5000/api/branches/$branchId" `
+Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/branches/$branchId" `
     -Method PUT `
     -Headers $headers `
     -ContentType "application/json" `
@@ -340,7 +340,7 @@ Invoke-RestMethod -Uri "http://localhost:5000/api/branches/$branchId" `
 #### الطلب
 ```powershell
 $branchId = 2
-Invoke-RestMethod -Uri "http://localhost:5000/api/branches/$branchId" `
+Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/branches/$branchId" `
     -Method DELETE `
     -Headers $headers
 ```
@@ -362,7 +362,7 @@ Invoke-RestMethod -Uri "http://localhost:5000/api/branches/$branchId" `
 
 #### الطلب
 ```powershell
-Invoke-RestMethod -Uri http://localhost:5000/api/users/me `
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/users/me `
     -Method GET `
     -Headers $headers
 ```
@@ -391,7 +391,7 @@ Invoke-RestMethod -Uri http://localhost:5000/api/users/me `
 
 #### الطلب
 ```powershell
-Invoke-RestMethod -Uri http://localhost:5000/api/users/permissions `
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/users/permissions `
     -Method GET `
     -Headers $headers
 ```
@@ -438,7 +438,7 @@ Invoke-RestMethod -Uri http://localhost:5000/api/users/permissions `
 
 #### الطلب
 ```powershell
-Invoke-RestMethod -Uri http://localhost:5000/api/users `
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/users `
     -Method GET `
     -Headers $headers
 ```
@@ -483,7 +483,7 @@ $body = @{
     permission_ids = @(2, 4)  # PRINTING, REPORTING
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri http://localhost:5000/api/users `
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/users `
     -Method POST `
     -Headers $headers `
     -ContentType "application/json" `
@@ -545,7 +545,7 @@ $body = @{
     permission_ids = @(2, 4, 5)
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:5000/api/users/$userId" `
+Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/users/$userId" `
     -Method PUT `
     -Headers $headers `
     -ContentType "application/json" `
@@ -561,7 +561,7 @@ Invoke-RestMethod -Uri "http://localhost:5000/api/users/$userId" `
 #### الطلب
 ```powershell
 $userId = 3
-Invoke-RestMethod -Uri "http://localhost:5000/api/users/$userId" `
+Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/users/$userId" `
     -Method DELETE `
     -Headers $headers
 ```
@@ -589,7 +589,7 @@ Invoke-RestMethod -Uri "http://localhost:5000/api/users/$userId" `
 
 #### الطلب
 ```powershell
-Invoke-RestMethod -Uri http://localhost:5000/api/inventory `
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/inventory `
     -Method GET `
     -Headers $headers
 ```
@@ -637,7 +637,7 @@ $body = @{
     notes = "شحنة جديدة من المورد"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri http://localhost:5000/api/inventory/add `
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/inventory/add `
     -Method POST `
     -Headers $headers `
     -ContentType "application/json" `
@@ -698,12 +698,12 @@ Invoke-RestMethod -Uri http://localhost:5000/api/inventory/add `
 #### الطلب
 ```powershell
 # كل الحركات
-Invoke-RestMethod -Uri "http://localhost:5000/api/inventory/transactions/history" `
+Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/inventory/transactions/history" `
     -Method GET `
     -Headers $headers
 
 # فلترة حسب النوع
-Invoke-RestMethod -Uri "http://localhost:5000/api/inventory/transactions/history?stock_type=1&limit=50" `
+Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/inventory/transactions/history?stock_type=1&limit=50" `
     -Method GET `
     -Headers $headers
 ```
@@ -754,7 +754,7 @@ $body = @{
     account_number = "1234567890"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri http://localhost:5000/api/accounts/query `
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/accounts/query `
     -Method POST `
     -Headers $headers `
     -ContentType "application/json" `
@@ -807,7 +807,7 @@ Invoke-RestMethod -Uri http://localhost:5000/api/accounts/query `
 
 #### الطلب
 ```powershell
-Invoke-RestMethod -Uri http://localhost:5000/api/accounts `
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/accounts `
     -Method GET `
     -Headers $headers
 ```
@@ -850,7 +850,7 @@ $body = @{
     account_number = "1234567890"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri http://localhost:5000/api/printing/print `
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/printing/print `
     -Method POST `
     -Headers $headers `
     -ContentType "application/json" `
@@ -958,12 +958,12 @@ Invoke-RestMethod -Uri http://localhost:5000/api/printing/print `
 #### الطلب
 ```powershell
 # كل العمليات
-Invoke-RestMethod -Uri "http://localhost:5000/api/printing/history" `
+Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/printing/history" `
     -Method GET `
     -Headers $headers
 
 # فلترة حسب الفرع
-Invoke-RestMethod -Uri "http://localhost:5000/api/printing/history?branch_id=1&limit=50" `
+Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/printing/history?branch_id=1&limit=50" `
     -Method GET `
     -Headers $headers
 ```
@@ -1004,12 +1004,12 @@ Invoke-RestMethod -Uri "http://localhost:5000/api/printing/history?branch_id=1&l
 #### الطلب
 ```powershell
 # كل الفروع
-Invoke-RestMethod -Uri "http://localhost:5000/api/printing/statistics" `
+Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/printing/statistics" `
     -Method GET `
     -Headers $headers
 
 # فرع محدد
-Invoke-RestMethod -Uri "http://localhost:5000/api/printing/statistics?branch_id=1" `
+Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/printing/statistics?branch_id=1" `
     -Method GET `
     -Headers $headers
 ```
@@ -1040,7 +1040,7 @@ $loginBody = @{
     password = "demo123"
 } | ConvertTo-Json
 
-$response = Invoke-RestMethod -Uri http://localhost:5000/api/auth/login `
+$response = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/auth/login `
     -Method POST `
     -ContentType "application/json" `
     -Body $loginBody
@@ -1049,7 +1049,7 @@ $token = $response.token
 $headers = @{ Authorization = "Bearer $token" }
 
 # 2. تحقق من المخزون
-$inventory = Invoke-RestMethod -Uri http://localhost:5000/api/inventory `
+$inventory = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/inventory `
     -Method GET `
     -Headers $headers
 
@@ -1061,7 +1061,7 @@ $queryBody = @{
     account_number = "1234567890"
 } | ConvertTo-Json
 
-$account = Invoke-RestMethod -Uri http://localhost:5000/api/accounts/query `
+$account = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/accounts/query `
     -Method POST `
     -Headers $headers `
     -ContentType "application/json" `
@@ -1076,7 +1076,7 @@ $printBody = @{
     account_number = "1234567890"
 } | ConvertTo-Json
 
-$printResult = Invoke-RestMethod -Uri http://localhost:5000/api/printing/print `
+$printResult = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/printing/print `
     -Method POST `
     -Headers $headers `
     -ContentType "application/json" `
@@ -1086,14 +1086,14 @@ Write-Host $printResult.message
 Write-Host "Printed from $($printResult.operation.serial_from) to $($printResult.operation.serial_to)"
 
 # 5. تحقق من سجل الطباعة
-$history = Invoke-RestMethod -Uri "http://localhost:5000/api/printing/history?limit=5" `
+$history = Invoke-RestMethod -Uri "http://10.250.100.40:5000/api/printing/history?limit=5" `
     -Method GET `
     -Headers $headers
 
 Write-Host "Total Operations: $($history.Length)"
 
 # 6. تحقق من المخزون بعد الطباعة
-$inventoryAfter = Invoke-RestMethod -Uri http://localhost:5000/api/inventory `
+$inventoryAfter = Invoke-RestMethod -Uri http://10.250.100.40:5000/api/inventory `
     -Method GET `
     -Headers $headers
 
@@ -1108,7 +1108,7 @@ Write-Host "Individual Stock After: $($inventoryAfter[0].quantity)"
 
 #### ❌ بدون Token
 ```powershell
-Invoke-RestMethod -Uri http://localhost:5000/api/branches -Method GET
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/branches -Method GET
 # Status: 401 Unauthorized
 # Error: "No token provided"
 ```
@@ -1116,7 +1116,7 @@ Invoke-RestMethod -Uri http://localhost:5000/api/branches -Method GET
 #### ❌ Token منتهي
 ```powershell
 $headers = @{ Authorization = "Bearer expired_token_here" }
-Invoke-RestMethod -Uri http://localhost:5000/api/branches -Method GET -Headers $headers
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/branches -Method GET -Headers $headers
 # Status: 401 Unauthorized
 # Error: "Invalid or expired token"
 ```
@@ -1125,7 +1125,7 @@ Invoke-RestMethod -Uri http://localhost:5000/api/branches -Method GET -Headers $
 ```powershell
 # تسجيل دخول بـ demo_user (ليس admin)
 # محاولة إنشاء فرع
-Invoke-RestMethod -Uri http://localhost:5000/api/branches -Method POST -Headers $headers ...
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/branches -Method POST -Headers $headers ...
 # Status: 403 Forbidden
 # Error: "Admin access required"
 ```
@@ -1134,7 +1134,7 @@ Invoke-RestMethod -Uri http://localhost:5000/api/branches -Method POST -Headers 
 ```powershell
 # مستخدم بدون PRINTING permission
 # محاولة طباعة
-Invoke-RestMethod -Uri http://localhost:5000/api/printing/print -Method POST -Headers $headers ...
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/printing/print -Method POST -Headers $headers ...
 # Status: 403 Forbidden
 # Error: "You do not have permission to perform this action"
 # required_permission: "PRINTING"

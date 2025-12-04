@@ -149,7 +149,7 @@ cd client
 npm run dev
 ```
 
-ثم افتح: `http://localhost:5000/dashboard`
+ثم افتح: `http://10.250.100.40:5000/dashboard`
 
 ---
 

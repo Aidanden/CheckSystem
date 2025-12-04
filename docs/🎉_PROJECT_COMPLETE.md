@@ -70,7 +70,7 @@ npm run prisma:migrate  # اكتب: init
 npm run db:seed
 npm run dev
 ```
-✅ **Backend: http://localhost:5000**
+✅ **Backend: http://10.250.100.40:5000**
 
 ### 3️⃣ Frontend
 ```powershell
@@ -78,7 +78,7 @@ cd client
 npm install
 npm run dev
 ```
-✅ **Frontend: http://localhost:5000**
+✅ **Frontend: http://10.250.100.40:5000**
 
 ### 4️⃣ Login
 ```
@@ -259,7 +259,7 @@ Terminal 2: cd client && npm run dev
 ```powershell
 cd server
 npm run prisma:studio
-# يفتح على: http://localhost:5000:5555
+# يفتح على: http://10.250.100.40:5000:5555
 ```
 
 ### 3. Redux DevTools
