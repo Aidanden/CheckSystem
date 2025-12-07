@@ -13,12 +13,12 @@ dotenv.config();
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
-const HOST = process.env.HOST || 'localhost';
+const HOST = process.env.HOST || '10.250.100.40';
 
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3040',
+  origin: process.env.CLIENT_URL || 'http://10.250.100.40:3040',
   credentials: true,
 }));
 // Use secure logging configuration

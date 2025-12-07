@@ -10,11 +10,11 @@ cp .env.example .env
 
 **عدّل `.env`:**
 ```env
-DATABASE_URL="postgresql://postgres:your_password@localhost:5432/checksystem"
+DATABASE_URL="postgresql://postgres:your_password@10.250.100.40:5432/checksystem"
 JWT_SECRET=your_very_secure_secret_key_here
 PORT=5000
-HOST=localhost
-CLIENT_URL=http://localhost:5000
+HOST=10.250.100.40
+CLIENT_URL=http://10.250.100.40:5000
 ```
 
 ### 2️⃣ Frontend Setup
@@ -25,7 +25,7 @@ cp .env.local.example .env.local
 
 **عدّل `.env.local`:**
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
 ```
 
 ### 3️⃣ تشغيل المشروع
@@ -44,16 +44,16 @@ cd client && npm run dev
 ### Backend (`.env`):
 | المتغير | مثال | ملاحظة |
 |---------|------|--------|
-| `DATABASE_URL` | `postgresql://user:pass@localhost:5432/db` | **مطلوب** |
+| `DATABASE_URL` | `postgresql://user:pass@10.250.100.40:5432/db` | **مطلوب** |
 | `JWT_SECRET` | `my_secret_key_2024` | **مطلوب** - استخدم قيمة قوية |
-| `CLIENT_URL` | `http://localhost:5000` | **مطلوب** - للـ CORS |
-| `HOST` | `localhost` | اختياري (افتراضي: localhost) |
+| `CLIENT_URL` | `http://10.250.100.40:5000` | **مطلوب** - للـ CORS |
+| `HOST` | `10.250.100.40` | اختياري (افتراضي: 10.250.100.40) |
 | `PORT` | `5000` | اختياري (افتراضي: 5000) |
 
 ### Frontend (`.env.local`):
 | المتغير | مثال | ملاحظة |
 |---------|------|--------|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:5000/api` | **مطلوب** |
+| `NEXT_PUBLIC_API_URL` | `http://10.250.100.40:5000/api` | **مطلوب** |
 
 ---
 
@@ -61,12 +61,12 @@ cd client && npm run dev
 
 ### Backend يعمل؟
 ```bash
-curl http://localhost:5000/api/health
+curl http://10.250.100.40:5000/api/health
 # يجب أن ترى: {"status":"ok"}
 ```
 
 ### Frontend يتصل بـ Backend؟
-افتح: http://localhost:5000
+افتح: http://10.250.100.40:5000
 سجل الدخول: `admin` / `Admin@123`
 
 ---
@@ -76,25 +76,25 @@ curl http://localhost:5000/api/health
 ### للتطوير المحلي:
 **Backend:**
 ```env
-HOST=localhost
-CLIENT_URL=http://localhost:5000
+HOST=10.250.100.40
+CLIENT_URL=http://10.250.100.40:5000
 ```
 
 **Frontend:**
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
 ```
 
 ### للشبكة المحلية (LAN):
 **Backend:**
 ```env
-HOST=localhost
-CLIENT_URL=http://localhost:5000:3000
+HOST=10.250.100.40
+CLIENT_URL=http://10.250.100.40:5000:3000
 ```
 
 **Frontend:**
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
 ```
 
 ---

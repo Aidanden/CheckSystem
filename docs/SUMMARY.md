@@ -123,7 +123,7 @@ CheckSystem/
 psql -U postgres -c "CREATE DATABASE check_printing_system;"
 
 # تحديث .env في مجلد server
-# DATABASE_URL="postgresql://postgres:password@localhost:5432/check_printing_system"
+# DATABASE_URL="postgresql://postgres:password@10.250.100.40:5432/check_printing_system"
 ```
 
 ### الخطوة 2: تشغيل الخادم
@@ -134,7 +134,7 @@ npm run prisma:migrate
 npm run db:seed
 npm run dev
 ```
-الخادم سيعمل على: `http://localhost:5000`
+الخادم سيعمل على: `http://10.250.100.40:5000`
 
 ### الخطوة 3: تشغيل العميل
 ```bash
@@ -142,7 +142,7 @@ cd client
 npm install
 npm run dev
 ```
-العميل سيعمل على: `http://localhost:5000`
+العميل سيعمل على: `http://10.250.100.40:5000`
 
 ### الخطوة 4: تسجيل الدخول
 ```

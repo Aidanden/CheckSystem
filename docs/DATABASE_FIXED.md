@@ -39,7 +39,7 @@ The table `public.print_settings` does not exist in the current database.
 ### جرب صفحة الإعدادات:
 
 ```
-http://localhost:5000/settings
+http://10.250.100.40:5000/settings
 ```
 
 **يجب أن تعمل الآن بدون أي أخطاء! ✅**
@@ -58,7 +58,7 @@ http://localhost:5000/settings
 
 ## اختبر الآن:
 
-1. افتح `http://localhost:5000/settings`
+1. افتح `http://10.250.100.40:5000/settings`
 2. اختر تبويب "شيكات الأفراد"
 3. شاهد الإعدادات الافتراضية المحملة
 4. عدّل أي قيمة

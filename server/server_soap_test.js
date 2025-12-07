@@ -314,9 +314,9 @@ app.listen(PORT, () => {
    console.log('═══════════════════════════════════════════════════════════════');
    console.log('🚀 خادم SOAP التجريبي يعمل على المنفذ:', PORT);
    console.log('═══════════════════════════════════════════════════════════════');
-   console.log('📍 CheckBook Endpoint: http://localhost:' + PORT + '/FCUBSAccService');
-   console.log('📍 CustomerName Endpoint: http://localhost:' + PORT + '/FCUBSIAService');
-   console.log('🏥 Health Check: http://localhost:' + PORT + '/health');
+   console.log('📍 CheckBook Endpoint: http://10.250.100.40:' + PORT + '/FCUBSAccService');
+   console.log('📍 CustomerName Endpoint: http://10.250.100.40:' + PORT + '/FCUBSIAService');
+   console.log('🏥 Health Check: http://10.250.100.40:' + PORT + '/health');
    console.log('\n📝 العمليات المدعومة:');
    console.log('1. QueryCheckBook (للحصول على بيانات الشيكات)');
    console.log('2. QueryIACustAcc (للحصول على اسم العميل)');

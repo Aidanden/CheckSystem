@@ -11,9 +11,9 @@
   - `QueryIACustAcc` - للحصول على اسم العميل
 
 #### Endpoints الاختبار:
-- **بيانات الشيكات:** `http://localhost:8080/FCUBSAccService`
-- **اسم العميل:** `http://localhost:8080/FCUBSIAService`
-- **Health Check:** `http://localhost:8080/health`
+- **بيانات الشيكات:** `http://10.250.100.40:8080/FCUBSAccService`
+- **اسم العميل:** `http://10.250.100.40:8080/FCUBSIAService`
+- **Health Check:** `http://10.250.100.40:8080/health`
 
 #### الحسابات التجريبية:
 
@@ -38,8 +38,8 @@ npm run soap:test
 #### إعدادات .env المطلوبة:
 ```env
 # للاختبار المحلي
-BANK_API_URL=http://localhost:8080/FCUBSAccService
-BANK_IA_API_URL=http://localhost:8080/FCUBSIAService
+BANK_API_URL=http://10.250.100.40:8080/FCUBSAccService
+BANK_IA_API_URL=http://10.250.100.40:8080/FCUBSIAService
 ```
 
 ---

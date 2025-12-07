@@ -135,7 +135,7 @@ npm install
 
 # إنشاء ملف .env (إذا لم يكن موجوداً)
 # يجب أن يحتوي على:
-DATABASE_URL="postgresql://postgres:your_password@localhost:5432/check_printing_system"
+DATABASE_URL="postgresql://postgres:your_password@10.250.100.40:5432/check_printing_system"
 JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
 PORT=5000
 
@@ -150,7 +150,7 @@ npm run db:seed
 npm run dev
 ```
 
-✅ Backend running on: `http://localhost:5000`
+✅ Backend running on: `http://10.250.100.40:5000`
 
 ### 4. Setup Frontend
 
@@ -165,7 +165,7 @@ npm install
 npm run dev
 ```
 
-✅ Frontend running on: `http://localhost:5000`
+✅ Frontend running on: `http://10.250.100.40:5000`
 
 ### 5. Login Credentials
 
@@ -363,7 +363,7 @@ cd server
 
 # Example: Login test
 $body = @{username="admin"; password="[REDACTED]"} | ConvertTo-Json
-Invoke-RestMethod -Uri http://localhost:5000/api/auth/login -Method POST -ContentType "application/json" -Body $body
+Invoke-RestMethod -Uri http://10.250.100.40:5000/api/auth/login -Method POST -ContentType "application/json" -Body $body
 ```
 
 ### Frontend Testing
