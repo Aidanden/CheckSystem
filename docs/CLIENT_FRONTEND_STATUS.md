@@ -155,7 +155,7 @@ npm run dev
 ### 4. فتح المتصفح
 
 ```
-http://10.250.100.40:5000
+http://localhost:5000
 ```
 
 ---
@@ -267,11 +267,11 @@ npm run dev
 
 ```powershell
 # Health check
-Invoke-RestMethod http://10.250.100.40:5000/api/health
+Invoke-RestMethod http://localhost:5000/api/health
 
 # Login
 $body = @{username="admin"; password="[REDACTED]"} | ConvertTo-Json
-Invoke-RestMethod -Uri http://10.250.100.40:5000/api/auth/login -Method POST -ContentType "application/json" -Body $body
+Invoke-RestMethod -Uri http://localhost:5000/api/auth/login -Method POST -ContentType "application/json" -Body $body
 ```
 
 ### Frontend Ready:

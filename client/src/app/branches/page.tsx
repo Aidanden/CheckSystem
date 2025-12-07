@@ -27,17 +27,14 @@ export default function BranchesPage() {
     accounting_number: '',
   });
 
+  // Handle permissions and data loading
   useEffect(() => {
-    if (!currentUser?.isAdmin) {
+    if (!currentUser) return;
+
+    if (!currentUser.isAdmin) {
       alert('ليس لديك صلاحية الوصول لهذه الصفحة');
       window.location.href = '/dashboard';
       return;
-    }
-
-    // التحقق من حالة فتح القفل المحفوظة في الجلسة
-    const savedUnlockState = sessionStorage.getItem('branches_unlocked');
-    if (savedUnlockState === 'true') {
-      setIsUnlocked(true);
     }
 
     if (isUnlocked) {
@@ -49,7 +46,6 @@ export default function BranchesPage() {
     e.preventDefault();
     if (password === SECURITY_CONFIG.BRANCHES_PAGE_PASSWORD) {
       setIsUnlocked(true);
-      sessionStorage.setItem('branches_unlocked', 'true');
       setPasswordError('');
       setPassword('');
     } else {
@@ -217,7 +213,6 @@ export default function BranchesPage() {
 
   const handleLock = () => {
     setIsUnlocked(false);
-    sessionStorage.removeItem('branches_unlocked');
   };
 
   return (

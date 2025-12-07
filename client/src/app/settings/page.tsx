@@ -186,7 +186,7 @@ export default function SettingsPage() {
 
       if (!token) return;
 
-      const response = await fetch(`http://10.250.100.40:5000/api/print-settings/${activeTab}`, {
+      const response = await fetch(`http://localhost:5000/api/print-settings/${activeTab}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -239,7 +239,7 @@ export default function SettingsPage() {
         return;
       }
 
-      const response = await fetch('http://10.250.100.40:5000/api/print-settings', {
+      const response = await fetch('http://localhost:5000/api/print-settings', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -391,7 +391,7 @@ export default function SettingsPage() {
             value={soapApiEndpoint}
             onChange={(e) => setSoapApiEndpoint(e.target.value)}
             disabled={soapApiLoading || soapApiSaving}
-            placeholder="http://10.250.100.40:5000:8080/FCUBSAccService"
+            placeholder="http://localhost:5000:8080/FCUBSAccService"
           />
 
           <div className="flex flex-wrap gap-3">
@@ -520,7 +520,7 @@ export default function SettingsPage() {
                 : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
-              شيكات موظفي المصرف (10 ورقات)
+              شيكات موظفين (10 ورقة)
             </button>
           </div>
         </div>

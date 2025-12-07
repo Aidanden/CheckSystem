@@ -74,7 +74,7 @@
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 🌐 SOAP Endpoint:  http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService
-🏥 Health Check:   http://10.250.100.40:5000:8080/health
+🏥 Health Check:   http://localhost:5000:8080/health
 📊 Method:         POST
 📄 Content-Type:   text/xml; charset=utf-8
 

@@ -24,7 +24,7 @@ npm run soap:test
 الخادم سيعمل على: `http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService`
 
 ### الخطوة 2: اختيار وضع SOAP
-1. افتح التطبيق: `http://10.250.100.40:5000`
+1. افتح التطبيق: `http://localhost:5000`
 2. اذهب إلى **الإعدادات** → **مصدر بيانات الطباعة**
 3. اختر **"طباعة عبر FCUBS SOAP API"** ⚡
 

@@ -116,7 +116,11 @@ export interface PrintCheckbookResponse {
 export interface PrintStatistics {
   total_operations: string;
   total_sheets_printed: string;
-  unique_accounts: string;
+  corporate_50: string;
+  individual_25: string;
+  employees_10: string;
+  reprint_operations: string;
+  reprint_sheets: string;
   first_print_date?: string;
   last_print_date?: string;
 }

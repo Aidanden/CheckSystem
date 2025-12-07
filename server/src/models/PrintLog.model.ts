@@ -176,4 +176,30 @@ export class PrintLogModel {
       },
     });
   }
+  static async getReprintStatistics(branchId?: number): Promise<{ operations: number, sheets: number }> {
+    const where: any = {
+      operationType: 'reprint'
+    };
+
+    if (branchId) {
+      where.user = {
+        branchId: branchId
+      };
+    }
+
+    const stats = await prisma.printLog.aggregate({
+      where,
+      _count: {
+        id: true,
+      },
+      _sum: {
+        totalCheques: true,
+      },
+    });
+
+    return {
+      operations: stats._count.id || 0,
+      sheets: stats._sum.totalCheques || 0
+    };
+  }
 }

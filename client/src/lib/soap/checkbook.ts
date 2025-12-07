@@ -11,10 +11,10 @@ const buildMicrLine = (serial: string, accountNumber: string, routingNumber: str
   // The backend should provide the full routing number.
   const routing = routingNumber;
 
-  // Order: Serial (Left) -> Routing -> Account -> Type (Right)
-  // This matches user request: "اخر شيء علي اليسار رقم التسلسل" (Serial is last on left)
-  // "من اليمين ... نوع الدفتر" (Type is first on right)
-  return `${typeCode}  '${accountNumber}'  '${routing}'  "${serial}"`;
+  // Format: Serial(Left)  Routing(Center)  Account Type(Right)
+  // User request: Start from right: Type -> Account -> Routing -> Serial
+  // This corresponds to standard MICR LTR layout: [Serial] [Routing] [Account] [Type]
+  return `C${serial}C A${routingNumber}A ${accountNumber}C ${typeCode}`;
 };
 
 const getTextContent = (root: ParentNode | null, tagName: string): string => {

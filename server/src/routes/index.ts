@@ -9,6 +9,7 @@ import printSettingsRoutes from './printSettings.routes';
 import systemSettingsRoutes from './systemSettings.routes';
 import soapRoutes from './soap.routes';
 import printLogRoutes from './printLog.routes';
+import certifiedCheckRoutes from './certifiedCheck.routes';
 
 const router = Router();
 
@@ -28,6 +29,7 @@ router.use('/print-settings', printSettingsRoutes);
 router.use('/system-settings', systemSettingsRoutes);
 router.use('/soap', soapRoutes);
 router.use('/print-logs', printLogRoutes);
+router.use('/certified-checks', certifiedCheckRoutes);
 
 export default router;
 

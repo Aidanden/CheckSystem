@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { inventoryService, printingService } from '@/lib/api';
-import { Inventory, PrintStatistics, PrintOperation } from '@/types';
-import { Package, FileText, TrendingUp, Clock } from 'lucide-react';
+import { printingService } from '@/lib/api';
+import { PrintStatistics, PrintOperation } from '@/types';
+import { FileText, TrendingUp, Clock } from 'lucide-react';
 import { formatDateShort, formatNumber } from '@/utils/locale';
 
 export default function DashboardPage() {
-  const [inventory, setInventory] = useState<Inventory[]>([]);
   const [statistics, setStatistics] = useState<PrintStatistics | null>(null);
   const [recentOperations, setRecentOperations] = useState<PrintOperation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,19 +17,29 @@ export default function DashboardPage() {
   }, []);
 
   const loadDashboardData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const [inv, stats, ops] = await Promise.all([
-        inventoryService.getAll(),
+      // Load data in parallel but handle failures independently
+      const [statsResult, opsResult] = await Promise.allSettled([
         printingService.getStatistics(),
-        printingService.getHistory(undefined, 5),
+        printingService.getHistory({ limit: 5 }),
       ]);
 
-      setInventory(inv);
-      setStatistics(stats);
-      setRecentOperations(ops);
+      // Process Statistics Result
+      if (statsResult.status === 'fulfilled') {
+        setStatistics(statsResult.value);
+      } else {
+        console.error('Failed to load statistics:', statsResult.reason);
+      }
+
+      // Process Recent Operations Result
+      if (opsResult.status === 'fulfilled') {
+        setRecentOperations(opsResult.value);
+      } else {
+        console.error('Failed to load recent operations:', opsResult.reason);
+      }
     } catch (error) {
-      console.error('Failed to load dashboard data:', error);
+      console.error('Unexpected error loading dashboard data:', error);
     } finally {
       setLoading(false);
     }
@@ -57,7 +66,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <div className="bg-white rounded-2xl shadow-lg p-6 border-r-4 border-primary-500 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <div>
@@ -89,9 +98,9 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl shadow-lg p-6 border-r-4 border-blue-500 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-2">حسابات فريدة</p>
+                <p className="text-sm text-gray-600 mb-2">شركات (50)</p>
                 <p className="text-3xl font-bold text-gray-800">
-                  {statistics?.unique_accounts || 0}
+                  {statistics?.corporate_50 || 0}
                 </p>
               </div>
               <div className="bg-blue-50 p-4 rounded-xl">
@@ -103,53 +112,29 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl shadow-lg p-6 border-r-4 border-amber-500 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-2">مخزون أفراد</p>
+                <p className="text-sm text-gray-600 mb-2">أفراد (25)</p>
                 <p className="text-3xl font-bold text-gray-800">
-                  {inventory.find((i) => i.stockType === 1)?.quantity || 0}
+                  {statistics?.individual_25 || 0}
                 </p>
               </div>
               <div className="bg-amber-50 p-4 rounded-xl">
-                <Package className="w-8 h-8 text-amber-600" />
+                <FileText className="w-8 h-8 text-amber-600" />
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Inventory Status */}
-        <div className="card">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-primary-100 p-3 rounded-xl">
-              <Package className="w-6 h-6 text-primary-600" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-800">حالة المخزون</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {inventory.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-5 bg-gray-50 rounded-xl border-2 border-gray-200 hover:border-primary-400 hover:shadow-md transition-all"
-              >
-                <div>
-                  <p className="font-bold text-gray-800 text-lg mb-1">
-                    {item.stockType === 1 ? 'شيكات أفراد' : 'شيكات شركات'}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    الكمية: <span className="font-bold text-primary-600 text-base">{item.quantity}</span> ورقة
-                  </p>
-                </div>
-                <div
-                  className={`px-4 py-2 rounded-lg text-sm font-bold ${
-                    item.quantity > 100
-                      ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-200'
-                      : item.quantity > 50
-                      ? 'bg-amber-100 text-amber-700 border-2 border-amber-200'
-                      : 'bg-red-100 text-red-700 border-2 border-red-200'
-                  }`}
-                >
-                  {item.quantity > 100 ? '✓ جيد' : item.quantity > 50 ? '⚠ متوسط' : '✗ منخفض'}
-                </div>
+          <div className="bg-white rounded-2xl shadow-lg p-6 border-r-4 border-purple-500 hover:shadow-xl transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">موظفين (10)</p>
+                <p className="text-3xl font-bold text-gray-800">
+                  {statistics?.employees_10 || 0}
+                </p>
               </div>
-            ))}
+              <div className="bg-purple-50 p-4 rounded-xl">
+                <FileText className="w-8 h-8 text-purple-600" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -188,11 +173,10 @@ export default function DashboardPage() {
                     <tr key={op.id} className="border-b border-gray-100 hover:bg-primary-50 transition-colors">
                       <td className="py-4 px-4 text-sm font-semibold text-gray-800">{op.accountNumber}</td>
                       <td className="py-4 px-4 text-sm">
-                        <span className={`px-3 py-1 rounded-lg font-semibold ${
-                          op.accountType === 1 
-                            ? 'bg-blue-100 text-blue-700' 
-                            : 'bg-purple-100 text-purple-700'
-                        }`}>
+                        <span className={`px-3 py-1 rounded-lg font-semibold ${op.accountType === 1
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-purple-100 text-purple-700'
+                          }`}>
                           {op.accountType === 1 ? 'فردي' : 'شركة'}
                         </span>
                       </td>

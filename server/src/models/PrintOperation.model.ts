@@ -88,8 +88,8 @@ export class PrintOperationModel {
   }
 
   static async getStatistics(branchId?: number): Promise<any> {
-    const where: Prisma.PrintOperationWhereInput = branchId !== undefined 
-      ? { branchId } 
+    const where: Prisma.PrintOperationWhereInput = branchId
+      ? { branchId }
       : {};
 
     const stats = await prisma.printOperation.aggregate({
@@ -108,15 +108,33 @@ export class PrintOperationModel {
       },
     });
 
-    const uniqueAccounts = await prisma.printOperation.groupBy({
-      by: ['accountId'],
-      where,
+    const corporate50 = await prisma.printOperation.count({
+      where: {
+        ...where,
+        sheetsPrinted: 50,
+      },
+    });
+
+    const individual25 = await prisma.printOperation.count({
+      where: {
+        ...where,
+        sheetsPrinted: 25,
+      },
+    });
+
+    const employees10 = await prisma.printOperation.count({
+      where: {
+        ...where,
+        sheetsPrinted: 10,
+      },
     });
 
     return {
       total_operations: stats._count.id?.toString() || '0',
       total_sheets_printed: stats._sum.sheetsPrinted?.toString() || '0',
-      unique_accounts: uniqueAccounts.length.toString(),
+      corporate_50: corporate50.toString(),
+      individual_25: individual25.toString(),
+      employees_10: employees10.toString(),
       first_print_date: stats._min.printDate,
       last_print_date: stats._max.printDate,
     };

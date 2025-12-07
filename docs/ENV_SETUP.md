@@ -25,18 +25,18 @@ JWT_EXPIRES_IN=24h
 
 # Server Configuration
 PORT=5000
-HOST=10.250.100.40
+HOST=localhost
 
 # Client Configuration
-CLIENT_URL=http://10.250.100.40:5000
+CLIENT_URL=http://localhost:5000
 
 # Banking API Configuration (Optional)
-BANK_API_URL=http://10.250.100.40:5000:8000/api
+BANK_API_URL=http://localhost:5000:8000/api
 BANK_API_KEY=test_bank_api_key
 ```
 
 **المتغيرات المهمة:**
-- `HOST`: عنوان IP الذي سيعمل عليه السيرفر (مثل: `10.250.100.40` أو `localhost`)
+- `HOST`: عنوان IP الذي سيعمل عليه السيرفر (مثل: `localhost` أو `localhost`)
 - `PORT`: المنفذ الذي سيعمل عليه السيرفر (افتراضي: `5000`)
 - `CLIENT_URL`: عنوان تطبيق الواجهة الأمامية (للـ CORS)
 
@@ -55,12 +55,12 @@ cp .env.local.example .env.local
 
 ```env
 # API Configuration
-NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
 ```
 
 **ملاحظة مهمة:**
 - يجب أن يبدأ المتغير بـ `NEXT_PUBLIC_` ليكون متاحاً في المتصفح
-- استبدل `10.250.100.40` بعنوان IP الخاص بالسيرفر
+- استبدل `localhost` بعنوان IP الخاص بالسيرفر
 - استبدل `5000` بالمنفذ الذي يعمل عليه السيرفر
 
 ---
@@ -73,12 +73,12 @@ NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
 ```env
 HOST=localhost
 PORT=5000
-CLIENT_URL=http://10.250.100.40:5000
+CLIENT_URL=http://localhost:5000
 ```
 
 **Client (.env.local):**
 ```env
-NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
 ```
 
 ---
@@ -87,14 +87,14 @@ NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
 
 **Server (.env):**
 ```env
-HOST=10.250.100.40
+HOST=localhost
 PORT=5000
-CLIENT_URL=http://10.250.100.40:5000:3000
+CLIENT_URL=http://localhost:5000:3000
 ```
 
 **Client (.env.local):**
 ```env
-NEXT_PUBLIC_API_URL=http://10.250.100.40:5000/api
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
 ```
 
 ---
@@ -128,7 +128,7 @@ npm run dev
 ✅ Database connected successfully
 🚀 Server is running on port 5000
 📝 Environment: development
-🌐 API URL: http://10.250.100.40:5000/api
+🌐 API URL: http://localhost:5000/api
 ```
 
 ### 2. تشغيل Frontend:
@@ -137,7 +137,7 @@ cd client
 npm run dev
 ```
 
-يجب أن يعمل على `http://10.250.100.40:5000` ويتصل بالـ API بنجاح.
+يجب أن يعمل على `http://localhost:5000` ويتصل بالـ API بنجاح.
 
 ---
 
@@ -199,7 +199,7 @@ cp .env.local.example .env.local
 npm run dev
 
 # 3. افتح المتصفح
-# http://10.250.100.40:5000
+# http://localhost:5000
 ```
 
 ✨ **الآن النظام يستخدم متغيرات البيئة بشكل كامل!**

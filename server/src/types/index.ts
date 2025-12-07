@@ -8,6 +8,7 @@ export type { UserWithPermissions };
 export enum AccountType {
   INDIVIDUAL = 1,
   CORPORATE = 2,
+  EMPLOYEE = 3,
 }
 
 export enum StockType {

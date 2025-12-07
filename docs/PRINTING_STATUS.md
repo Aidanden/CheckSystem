@@ -62,7 +62,7 @@ if (!branchId) {
 
 #### الخطوة 1: تسجيل الدخول
 ```http
-POST http://10.250.100.40:5000/api/auth/login
+POST http://localhost:5000/api/auth/login
 Content-Type: application/json
 
 {
@@ -75,7 +75,7 @@ Content-Type: application/json
 
 #### الخطوة 2: طباعة شيك
 ```http
-POST http://10.250.100.40:5000/api/printing/print
+POST http://localhost:5000/api/printing/print
 Content-Type: application/json
 Authorization: Bearer YOUR_TOKEN_HERE
 
@@ -88,12 +88,12 @@ Authorization: Bearer YOUR_TOKEN_HERE
 
 ```bash
 # Login
-curl -X POST http://10.250.100.40:5000/api/auth/login \
+curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -d "{\"username\":\"admin\",\"password\":\"[REDACTED]\"}"
 
 # Print (استبدل YOUR_TOKEN بالـ token)
-curl -X POST http://10.250.100.40:5000/api/printing/print \
+curl -X POST http://localhost:5000/api/printing/print \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d "{\"account_number\":\"100012345678901\"}"
@@ -166,7 +166,7 @@ curl -X POST http://10.250.100.40:5000/api/printing/print \
 
 ## 📝 ملاحظات
 
-- السيرفر يجب أن يكون مُشغّلاً على `http://10.250.100.40:5000`
+- السيرفر يجب أن يكون مُشغّلاً على `http://localhost:5000`
 - قاعدة البيانات يجب أن تكون متصلة
 - المخزون يجب أن يكون متوفراً
 

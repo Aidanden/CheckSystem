@@ -69,15 +69,7 @@ const MICR_TRANSIT = '⑆';
 const MICR_ON_US = '⑈';
 
 const reorderMicrLine = (value: string) => {
-  // Parse the MICR line which now comes as: type routing account serial
-  const parts = value.trim().split(/\s+/);
-  if (parts && parts.length >= 4) {
-    const [type, routing, account, serial] = parts;
-
-    // Format: Type Routing Account Serial (right to left)
-    // With MICR delimiters for proper formatting
-    return `${type} ${MICR_TRANSIT}${routing}${MICR_TRANSIT} ${MICR_ON_US}${account}${MICR_ON_US} ${MICR_ON_US}${serial}${MICR_ON_US}`;
-  }
+  // Return the MICR line as-is, trusting the generator to format it correctly.
   return value;
 };
 
@@ -259,8 +251,9 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
     .micr-line {
       font-family: 'MICR', 'MICR E-13B', 'Courier New', monospace;
       letter-spacing: 0.15em;
-      direction: rtl;
+      direction: ltr;
       white-space: nowrap;
+      font-weight: bold;
     }
 
     @media print {

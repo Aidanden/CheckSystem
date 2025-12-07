@@ -32,17 +32,15 @@ router.post(
   PrintingController.printCheckbook
 );
 
-// Get print history (requires REPORTING permission)
+// Get print history
 router.get(
   '/history',
-  requirePermission(PermissionCode.REPORTING),
   PrintingController.getPrintHistory
 );
 
-// Get statistics (requires REPORTING permission)
+// Get statistics
 router.get(
   '/statistics',
-  requirePermission(PermissionCode.REPORTING),
   PrintingController.getStatistics
 );
 

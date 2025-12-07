@@ -13,7 +13,7 @@
 
 ### المسار:
 ```
-http://10.250.100.40:5000/history
+http://localhost:5000/history
 ```
 
 ### الميزات:
@@ -209,7 +209,7 @@ if (customSerialFrom !== undefined && customSerialTo !== undefined) {
 
 1. **افتح المتصفح:**
    ```
-   http://10.250.100.40:5000/history
+   http://localhost:5000/history
    ```
 
 2. **اطبع بعض الشيكات أولاً:**
@@ -230,7 +230,7 @@ if (customSerialFrom !== undefined && customSerialTo !== undefined) {
 ### من API مباشرة:
 
 ```http
-POST http://10.250.100.40:5000/api/printing/print
+POST http://localhost:5000/api/printing/print
 Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
@@ -267,5 +267,5 @@ Content-Type: application/json
 - ✅ اختيار النطاق الذي تريده
 - ✅ طباعة من 1 شيك إلى 25/50 شيك حسب الحاجة
 
-**جرب الآن من:** `http://10.250.100.40:5000/history` 🚀
+**جرب الآن من:** `http://localhost:5000/history` 🚀
 

@@ -2,7 +2,7 @@
 
 ## Base URL
 ```
-http://10.250.100.40:5000/api
+http://localhost:5000/api
 ```
 
 ## Authentication
@@ -601,14 +601,14 @@ Authorization: Bearer <token>
 
 1. **Login**
 ```bash
-curl -X POST http://10.250.100.40:5000/api/auth/login \
+curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "demo_user", "password": "demo123"}'
 ```
 
 2. **Query Account**
 ```bash
-curl -X POST http://10.250.100.40:5000/api/accounts/query \
+curl -X POST http://localhost:5000/api/accounts/query \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{"account_number": "1234567890"}'
@@ -616,7 +616,7 @@ curl -X POST http://10.250.100.40:5000/api/accounts/query \
 
 3. **Print Checkbook**
 ```bash
-curl -X POST http://10.250.100.40:5000/api/printing/print \
+curl -X POST http://localhost:5000/api/printing/print \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{"account_number": "1234567890"}'
@@ -624,7 +624,7 @@ curl -X POST http://10.250.100.40:5000/api/printing/print \
 
 4. **Get Print History**
 ```bash
-curl http://10.250.100.40:5000/api/printing/history \
+curl http://localhost:5000/api/printing/history \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

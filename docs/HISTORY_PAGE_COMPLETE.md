@@ -13,7 +13,7 @@
 
 ### من واجهة المستخدم:
 ```
-http://10.250.100.40:5000/history
+http://localhost:5000/history
 ```
 
 أو من القائمة الجانبية: **"📋 سجل العمليات"**
@@ -189,7 +189,7 @@ cd client
 npm run dev
 
 # 2. افتح المتصفح
-http://10.250.100.40:5000/history
+http://localhost:5000/history
 
 # 3. سجل الدخول:
 Username: admin
@@ -204,7 +204,7 @@ Password: [REDACTED]
 
 #### طباعة عادية:
 ```http
-POST http://10.250.100.40:5000/api/printing/print
+POST http://localhost:5000/api/printing/print
 Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
@@ -215,7 +215,7 @@ Content-Type: application/json
 
 #### إعادة طباعة بنطاق مخصص:
 ```http
-POST http://10.250.100.40:5000/api/printing/print
+POST http://localhost:5000/api/printing/print
 Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
@@ -228,7 +228,7 @@ Content-Type: application/json
 
 #### جلب السجل:
 ```http
-GET http://10.250.100.40:5000/api/printing/history
+GET http://localhost:5000/api/printing/history
 Authorization: Bearer YOUR_TOKEN
 ```
 
@@ -277,7 +277,7 @@ Authorization: Bearer YOUR_TOKEN
 - ✅ طباعة الشيكات التالفة فقط
 - ✅ توفير الورق والحبر
 
-**جرب الآن:** `http://10.250.100.40:5000/history` 🚀
+**جرب الآن:** `http://localhost:5000/history` 🚀
 
 ---
 

@@ -2,6 +2,7 @@ import prisma from '../lib/prisma';
 import { AccountModel } from '../models/Account.model';
 import { InventoryModel } from '../models/Inventory.model';
 import { PrintOperationModel } from '../models/PrintOperation.model';
+import { PrintLogModel } from '../models/PrintLog.model';
 import { BranchModel } from '../models/Branch.model';
 import { PrintSettingsModel } from '../models/PrintSettings.model';
 import { AccountService } from './account.service';
@@ -43,11 +44,18 @@ export class PrintingService {
         }
 
         // Determine stock type and number of sheets
-        const stockType: StockType = account.accountType === AccountType.INDIVIDUAL
-          ? StockType.INDIVIDUAL
-          : StockType.CORPORATE;
+        // Individual (1) and Employee (3) checks use Individual stock
+        // Corporate (2) checks use Corporate stock
+        const stockType: StockType = account.accountType === AccountType.CORPORATE
+          ? StockType.CORPORATE
+          : StockType.INDIVIDUAL;
 
-        const sheetsPerBook = account.accountType === AccountType.INDIVIDUAL ? 25 : 50;
+        // Individual = 25 sheets, Corporate = 50 sheets, Employee = 10 sheets
+        const sheetsPerBook = account.accountType === AccountType.INDIVIDUAL
+          ? 25
+          : account.accountType === AccountType.CORPORATE
+            ? 50
+            : 10;
 
         // If account is assigned to a specific branch and doesn't match the requested branch, prevent printing
         if (account.branchId && account.branchId !== branchId) {
@@ -267,7 +275,14 @@ export class PrintingService {
   }
 
   static async getPrintStatistics(branchId?: number): Promise<any> {
-    return PrintOperationModel.getStatistics(branchId);
+    const stats = await PrintOperationModel.getStatistics(branchId);
+    const reprintStats = await PrintLogModel.getReprintStatistics(branchId);
+
+    return {
+      ...stats,
+      reprint_operations: reprintStats.operations.toString(),
+      reprint_sheets: reprintStats.sheets.toString(),
+    };
   }
 
   /**

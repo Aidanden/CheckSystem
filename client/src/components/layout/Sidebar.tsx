@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
@@ -19,6 +20,7 @@ const navigation = [
   { name: 'لوحة التحكم', href: '/dashboard', icon: Home },
   { name: 'طباعة شيك', href: '/print', icon: Printer, permission: 'SCREEN_PRINT' },
   { name: 'سجلات الطباعة', href: '/print-logs', icon: ClipboardList, permission: 'SCREEN_PRINT_LOGS' },
+  { name: 'المخزون', href: '/inventory', icon: Package, permission: 'INVENTORY_MANAGEMENT' },
   { name: 'المستخدمين', href: '/users', icon: Users, permission: 'MANAGE_USERS' },
   { name: 'الفروع', href: '/branches', icon: Building2, permission: 'MANAGE_BRANCHES' },
   { name: 'التقارير', href: '/reports', icon: FileText, permission: 'SCREEN_REPORTS' },
@@ -29,20 +31,27 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useAppSelector((state) => state.auth);
 
-  const filteredNavigation = navigation.filter((item) => {
-    // Dashboard is always visible
-    if (item.href === '/dashboard') return true;
+  const filteredNavigation = useMemo(() => {
+    if (!user) return [];
 
-    // Admin sees everything
-    if (user?.isAdmin) return true;
+    return navigation.filter((item) => {
+      // Dashboard is always visible
+      if (item.href === '/dashboard') return true;
 
-    // Check permissions for other users
-    if (item.permission) {
-      return user?.permissions?.some(p => p.permissionCode === item.permission);
-    }
+      // Admin sees everything
+      if (user.isAdmin) return true;
 
-    return true;
-  });
+      // Check permissions for other users
+      if (item.permission) {
+        // Safe check for permissions array
+        const userPermissions = user.permissions || [];
+        return userPermissions.some(p => p.permissionCode === item.permission);
+      }
+
+      // If no permission requirement, show it
+      return true;
+    });
+  }, [user]);
 
   return (
     <div className="fixed right-0 top-0 bottom-0 w-72 bg-gradient-to-b from-white to-secondary-50 border-l border-gray-200 shadow-xl">

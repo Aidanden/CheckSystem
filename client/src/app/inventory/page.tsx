@@ -42,7 +42,7 @@ export default function InventoryPage() {
 
   const handleAddStock = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       await inventoryService.addStock(addForm);
       setShowAddModal(false);
@@ -89,11 +89,11 @@ export default function InventoryPage() {
             <div key={item.id} className="card">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">
-                  {item.stockType === 1 ? 'شيكات أفراد' : 'شيكات شركات'}
+                  {item.stockType === 1 ? 'شيكات أفراد وموظفين' : 'شيكات شركات'}
                 </h3>
                 <Package className="w-8 h-8 text-blue-500" />
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">الكمية المتاحة:</span>
@@ -101,21 +101,20 @@ export default function InventoryPage() {
                     {item.quantity}
                   </span>
                 </div>
-                
+
                 <div
-                  className={`mt-4 px-4 py-2 rounded-lg text-center font-medium ${
-                    item.quantity > 100
-                      ? 'bg-green-100 text-green-700'
-                      : item.quantity > 50
+                  className={`mt-4 px-4 py-2 rounded-lg text-center font-medium ${item.quantity > 100
+                    ? 'bg-green-100 text-green-700'
+                    : item.quantity > 50
                       ? 'bg-yellow-100 text-yellow-700'
                       : 'bg-red-100 text-red-700'
-                  }`}
+                    }`}
                 >
                   {item.quantity > 100
                     ? 'المخزون جيد'
                     : item.quantity > 50
-                    ? 'المخزون متوسط'
-                    : 'المخزون منخفض - يرجى إضافة مخزون'}
+                      ? 'المخزون متوسط'
+                      : 'المخزون منخفض - يرجى إضافة مخزون'}
                 </div>
               </div>
             </div>
@@ -127,7 +126,7 @@ export default function InventoryPage() {
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
             سجل حركة المخزون
           </h2>
-          
+
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -153,15 +152,14 @@ export default function InventoryPage() {
                 {transactions.map((trans) => (
                   <tr key={trans.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-sm">
-                      {trans.stockType === 1 ? 'أفراد' : 'شركات'}
+                      {trans.stockType === 1 ? 'أفراد/موظفين' : 'شركات'}
                     </td>
                     <td className="py-3 px-4">
                       <span
-                        className={`flex items-center gap-1 text-sm ${
-                          trans.transactionType === 'ADD'
-                            ? 'text-green-600'
-                            : 'text-red-600'
-                        }`}
+                        className={`flex items-center gap-1 text-sm ${trans.transactionType === 'ADD'
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                          }`}
                       >
                         {trans.transactionType === 'ADD' ? (
                           <TrendingUp className="w-4 h-4" />
@@ -191,7 +189,7 @@ export default function InventoryPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="card max-w-md w-full mx-4">
             <h2 className="text-xl font-bold text-gray-800 mb-4">إضافة مخزون جديد</h2>
-            
+
             <form onSubmit={handleAddStock} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -205,7 +203,7 @@ export default function InventoryPage() {
                   className="input"
                   required
                 >
-                  <option value={1}>شيكات أفراد</option>
+                  <option value={1}>شيكات أفراد وموظفين</option>
                   <option value={2}>شيكات شركات</option>
                 </select>
               </div>

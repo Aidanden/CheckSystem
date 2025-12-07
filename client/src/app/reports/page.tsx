@@ -299,7 +299,7 @@ export default function ReportsPage() {
         )}
 
         {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="card">
             <p className="text-sm text-gray-600">إجمالي العمليات</p>
             <p className="text-3xl font-bold text-blue-600 mt-2">
@@ -315,22 +315,37 @@ export default function ReportsPage() {
           </div>
 
           <div className="card">
-            <p className="text-sm text-gray-600">حسابات فريدة</p>
-            <p className="text-3xl font-bold text-purple-600 mt-2">
-              {statistics?.unique_accounts || 0}
+            <p className="text-sm text-gray-600">شركات (50)</p>
+            <p className="text-3xl font-bold text-gray-800 mt-2">
+              {statistics?.corporate_50 || 0}
             </p>
           </div>
 
           <div className="card">
-            <p className="text-sm text-gray-600">متوسط الأوراق</p>
+            <p className="text-sm text-gray-600">أفراد (25)</p>
+            <p className="text-3xl font-bold text-gray-800 mt-2">
+              {statistics?.individual_25 || 0}
+            </p>
+          </div>
+
+          <div className="card">
+            <p className="text-sm text-gray-600">موظفين (10)</p>
+            <p className="text-3xl font-bold text-gray-800 mt-2">
+              {statistics?.employees_10 || 0}
+            </p>
+          </div>
+
+          <div className="card">
+            <p className="text-sm text-gray-600">عمليات إعادة طباعة</p>
             <p className="text-3xl font-bold text-orange-600 mt-2">
-              {statistics &&
-                Number(statistics.total_operations) > 0
-                ? Math.round(
-                  Number(statistics.total_sheets_printed) /
-                  Number(statistics.total_operations)
-                )
-                : 0}
+              {statistics?.reprint_operations || 0}
+            </p>
+          </div>
+
+          <div className="card">
+            <p className="text-sm text-gray-600">أوراق معاد طباعتها</p>
+            <p className="text-3xl font-bold text-red-600 mt-2">
+              {statistics?.reprint_sheets || 0}
             </p>
           </div>
         </div>

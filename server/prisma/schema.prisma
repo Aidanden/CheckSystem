@@ -23,6 +23,8 @@ model Branch {
   users           User[]
   accounts        Account[]
   printOperations PrintOperation[]
+  certifiedCheckSerial  CertifiedCheckSerial?
+  certifiedCheckLogs    CertifiedCheckLog[]
 
   @@map("branches")
 }
@@ -56,6 +58,7 @@ model User {
   inventoryTransactions InventoryTransaction[]
   printOperations       PrintOperation[]
   printLogs             PrintLog[]
+  certifiedCheckLogs    CertifiedCheckLog[]
 
   @@map("users")
 }
@@ -238,4 +241,41 @@ model PrintedCheque {
   @@unique([accountNumber, chequeNumber])
   @@index([accountNumber])
   @@map("printed_cheques")
+}
+
+// Certified Check Serial Tracker - tracks serial numbers per branch
+model CertifiedCheckSerial {
+  id            Int      @id @default(autoincrement())
+  branchId      Int      @unique @map("branch_id")
+  lastSerial    Int      @default(0) @map("last_serial")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@map("certified_check_serials")
+}
+
+// Certified Check Print Log
+model CertifiedCheckLog {
+  id              Int      @id @default(autoincrement())
+  branchId        Int      @map("branch_id")
+  branchName      String   @map("branch_name")
+  accountingNumber String  @map("accounting_number")
+  routingNumber   String   @map("routing_number")
+  firstSerial     Int      @map("first_serial")
+  lastSerial      Int      @map("last_serial")
+  totalChecks     Int      @map("total_checks")
+  operationType   String   @map("operation_type") // 'print' or 'reprint'
+  printedBy       Int      @map("printed_by")
+  printedByName   String   @map("printed_by_name")
+  printDate       DateTime @default(now()) @map("print_date")
+  notes           String?
+
+  user   User   @relation(fields: [printedBy], references: [id])
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@index([branchId])
+  @@index([printDate])
+  @@map("certified_check_logs")
 }

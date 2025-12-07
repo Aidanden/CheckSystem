@@ -126,7 +126,7 @@ export default function PrintPage() {
         setError('⚠️ تنبيه: لم يتم العثور على بيانات الفرع (الاسم والرقم التوجيهي) في قاعدة البيانات. سيتم استخدام القيم الافتراضية (رقم الفرع) وهذا قد يؤدي لطباعة خط MICR غير صحيح. يرجى إضافة الفرع في صفحة "إدارة الفروع".');
       }
 
-      // التحقق من الشيكات المطبوعة مسبقاً
+      // التحقق من الشيكات المطبوعة مسبقاً من قاعدة البيانات المحلية
       const chequeNumbers = soapResponse.chequeStatuses.map(s => s.chequeNumber);
       try {
         const printStatus = await printLogService.checkStatus(accountNumber, chequeNumbers);
@@ -137,6 +137,14 @@ export default function PrintPage() {
         if (printed.length > 0) {
           setAlreadyPrintedCheques(printed);
           setError('⚠️ تنبيه: هذا الدفتر (أو بعض شيكاته) تمت طباعته مسبقاً. لا يمكن إعادة الطباعة من هنا، يرجى مراجعة سجلات الطباعة.');
+
+          // تحديث حالة الشيكات في العرض لتظهر كمطبوعة
+          soapResponse.chequeStatuses = soapResponse.chequeStatuses.map(s => {
+            if (printed.includes(s.chequeNumber)) {
+              return { ...s, status: 'U' };
+            }
+            return s;
+          });
         } else {
           setAlreadyPrintedCheques([]);
         }
@@ -210,6 +218,17 @@ export default function PrintPage() {
         // لا نوقف العملية، فقط نسجل الخطأ
       }
 
+      // Update local state to show "Printed"
+      if (soapData) {
+        setSoapData(prev => prev ? ({
+          ...prev,
+          chequeStatuses: prev.chequeStatuses.map(s => ({
+            ...s,
+            status: 'U'
+          }))
+        }) : null);
+      }
+
       setSuccess(true);
     } catch (err: any) {
       console.error('Print failed:', err);
@@ -248,7 +267,7 @@ export default function PrintPage() {
                 type="number"
                 value={firstChequeNumber}
                 onChange={(e) => setFirstChequeNumber(e.target.value)}
-                placeholder="734"
+                placeholder=""
                 className="input w-full"
                 disabled={loading}
                 min={0}
@@ -263,12 +282,12 @@ export default function PrintPage() {
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    جاري الاتصال بالـ SOAP...
+                    جاري الاتصال...
                   </>
                 ) : (
                   <>
                     <Search className="w-5 h-5" />
-                    استعلام SOAP
+                    استعلام
                   </>
                 )}
               </button>
@@ -304,151 +323,129 @@ export default function PrintPage() {
             </h2>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">رقم الحساب</p>
-                  <p className="font-mono font-semibold text-gray-800 mt-1">
-                    {soapData.accountNumber}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-600">اسم صاحب الحساب</p>
-                  <p className="font-semibold text-gray-800 mt-1">
-                    {soapData.customerName || 'غير متوفر'}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-600">رمز الفرع</p>
-                  <p className="font-semibold text-gray-800 mt-1">
-                    {soapData.accountBranch}
-                  </p>
-                </div>
-                {branchInfo && (
-                  <>
-                    <div>
-                      <p className="text-sm text-gray-600">اسم الفرع</p>
-                      <p className="font-semibold text-gray-800 mt-1">{branchInfo.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">الرقم التوجيهي</p>
-                      <p className="font-mono font-semibold text-gray-800 mt-1">
-                        {branchInfo.routing}
+              <div className="space-y-6">
+                {/* Account Summary Card */}
+                <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Account Number & Name */}
+                    <div className="space-y-1">
+                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">الحساب</p>
+                      <p className="text-2xl font-bold text-gray-800 font-mono tracking-tight">
+                        {soapData.accountNumber}
+                      </p>
+                      <p className="text-sm font-medium text-gray-600">
+                        {soapData.customerName || 'غير متوفر'}
                       </p>
                     </div>
-                  </>
-                )}
 
-                <div>
-                  <p className="text-sm text-gray-600">أول رقم شيك</p>
-                  <p className="font-semibold text-gray-800 mt-1">
-                    {soapData.firstChequeNumber ?? 'غير محدد'}
-                  </p>
+                    {/* Branch Info */}
+                    <div className="space-y-1">
+                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">الفرع</p>
+                      <p className="text-lg font-semibold text-gray-800">
+                        {soapData.accountBranch} {branchInfo && `- ${branchInfo.name}`}
+                      </p>
+                      {branchInfo && (
+                        <p className="text-xs text-gray-500 font-mono">
+                          Route: {branchInfo.routing}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Checkbook Status */}
+                    <div className="space-y-1">
+                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">تفاصيل الدفتر</p>
+                      <div className="flex flex-wrap gap-2 text-sm">
+                        <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-medium border border-blue-100">
+                          {soapData.chequeLeaves} ورقة
+                        </span>
+                        <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md font-medium border border-purple-100">
+                          {soapData.checkBookType ?? 'غير محدد'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Start: <span className="font-mono text-gray-600">{soapData.firstChequeNumber ?? 'N/A'}</span>
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
+                {/* Checks Grid */}
                 <div>
-                  <p className="text-sm text-gray-600">عدد الأوراق</p>
-                  <p className="font-semibold text-gray-800 mt-1">
-                    {soapData.chequeLeaves ?? 0}
-                  </p>
-                </div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-bold text-gray-700">قائمة الشيكات ({soapData.chequeStatuses.length})</h3>
+                  </div>
 
-                <div>
-                  <p className="text-sm text-gray-600">حالة الطلب</p>
-                  <p className="font-semibold text-gray-800 mt-1">
-                    {soapData.requestStatus ?? 'غير متوفر'}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-600">نوع دفتر الشيكات</p>
-                  <p className="font-semibold text-gray-800 mt-1">
-                    {soapData.checkBookType ?? 'غير متوفر'}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-600">طريقة التسليم</p>
-                  <p className="font-semibold text-gray-800 mt-1">
-                    {soapData.deliveryMode ?? 'غير متوفر'}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-600">آخر تعديل</p>
-                  <p className="font-semibold text-gray-800 mt-1">
-                    {soapData.checkerStamp ?? soapData.makerStamp ?? 'غير متوفر'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-3 py-2 text-right text-gray-600">رقم الشيك</th>
-                      <th className="px-3 py-2 text-right text-gray-600">رقم الدفتر</th>
-                      <th className="px-3 py-2 text-right text-gray-600">الحالة</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                     {soapData.chequeStatuses.map((status) => (
-                      <tr key={status.chequeNumber}>
-                        <td className="px-3 py-2 font-mono">{status.chequeNumber}</td>
-                        <td className="px-3 py-2">{status.chequeBookNumber}</td>
-                        <td className="px-3 py-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${status.status === 'U'
+                      <div
+                        key={status.chequeNumber}
+                        className={`relative p-3 rounded-lg border transition-all hover:shadow-md ${status.status === 'U'
+                          ? 'bg-amber-50 border-amber-200'
+                          : 'bg-white border-gray-200'
+                          }`}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${status.status === 'U'
                             ? 'bg-amber-100 text-amber-700'
                             : 'bg-green-100 text-green-700'
                             }`}>
                             {status.status === 'U' ? 'مطبوع' : 'جديد'}
                           </span>
-                        </td>
-                      </tr>
+                          <Printer className={`w-3 h-3 ${status.status === 'U' ? 'text-amber-400' : 'text-gray-300'}`} />
+                        </div>
+
+                        <div className="text-center">
+                          <p className="text-lg font-bold font-mono text-gray-800 tracking-tight">
+                            {status.chequeNumber}
+                          </p>
+                          <p className="text-[10px] text-gray-500 mt-0.5">
+                            Book: {status.chequeBookNumber}
+                          </p>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </div>
+                </div>
 
-              <div className="border-t border-gray-200 pt-4 mt-6">
-                <button
-                  onClick={handlePrint}
-                  disabled={printing || !checkbookPreview}
-                  className="w-full btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 py-3"
-                >
-                  {printing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      جاري الطباعة...
-                    </>
-                  ) : (
-                    <>
-                      <Printer className="w-5 h-5" />
-                      طباعة دفتر الشيكات (SOAP)
-                    </>
-                  )}
-                </button>
+                <div className="border-t border-gray-200 pt-4 mt-6">
+                  <button
+                    onClick={handlePrint}
+                    disabled={printing || !checkbookPreview}
+                    className="w-full btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 py-3"
+                  >
+                    {printing ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        جاري الطباعة...
+                      </>
+                    ) : (
+                      <>
+                        <Printer className="w-5 h-5" />
+                        طباعة دفتر الشيكات (SOAP)
+                      </>
+                    )}
+                  </button>
 
-                <p className="text-xs text-gray-500 text-center mt-2">
-                  سيتم استخدام البيانات المستلمة من واجهة SOAP المباشرة للطباعة
-                </p>
-                <button
-                  onClick={() => {
-                    if (!soapData) return;
-                    const refreshed = buildPreviewFromSoap(soapData, {
-                      layout: layout ?? undefined,
-                      branchName: branchInfo?.name,
-                      routingNumber: branchInfo?.routing,
-                    });
-                    setCheckbookPreview(refreshed);
-                  }}
-                  className="mt-3 w-full btn bg-gray-100 text-gray-700 hover:bg-gray-200 flex items-center justify-center gap-2"
-                  disabled={!soapData}
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  إعادة تحميل المعاينة
-                </button>
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    سيتم استخدام البيانات المستلمة من واجهة SOAP المباشرة للطباعة
+                  </p>
+                  <button
+                    onClick={() => {
+                      if (!soapData) return;
+                      const refreshed = buildPreviewFromSoap(soapData, {
+                        layout: layout ?? undefined,
+                        branchName: branchInfo?.name,
+                        routingNumber: branchInfo?.routing,
+                      });
+                      setCheckbookPreview(refreshed);
+                    }}
+                    className="mt-3 w-full btn bg-gray-100 text-gray-700 hover:bg-gray-200 flex items-center justify-center gap-2"
+                    disabled={!soapData}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    إعادة تحميل المعاينة
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -458,13 +455,10 @@ export default function PrintPage() {
         {!soapData && !error && (
           <div className="card bg-blue-50 border border-blue-200">
             <h3 className="font-semibold text-blue-900 mb-2">
-              تعليمات الطباعة:
+              تعليمات الاستعلام:
             </h3>
             <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-              <li>أدخل رقم الحساب المصرفي للاستعلام</li>
-              <li>سيتم جلب البيانات مباشرة من واجهة SOAP</li>
-              <li>تأكد من تشغيل الخادم التجريبي على المنفذ 8080</li>
-              <li>يمكن تعديل رقم الشيك الأول عند الحاجة</li>
+              <li>ضع رقم الحساب و رقم بداية الطباعة لدفتر الشيكات الذي تم طلبه عبر المنظومة المصرفية</li>
             </ul>
           </div>
         )}

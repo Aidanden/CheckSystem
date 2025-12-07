@@ -86,7 +86,7 @@ function generateChequeStatuses(firstChequeNumber, numberOfLeaves = 10) {
       statuses.push({
          'CHQ_BOOK_NO': firstChequeNumber,
          'CHQ_NO': chequeNum.toString(),
-         'STATUS': i === 0 ? 'U' : 'N' // أول شيك Used، الباقي New
+         'STATUS': 'N' // جميع الشيكات جديدة افتراضياً
       });
    }
 

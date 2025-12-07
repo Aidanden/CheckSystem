@@ -8,6 +8,7 @@ export { printingService } from './services/printing.service';
 export { systemSettingsService } from './services/systemSettings.service';
 export { soapService } from './services/soap.service';
 export { printLogService } from './services/printLog.service';
+export { certifiedCheckService } from './services/certifiedCheck.service';
 
 // Export API client
 export { default as apiClient, request } from './client';
