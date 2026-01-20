@@ -44,13 +44,14 @@ export default function PrintLogsPage() {
   const [selectedLog, setSelectedLog] = useState<PrintLog | null>(null);
   const [reprintStartSerial, setReprintStartSerial] = useState<number>(0);
   const [reprintEndSerial, setReprintEndSerial] = useState<number>(0);
+  const [reprintReason, setReprintReason] = useState<'damaged' | 'not_printed' | ''>('');
 
   // التحقق من صلاحية إعادة الطباعة
   const canReprint = currentUser?.isAdmin || currentUser?.permissions?.some(p => p.permissionCode === 'REPRINT');
 
   useEffect(() => {
     loadLogs();
-  }, [page, operationType]);
+  }, [page, operationType, searchTerm]);
 
   const loadLogs = async () => {
     try {
@@ -78,7 +79,6 @@ export default function PrintLogsPage() {
   const handleSearch = () => {
     setSearchTerm(accountNumber);
     setPage(1);
-    loadLogs();
   };
 
   const resolveAccountType = (data: SoapCheckbookResponse): 1 | 2 | 3 => {
@@ -96,6 +96,7 @@ export default function PrintLogsPage() {
     setSelectedLog(log);
     setReprintStartSerial(log.firstChequeNumber);
     setReprintEndSerial(log.lastChequeNumber);
+    setReprintReason(''); // إعادة تعيين السبب
     setReprintModalOpen(true);
   };
 
@@ -113,6 +114,12 @@ export default function PrintLogsPage() {
       return;
     }
 
+    // التحقق من اختيار سبب إعادة الطباعة
+    if (!reprintReason || (reprintReason !== 'damaged' && reprintReason !== 'not_printed')) {
+      alert('الرجاء اختيار سبب إعادة الطباعة: ورقة تالفة أو ورقة لم تطبع');
+      return;
+    }
+
     setReprinting(true);
 
     try {
@@ -124,7 +131,7 @@ export default function PrintLogsPage() {
 
       // تصفية الشيكات بناءً على النطاق المحدد
       const filteredStatuses = soapResponse.chequeStatuses.filter(
-        c => c.chequeNumber >= reprintStartSerial && c.chequeNumber <= reprintEndSerial
+        c => c.chequeNumber >= reprintStartSerial && c.chequeNumber <= reprintEndSerial && c.chequeNumber > 0
       );
 
       if (filteredStatuses.length === 0) {
@@ -199,15 +206,19 @@ export default function PrintLogsPage() {
           totalCheques: chequeNumbers.length,
           accountType: preview.operation.accountType,
           operationType: 'reprint',
+          reprintReason: reprintReason as 'damaged' | 'not_printed',
           chequeNumbers,
         });
         console.log('✅ تم تسجيل عملية إعادة الطباعة بنجاح');
         loadLogs();
-      } catch (logError) {
+      } catch (logError: any) {
         console.error('فشل تسجيل عملية إعادة الطباعة:', logError);
+        alert(logError.response?.data?.error || logError.message || 'فشل تسجيل عملية إعادة الطباعة');
+        return;
       }
 
       setReprintModalOpen(false);
+      setReprintReason(''); // إعادة تعيين السبب
       // alert('✅ تمت إعادة الطباعة بنجاح!'); // Removed alert to be less intrusive
     } catch (error: any) {
       console.error('Reprint failed:', error);
@@ -432,6 +443,11 @@ export default function PrintLogsPage() {
                   عرض <span className="font-medium">{(page - 1) * limit + 1}</span> إلى{' '}
                   <span className="font-medium">{Math.min(page * limit, total)}</span> من{' '}
                   <span className="font-medium">{total}</span> سجل
+                  {totalPages > 0 && (
+                    <span className="text-gray-500 mr-2">
+                      (صفحة {page} من {totalPages})
+                    </span>
+                  )}
                 </div>
 
                 {/* Pagination Controls */}
@@ -439,21 +455,22 @@ export default function PrintLogsPage() {
                   {/* Previous Button */}
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                    disabled={page === 1 || loading}
+                    className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors font-medium"
                   >
                     <ChevronRight className="w-4 h-4" />
-                    <span className="hidden sm:inline">السابق</span>
+                    <span>السابق</span>
                   </button>
 
                   {/* Page Numbers */}
                   <div className="flex items-center gap-1">
                     {/* First Page */}
-                    {page > 3 && (
+                    {page > 3 && totalPages > 5 && (
                       <>
                         <button
                           onClick={() => setPage(1)}
-                          className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                          disabled={loading}
+                          className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                         >
                           1
                         </button>
@@ -467,30 +484,34 @@ export default function PrintLogsPage() {
                     {Array.from({ length: totalPages }, (_, i) => i + 1)
                       .filter(pageNum => {
                         // Show current page and 2 pages before and after
-                        return pageNum >= page - 2 && pageNum <= page + 2;
+                        if (totalPages <= 7) return true; // Show all if 7 or less pages
+                        return pageNum >= Math.max(1, page - 2) && pageNum <= Math.min(totalPages, page + 2);
                       })
                       .map(pageNum => (
                         <button
                           key={pageNum}
                           onClick={() => setPage(pageNum)}
-                          className={`px-3 py-2 border rounded-lg transition-colors ${page === pageNum
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                            }`}
+                          disabled={loading}
+                          className={`px-3 py-2 border rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed ${
+                            page === pageNum
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`}
                         >
                           {pageNum}
                         </button>
                       ))}
 
                     {/* Last Page */}
-                    {page < totalPages - 2 && (
+                    {page < totalPages - 2 && totalPages > 5 && (
                       <>
                         {page < totalPages - 3 && (
                           <span className="px-2 text-gray-500">...</span>
                         )}
                         <button
                           onClick={() => setPage(totalPages)}
-                          className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                          disabled={loading}
+                          className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                         >
                           {totalPages}
                         </button>
@@ -501,10 +522,10 @@ export default function PrintLogsPage() {
                   {/* Next Button */}
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                    disabled={page === totalPages || loading}
+                    className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors font-medium"
                   >
-                    <span className="hidden sm:inline">التالي</span>
+                    <span>التالي</span>
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                 </div>
@@ -575,6 +596,32 @@ export default function PrintLogsPage() {
 
               <div className="text-sm text-gray-500">
                 عدد الشيكات المحدد: <span className="font-bold text-gray-900">{Math.max(0, reprintEndSerial - reprintStartSerial + 1)}</span>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  سبب إعادة الطباعة <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={reprintReason}
+                  onChange={(e) => setReprintReason(e.target.value as 'damaged' | 'not_printed' | '')}
+                  className="input w-full"
+                  required
+                >
+                  <option value="">-- اختر السبب --</option>
+                  <option value="damaged">ورقة تالفة (سيتم خصم من المخزون)</option>
+                  <option value="not_printed">ورقة لم تطبع (لن يتم خصم من المخزون)</option>
+                </select>
+                {reprintReason === 'damaged' && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    ⚠️ سيتم خصم {Math.max(0, reprintEndSerial - reprintStartSerial + 1)} ورقة من المخزون
+                  </p>
+                )}
+                {reprintReason === 'not_printed' && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ لن يتم خصم من المخزون لأن الورقة لم تطبع أصلاً
+                  </p>
+                )}
               </div>
             </div>
 

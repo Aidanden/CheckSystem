@@ -156,11 +156,21 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
   }
 
   const micrFontUrl = new URL('/font/micrenc.ttf', window.location.origin).toString();
-  const firstCheck = checkbookData.checks[0];
+  
+  // تصفية الشيكات الفارغة أو غير الصالحة قبل المعالجة
+  const validChecks = checkbookData.checks.filter(
+    check => check && check.serialNumber && check.serialNumber.trim() !== '' && check.accountNumber
+  );
+  
+  if (validChecks.length === 0) {
+    throw new Error('لا توجد شيكات صالحة للطباعة');
+  }
+  
+  const firstCheck = validChecks[0];
   const defaultWidthMm = firstCheck?.checkSize.width ?? 235;
   const defaultHeightMm = firstCheck?.checkSize.height ?? 86;
 
-  const checksHtml = checkbookData.checks.map(renderCheckSection).join('\n');
+  const checksHtml = validChecks.map(renderCheckSection).join('\n');
 
   return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">

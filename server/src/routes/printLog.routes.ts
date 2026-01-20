@@ -20,6 +20,7 @@ router.post(
     body('totalCheques').isInt(),
     body('accountType').isInt(),
     body('operationType').isIn(['print', 'reprint']),
+    body('reprintReason').optional().isIn(['damaged', 'not_printed']),
     body('chequeNumbers').isArray(),
   ]),
   PrintLogController.createLog

@@ -10,6 +10,7 @@ export interface CreatePrintLogData {
   totalCheques: number;
   accountType: number;
   operationType: 'print' | 'reprint';
+  reprintReason?: 'damaged' | 'not_printed'; // سبب إعادة الطباعة: 'damaged' = تالفة، 'not_printed' = لم تطبع
   printedBy: number;
   printedByName: string;
   notes?: string;
@@ -31,6 +32,7 @@ export class PrintLogModel {
           totalCheques: data.totalCheques,
           accountType: data.accountType,
           operationType: data.operationType,
+          ...(data.reprintReason ? { reprintReason: data.reprintReason } : {}),
           printedBy: data.printedBy,
           printedByName: data.printedByName,
           notes: data.notes,

@@ -2,9 +2,95 @@ import { PrintLogModel, CreatePrintLogData } from '../models/PrintLog.model';
 import { PrintOperationModel } from '../models/PrintOperation.model';
 import { AccountModel } from '../models/Account.model';
 import { UserModel } from '../models/User.model';
+import { InventoryService } from './inventory.service';
+import { AccountType, StockType } from '../types';
 
 export class PrintLogService {
   static async createPrintLog(data: CreatePrintLogData) {
+    // خصم المخزون عند الطباعة العادية
+    if (data.operationType === 'print') {
+      try {
+        // تحديد نوع المخزون بناءً على نوع الحساب
+        // Individual (1) و Employee (3) يستخدمان Individual stock
+        // Corporate (2) يستخدم Corporate stock
+        const stockType: StockType = data.accountType === AccountType.CORPORATE
+          ? StockType.CORPORATE
+          : StockType.INDIVIDUAL;
+
+        // عدد الأوراق المطبوعة (يجب خصمها من المخزون)
+        const sheetsToDeduct = data.totalCheques;
+
+        // التحقق من توفر المخزون قبل الخصم
+        const availableQuantity = await InventoryService.getAvailableQuantity(stockType);
+        if (availableQuantity < sheetsToDeduct) {
+          throw new Error(`لا يوجد مخزون كافٍ. المطلوب: ${sheetsToDeduct} ورقة، المتاح: ${availableQuantity} ورقة`);
+        }
+
+        // خصم عدد الأوراق الفعلي من المخزون
+        await InventoryService.deductInventory(
+          stockType,
+          sheetsToDeduct,
+          data.printedBy,
+          `طباعة دفتر شيكات للحساب ${data.accountNumber} (${sheetsToDeduct} ورقة - من ${data.firstChequeNumber} إلى ${data.lastChequeNumber})`
+        );
+
+        console.log(`✅ تم خصم ${sheetsToDeduct} ورقة من المخزون (نوع: ${stockType === StockType.INDIVIDUAL ? 'فردي' : 'شركة'})`);
+      } catch (error) {
+        console.error('❌ خطأ في خصم المخزون:', error);
+        // نرمي الخطأ هنا لأن الطباعة يجب أن تفشل إذا لم يكن هناك مخزون
+        if (error instanceof Error) {
+          throw new Error(`فشل خصم المخزون: ${error.message}`);
+        }
+        throw new Error('فشل خصم المخزون');
+      }
+    }
+    // خصم المخزون عند إعادة الطباعة (فقط إذا كانت الورقة تالفة)
+    else if (data.operationType === 'reprint') {
+      // التحقق من وجود سبب إعادة الطباعة
+      if (!data.reprintReason) {
+        throw new Error('يجب تحديد سبب إعادة الطباعة (ورقة تالفة أو ورقة لم تطبع)');
+      }
+
+      // إذا كانت الورقة تالفة، يجب خصم عدد الأوراق من المخزون
+      if (data.reprintReason === 'damaged') {
+        try {
+          // تحديد نوع المخزون بناءً على نوع الحساب
+          const stockType: StockType = data.accountType === AccountType.CORPORATE
+            ? StockType.CORPORATE
+            : StockType.INDIVIDUAL;
+
+          // عدد الأوراق المعاد طباعتها (يجب خصمها من المخزون)
+          const sheetsToDeduct = data.totalCheques;
+
+          // التحقق من توفر المخزون قبل الخصم
+          const availableQuantity = await InventoryService.getAvailableQuantity(stockType);
+          if (availableQuantity < sheetsToDeduct) {
+            throw new Error(`لا يوجد مخزون كافٍ. المطلوب: ${sheetsToDeduct} ورقة، المتاح: ${availableQuantity} ورقة`);
+          }
+
+          // خصم عدد الأوراق المعاد طباعتها من المخزون
+          await InventoryService.deductInventory(
+            stockType,
+            sheetsToDeduct,
+            data.printedBy,
+            `إعادة طباعة دفتر شيكات تالف للحساب ${data.accountNumber} (${sheetsToDeduct} ورقة - من ${data.firstChequeNumber} إلى ${data.lastChequeNumber})`
+          );
+
+          console.log(`✅ تم خصم ${sheetsToDeduct} ورقة من المخزون (إعادة طباعة - تالفة) (نوع: ${stockType === StockType.INDIVIDUAL ? 'فردي' : 'شركة'})`);
+        } catch (error) {
+          console.error('❌ خطأ في خصم المخزون عند إعادة الطباعة:', error);
+          if (error instanceof Error) {
+            throw new Error(`فشل خصم المخزون: ${error.message}`);
+          }
+          throw new Error('فشل خصم المخزون');
+        }
+      }
+      // إذا كانت الورقة لم تطبع، لا يتم خصم من المخزون
+      else if (data.reprintReason === 'not_printed') {
+        console.log(`ℹ️ إعادة طباعة بدون خصم من المخزون (الورقة لم تطبع) - ${data.totalCheques} ورقة`);
+      }
+    }
+
     const log = await PrintLogModel.create(data);
 
     // Sync to PrintOperation for Dashboard Statistics

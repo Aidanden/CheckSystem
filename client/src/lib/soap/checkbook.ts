@@ -195,7 +195,11 @@ export function buildPreviewFromSoap(
   data: SoapCheckbookResponse,
   options: PreviewOptions = {}
 ): CheckbookData {
-  const sortedStatuses = [...data.chequeStatuses].sort((a, b) => a.chequeNumber - b.chequeNumber);
+  // تصفية الشيكات الفارغة أو غير الصالحة قبل الفرز
+  const validStatuses = data.chequeStatuses.filter(
+    status => status && status.chequeNumber && status.chequeNumber > 0
+  );
+  const sortedStatuses = [...validStatuses].sort((a, b) => a.chequeNumber - b.chequeNumber);
   const accountType = data.accountNumber.startsWith('2') ? 2 : 1;
   const accountHolderName = options.accountHolderName || data.customerName || 'صاحب الحساب';
 

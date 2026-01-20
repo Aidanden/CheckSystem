@@ -15,12 +15,31 @@ export class PrintLogController {
         totalCheques,
         accountType,
         operationType,
+        reprintReason,
         notes,
         chequeNumbers,
       } = req.body;
 
       if (!req.user) {
         res.status(401).json({ error: 'المستخدم غير مصرح' });
+        return;
+      }
+
+      // التحقق من وجود سبب إعادة الطباعة عند إعادة الطباعة
+      if (operationType === 'reprint' && !reprintReason) {
+        res.status(400).json({ 
+          error: 'يجب تحديد سبب إعادة الطباعة',
+          details: 'الرجاء اختيار سبب إعادة الطباعة: ورقة تالفة أو ورقة لم تطبع'
+        });
+        return;
+      }
+
+      // التحقق من صحة سبب إعادة الطباعة
+      if (operationType === 'reprint' && reprintReason && !['damaged', 'not_printed'].includes(reprintReason)) {
+        res.status(400).json({ 
+          error: 'سبب إعادة الطباعة غير صحيح',
+          details: 'يجب أن يكون السبب إما "damaged" (تالفة) أو "not_printed" (لم تطبع)'
+        });
         return;
       }
 
@@ -33,6 +52,7 @@ export class PrintLogController {
         totalCheques,
         accountType,
         operationType: operationType || 'print',
+        reprintReason: reprintReason || undefined,
         printedBy: req.user.userId,
         printedByName: req.user.username,
         notes,

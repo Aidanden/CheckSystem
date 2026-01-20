@@ -5,19 +5,57 @@ const app = express();
 const PORT = 8080;
 
 // بيانات الحسابات التجريبية
+// accountType: 1 = Individual (25 شيك), 2 = Corporate (50 شيك), 3 = Employee (10 شيك)
 const TEST_ACCOUNTS = [
    // فرع طرابلس 001
-   { branch: '001', account: '001001000100001', name: 'شركة ليبيا للاتصالات', startCheck: '1001' },
-   { branch: '001', account: '001001000100002', name: 'محمد علي أحمد', startCheck: '2001' },
-   { branch: '001', account: '001001000100003', name: 'سالم عمر خالد', startCheck: '3001' },
-   { branch: '001', account: '001001000100004', name: 'شركة الأفق للتجارة', startCheck: '4001' },
-   { branch: '001', account: '001001000100005', name: 'فاطمة حسن محمود', startCheck: '5001' },
+   { branch: '001', account: '001001000100001', name: 'شركة ليبيا للاتصالات', startCheck: '1001', accountType: 2 }, // Corporate
+   { branch: '001', account: '001001000100002', name: 'محمد علي أحمد', startCheck: '2001', accountType: 1 }, // Individual
+   { branch: '001', account: '001001000100003', name: 'سالم عمر خالد', startCheck: '3001', accountType: 1 }, // Individual
+   { branch: '001', account: '001001000100004', name: 'شركة الأفق للتجارة', startCheck: '4001', accountType: 2 }, // Corporate
+   { branch: '001', account: '001001000100005', name: 'فاطمة حسن محمود', startCheck: '5001', accountType: 1 }, // Individual
+   { branch: '001', account: '001001000100006', name: 'شركة النور للاستثمار', startCheck: '11001', accountType: 2 }, // Corporate
+   { branch: '001', account: '001001000100007', name: 'أحمد محمود السيد', startCheck: '12001', accountType: 1 }, // Individual
+   { branch: '001', account: '001001000100008', name: 'شركة الصحراء للنقل', startCheck: '13001', accountType: 2 }, // Corporate
+   { branch: '001', account: '001001000100009', name: 'مريم عبدالله سالم', startCheck: '14001', accountType: 1 }, // Individual
+   { branch: '001', account: '001001000100010', name: 'شركة الواحة للبناء', startCheck: '15001', accountType: 2 }, // Corporate
+   { branch: '001', account: '001001000100011', name: 'يوسف خالد إبراهيم', startCheck: '16001', accountType: 1 }, // Individual
+   { branch: '001', account: '001001000100012', name: 'شركة النجوم للتجارة العامة', startCheck: '17001', accountType: 2 }, // Corporate
+   { branch: '001', account: '001001000100013', name: 'نورا محمد علي', startCheck: '18001', accountType: 1 }, // Individual
+   { branch: '001', account: '001001000100014', name: 'شركة الفجر للخدمات', startCheck: '19001', accountType: 2 }, // Corporate
+   { branch: '001', account: '001001000100015', name: 'عمر عبدالرحمن حسن', startCheck: '20001', accountType: 1 }, // Individual
    // فرع مصراته 002
-   { branch: '002', account: '002001000200001', name: 'شركة مصراتة القابضة', startCheck: '6001' },
-   { branch: '002', account: '002001000200002', name: 'علي مصطفى علي', startCheck: '7001' },
-   { branch: '002', account: '002001000200003', name: 'خالد عبدالسلام محمد', startCheck: '8001' },
-   { branch: '002', account: '002001000200004', name: 'شركة البحر المتوسط', startCheck: '9001' },
-   { branch: '002', account: '002001000200005', name: 'هدى إبراهيم يوسف', startCheck: '10001' }
+   { branch: '002', account: '002001000200001', name: 'شركة مصراتة القابضة', startCheck: '6001', accountType: 2 }, // Corporate
+   { branch: '002', account: '002001000200002', name: 'علي مصطفى علي', startCheck: '7001', accountType: 1 }, // Individual
+   { branch: '002', account: '002001000200003', name: 'خالد عبدالسلام محمد', startCheck: '8001', accountType: 1 }, // Individual
+   { branch: '002', account: '002001000200004', name: 'شركة البحر المتوسط', startCheck: '9001', accountType: 2 }, // Corporate
+   { branch: '002', account: '002001000200005', name: 'هدى إبراهيم يوسف', startCheck: '10001', accountType: 1 }, // Individual
+   { branch: '002', account: '002001000200006', name: 'شركة الساحل للصناعات', startCheck: '21001', accountType: 2 }, // Corporate
+   { branch: '002', account: '002001000200007', name: 'سارة أحمد محمود', startCheck: '22001', accountType: 1 }, // Individual
+   { branch: '002', account: '002001000200008', name: 'شركة الرياح للتجارة', startCheck: '23001', accountType: 2 }, // Corporate
+   { branch: '002', account: '002001000200009', name: 'مصطفى سالم عبدالله', startCheck: '24001', accountType: 1 }, // Individual
+   { branch: '002', account: '002001000200010', name: 'شركة الأمل للاستيراد والتصدير', startCheck: '25001', accountType: 2 }, // Corporate
+   { branch: '002', account: '002001000200011', name: 'ليلى حسن علي', startCheck: '26001', accountType: 1 }, // Individual
+   { branch: '002', account: '002001000200012', name: 'شركة الصقر للطاقة', startCheck: '27001', accountType: 2 }, // Corporate
+   { branch: '002', account: '002001000200013', name: 'طارق يوسف خالد', startCheck: '28001', accountType: 1 }, // Individual
+   { branch: '002', account: '002001000200014', name: 'شركة المروج للزراعة', startCheck: '29001', accountType: 2 }, // Corporate
+   { branch: '002', account: '002001000200015', name: 'رنا عبدالرحمن محمد', startCheck: '30001', accountType: 1 }, // Individual
+   // فرع بنغازي 003
+   { branch: '003', account: '003001000300001', name: 'شركة برقة للخدمات المالية', startCheck: '31001', accountType: 2 }, // Corporate
+   { branch: '003', account: '003001000300002', name: 'عبدالله محمود إبراهيم', startCheck: '32001', accountType: 1 }, // Individual
+   { branch: '003', account: '003001000300003', name: 'شركة الجبل للتجارة', startCheck: '33001', accountType: 2 }, // Corporate
+   { branch: '003', account: '003001000300004', name: 'فاطمة علي سالم', startCheck: '34001', accountType: 1 }, // Individual
+   { branch: '003', account: '003001000300005', name: 'شركة الشروق للاستثمار', startCheck: '35001', accountType: 2 }, // Corporate
+   { branch: '003', account: '003001000300006', name: 'خالد يوسف عبدالله', startCheck: '36001', accountType: 1 }, // Individual
+   { branch: '003', account: '003001000300007', name: 'شركة الوادي للبناء والتطوير', startCheck: '37001', accountType: 2 }, // Corporate
+   { branch: '003', account: '003001000300008', name: 'أسماء محمد حسن', startCheck: '38001', accountType: 1 }, // Individual
+   { branch: '003', account: '003001000300009', name: 'شركة النخيل للصناعات الغذائية', startCheck: '39001', accountType: 2 }, // Corporate
+   { branch: '003', account: '003001000300010', name: 'محمود عبدالسلام علي', startCheck: '40001', accountType: 1 }, // Individual
+   // حسابات موظفين (Employee - 10 شيك)
+   { branch: '001', account: '001001000100016', name: 'موظف - أحمد سعيد محمد', startCheck: '41001', accountType: 3 }, // Employee
+   { branch: '001', account: '001001000100017', name: 'موظف - فاطمة علي حسن', startCheck: '42001', accountType: 3 }, // Employee
+   { branch: '002', account: '002001000200016', name: 'موظف - خالد محمود علي', startCheck: '43001', accountType: 3 }, // Employee
+   { branch: '002', account: '002001000200017', name: 'موظف - سارة يوسف أحمد', startCheck: '44001', accountType: 3 }, // Employee
+   { branch: '003', account: '003001000300011', name: 'موظف - عمر عبدالله سالم', startCheck: '45001', accountType: 3 } // Employee
 ];
 
 // CORS يجب أن يكون أولاً
@@ -76,8 +114,19 @@ function getCurrentDate() {
    return `${year}-${month}-${day}`;
 }
 
+// دالة لتحديد عدد الشيكات حسب نوع الحساب
+function getChequeLeavesByAccountType(accountType) {
+   // 1 = Individual (25 شيك), 2 = Corporate (50 شيك), 3 = Employee (10 شيك)
+   switch (accountType) {
+      case 1: return 25; // Individual
+      case 2: return 50; // Corporate
+      case 3: return 10; // Employee
+      default: return 25; // Default to Individual
+   }
+}
+
 // دالة لتوليد قائمة الشيكات
-function generateChequeStatuses(firstChequeNumber, numberOfLeaves = 10) {
+function generateChequeStatuses(firstChequeNumber, numberOfLeaves) {
    const statuses = [];
    const firstNum = parseInt(firstChequeNumber);
 
@@ -151,11 +200,23 @@ const soapHandler = async (req, res) => {
          throw new Error(`الحساب رقم ${account} غير موجود في قاعدة البيانات التجريبية`);
       }
 
+      console.log(`🔍 بيانات الحساب:`, {
+         account: accountData.account,
+         name: accountData.name,
+         accountType: accountData.accountType,
+         startCheck: accountData.startCheck
+      });
+
       let responseXml = '';
 
       if (operation === 'QueryCheckBook') {
          const firstChequeNumber = accountData.startCheck;
-         const chequeStatuses = generateChequeStatuses(firstChequeNumber);
+         const accountType = accountData.accountType || 1; // Default to Individual if not specified
+         const chequeLeaves = getChequeLeavesByAccountType(accountType);
+         const chequeStatuses = generateChequeStatuses(firstChequeNumber, chequeLeaves);
+
+         console.log(`📋 نوع الحساب: ${accountType === 1 ? 'فردي' : accountType === 2 ? 'شركة' : 'موظف'} (${accountType}) - عدد الشيكات: ${chequeLeaves}`);
+         console.log(`📊 عدد الشيكات المولدة: ${chequeStatuses.length}`);
 
          responseXml = `<?xml version="1.0" encoding="UTF-8"?>
 <S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
@@ -183,7 +244,7 @@ const soapHandler = async (req, res) => {
                <ACCOUNT_BRANCH>${accountBranch}</ACCOUNT_BRANCH>
                <ACCOUNT>${account}</ACCOUNT>
                <FIRST_CHEQUE_NUMBER>${firstChequeNumber}</FIRST_CHEQUE_NUMBER>
-               <CHEQUE_LEAVES>10</CHEQUE_LEAVES>
+               <CHEQUE_LEAVES>${chequeLeaves}</CHEQUE_LEAVES>
                <ORDER_DATE>${getCurrentDate()}</ORDER_DATE>
                <ISSUE_DATE>${getCurrentDate()}</ISSUE_DATE>
                <CHQ_TYPE>COMM</CHQ_TYPE>
@@ -322,7 +383,8 @@ app.listen(PORT, () => {
    console.log('2. QueryIACustAcc (للحصول على اسم العميل)');
    console.log('\n📊 الحسابات المتوفرة:');
    TEST_ACCOUNTS.forEach(acc => {
-      console.log(`  - ${acc.account} (${acc.name}) - فرع ${acc.branch}`);
+      const accountTypeName = acc.accountType === 1 ? 'فردي (25 شيك)' : acc.accountType === 2 ? 'شركة (50 شيك)' : 'موظف (10 شيك)';
+      console.log(`  - ${acc.account} (${acc.name}) - فرع ${acc.branch} - ${accountTypeName}`);
    });
    console.log('═══════════════════════════════════════════════════════════════\n');
 });

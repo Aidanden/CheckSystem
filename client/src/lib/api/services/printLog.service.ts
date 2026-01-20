@@ -9,6 +9,7 @@ export interface PrintLogData {
   totalCheques: number;
   accountType: number;
   operationType: 'print' | 'reprint';
+  reprintReason?: 'damaged' | 'not_printed'; // سبب إعادة الطباعة: 'damaged' = تالفة، 'not_printed' = لم تطبع
   notes?: string;
   chequeNumbers: number[];
 }

@@ -421,13 +421,13 @@ export default function PrintPage() {
                     ) : (
                       <>
                         <Printer className="w-5 h-5" />
-                        طباعة دفتر الشيكات (SOAP)
+                        طباعة دفتر الشيكات 
                       </>
                     )}
                   </button>
 
                   <p className="text-xs text-gray-500 text-center mt-2">
-                    سيتم استخدام البيانات المستلمة من واجهة SOAP المباشرة للطباعة
+                    سيتم استخدام البيانات المستلمة من FLEXCUBE المباشرة للطباعة
                   </p>
                   <button
                     onClick={() => {

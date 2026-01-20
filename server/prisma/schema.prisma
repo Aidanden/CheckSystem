@@ -216,6 +216,7 @@ model PrintLog {
   totalCheques      Int      @map("total_cheques")
   accountType       Int      @map("account_type")
   operationType     String   @map("operation_type") // 'print' or 'reprint'
+  reprintReason     String?  @map("reprint_reason") // 'damaged' or 'not_printed' - only for reprint
   printedBy         Int      @map("printed_by")
   printedByName     String   @map("printed_by_name")
   printDate         DateTime @default(now()) @map("print_date")

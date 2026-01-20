@@ -13,7 +13,7 @@ export class BankAPIClient {
   private apiKey: string;
 
   constructor() {
-    this.baseUrl = process.env.BANK_API_URL || 'http://fcubsuatapp1.aiib.ly:9005/FCUBSAccService/FCUBSAccService';
+    this.baseUrl = process.env.BANK_API_URL || 'http://localhost:8080/FCUBSAccService';
     this.apiKey = process.env.BANK_API_KEY || '';
   }
 
@@ -225,7 +225,7 @@ export class BankAPIClient {
         endpoint = await SystemSettingService.getSoapIAEndpoint();
       } catch (error) {
         console.warn('Failed to get SOAP IA endpoint from settings, using default:', error);
-        endpoint = 'http://fcubsuatapp1.aiib.ly:9005/FCUBSIAService/FCUBSIAService';
+        endpoint = process.env.BANK_IA_API_URL || 'http://localhost:8080/FCUBSIAService';
       }
 
       const response = await fetch(endpoint, {
