@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { certifiedCheckService } from '@/lib/api';
 import { CertifiedCheckLog, CertifiedBranch } from '@/lib/api/services/certifiedCheck.service';
 import { useAppSelector } from '@/store/hooks';
-import { ClipboardList, Printer, RefreshCw, Eye, Building2, Calendar } from 'lucide-react';
+import { ClipboardList, Printer, RefreshCw, Eye, Building2, Calendar, X } from 'lucide-react';
 
 export default function CertifiedLogsPage() {
     const { user } = useAppSelector((state) => state.auth);
@@ -13,10 +13,20 @@ export default function CertifiedLogsPage() {
     const [branches, setBranches] = useState<CertifiedBranch[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [reprinting, setReprinting] = useState<number | null>(null);
+    const [reprinting, setReprinting] = useState(false);
     const [page, setPage] = useState(0);
     const [selectedBranch, setSelectedBranch] = useState<number | undefined>(undefined);
     const pageSize = 10;
+
+    // Reprint Modal State
+    const [reprintModalOpen, setReprintModalOpen] = useState(false);
+    const [selectedLog, setSelectedLog] = useState<CertifiedCheckLog | null>(null);
+    const [reprintStartSerial, setReprintStartSerial] = useState<number>(0);
+    const [reprintEndSerial, setReprintEndSerial] = useState<number>(0);
+    const [reprintReason, setReprintReason] = useState<'damaged' | 'not_printed' | ''>('');
+
+    // التحقق من صلاحية إعادة الطباعة
+    const canReprint = user?.isAdmin || user?.permissions?.some(p => p.permissionCode === 'REPRINT_CERTIFIED');
 
     useEffect(() => {
         loadBranches();
@@ -43,38 +53,113 @@ export default function CertifiedLogsPage() {
                 take: pageSize,
                 branchId: selectedBranch,
             });
-            setLogs(result.logs);
-            setTotal(result.total);
-        } catch (err) {
-            console.error('Error loading logs:', err);
+            console.log('✅ Loaded logs result:', result); // Debug log
+            if (result && result.logs) {
+                setLogs(result.logs);
+                setTotal(result.total || 0);
+            } else {
+                console.warn('⚠️ Unexpected response format:', result);
+                setLogs([]);
+                setTotal(0);
+            }
+        } catch (err: any) {
+            console.error('❌ Error loading logs:', err);
+            // Don't show alert for empty results, only for actual errors
+            if (err.response?.status !== 200) {
+                console.error('API Error:', err.response?.data || err.message);
+            }
+            setLogs([]);
+            setTotal(0);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleReprint = async (logId: number) => {
-        if (!confirm('هل أنت متأكد من إعادة طباعة هذا الدفتر؟')) return;
+    const openReprintModal = (log: CertifiedCheckLog) => {
+        if (!canReprint) {
+            alert('ليس لديك صلاحية إعادة الطباعة. يرجى التواصل مع المسؤول.');
+            return;
+        }
+        setSelectedLog(log);
+        setReprintStartSerial(log.firstSerial);
+        setReprintEndSerial(log.lastSerial);
+        setReprintReason(''); // إعادة تعيين السبب
+        setReprintModalOpen(true);
+    };
+
+    const handleConfirmReprint = async () => {
+        if (!selectedLog) return;
+
+        // Validation
+        if (reprintStartSerial < selectedLog.firstSerial || reprintEndSerial > selectedLog.lastSerial) {
+            alert(`الرجاء اختيار نطاق ضمن النطاق الأصلي (${selectedLog.firstSerial} - ${selectedLog.lastSerial})`);
+            return;
+        }
+
+        if (reprintStartSerial > reprintEndSerial) {
+            alert('رقم البداية يجب أن يكون أصغر من أو يساوي رقم النهاية');
+            return;
+        }
+
+        // التحقق من اختيار سبب إعادة الطباعة
+        if (!reprintReason || (reprintReason !== 'damaged' && reprintReason !== 'not_printed')) {
+            alert('الرجاء اختيار سبب إعادة الطباعة: ورقة تالفة أو ورقة لم تطبع');
+            return;
+        }
+
+        setReprinting(true);
 
         try {
-            setReprinting(logId);
-            const result = await certifiedCheckService.reprintBook(logId);
+            // إنشاء بيانات الطباعة من السجل المحدد
+            const printData = {
+                branchId: selectedLog.branchId,
+                branchName: selectedLog.branchName,
+                accountingNumber: selectedLog.accountingNumber,
+                routingNumber: selectedLog.routingNumber,
+                firstSerial: reprintStartSerial,
+                lastSerial: reprintEndSerial,
+                checksCount: reprintEndSerial - reprintStartSerial + 1,
+            };
 
-            if (result.success) {
-                // Open print window
-                openPrintWindow(result.printData);
-                loadLogs(); // Refresh logs
+            // طباعة مباشرة (نفس آلية الأفراد والشركات)
+            openPrintWindow(printData);
+
+            // تسجيل عملية إعادة الطباعة
+            try {
+                const result = await certifiedCheckService.reprintBook(selectedLog.id, {
+                    firstSerial: reprintStartSerial,
+                    lastSerial: reprintEndSerial,
+                    reprintReason: reprintReason as 'damaged' | 'not_printed',
+                });
+
+                if (result.success) {
+                    console.log('✅ تم تسجيل عملية إعادة الطباعة بنجاح');
+                    loadLogs(); // Refresh logs
+                }
+            } catch (logError: any) {
+                console.error('فشل تسجيل عملية إعادة الطباعة:', logError);
+                alert(logError.response?.data?.error || logError.message || 'فشل تسجيل عملية إعادة الطباعة');
+                return;
             }
+
+            setReprintModalOpen(false);
+            setReprintReason(''); // إعادة تعيين السبب
         } catch (err: any) {
             console.error('Error reprinting:', err);
             alert(err.response?.data?.error || 'فشل في إعادة الطباعة');
         } finally {
-            setReprinting(null);
+            setReprinting(false);
         }
     };
 
     const openPrintWindow = (printData: any) => {
+        // رقم الترميز: من اليمين لليسار = 03 + محاسبي + توجيهي + تسلسلي
+        // في MICR (من اليسار لليمين): C{serial}C A{routing}A {accounting}C 03
         const buildMicrLine = (serial: number) => {
-            return `C${String(serial).padStart(6, '0')}C A${printData.routingNumber}A ${printData.accountingNumber}C 03`;
+            const serialStr = String(serial).padStart(9, '0');
+            const accountingStr = String(printData.accountingNumber || '').padStart(10, '0');
+            const routingStr = String(printData.routingNumber || '').padStart(8, '0');
+            return `C${serialStr}C A${routingStr}A ${accountingStr}C 03`;
         };
 
         const checksHtml = [];
@@ -84,8 +169,8 @@ export default function CertifiedLogsPage() {
         <div class="check-wrapper">
           <section class="check">
             <div class="branch-name">${printData.branchName}</div>
-            <div class="serial-left">${String(i).padStart(6, '0')}</div>
-            <div class="serial-right">${String(i).padStart(6, '0')}</div>
+            <div class="serial-left">${String(i).padStart(9, '0')}</div>
+            <div class="serial-right">${String(i).padStart(9, '0')}</div>
             <div class="micr-line">${micrLine}</div>
           </section>
         </div>
@@ -127,8 +212,6 @@ export default function CertifiedLogsPage() {
             };
         }
     };
-
-    const canReprint = user?.isAdmin || user?.permissions?.some(p => p.permissionCode === 'REPRINT_CERTIFIED');
 
     const totalPages = Math.ceil(total / pageSize);
 
@@ -192,6 +275,11 @@ export default function CertifiedLogsPage() {
                         <div className="text-center py-12 text-gray-500">
                             <ClipboardList className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                             <p className="text-lg font-semibold">لا توجد سجلات حتى الآن</p>
+                            <p className="text-sm text-gray-400 mt-2">
+                                {selectedBranch 
+                                    ? 'لا توجد سجلات للفرع المحدد' 
+                                    : 'لم يتم طباعة أي دفتر صكوك مصدقة بعد'}
+                            </p>
                         </div>
                     ) : (
                         <>
@@ -202,9 +290,10 @@ export default function CertifiedLogsPage() {
                                             <th className="text-right py-3 px-4 text-sm font-bold text-gray-700">الفرع</th>
                                             <th className="text-right py-3 px-4 text-sm font-bold text-gray-700">الرقم المحاسبي</th>
                                             <th className="text-right py-3 px-4 text-sm font-bold text-gray-700">من - إلى</th>
+                                            <th className="text-right py-3 px-4 text-sm font-bold text-gray-700">عدد الدفاتر</th>
                                             <th className="text-right py-3 px-4 text-sm font-bold text-gray-700">عدد الصكوك</th>
                                             <th className="text-right py-3 px-4 text-sm font-bold text-gray-700">النوع</th>
-                                            <th className="text-right py-3 px-4 text-sm font-bold text-gray-700">التاريخ</th>
+                                            <th className="text-right py-3 px-4 text-sm font-bold text-gray-700">التاريخ والوقت</th>
                                             <th className="text-right py-3 px-4 text-sm font-bold text-gray-700">المستخدم</th>
                                             <th className="text-right py-3 px-4 text-sm font-bold text-gray-700">إجراءات</th>
                                         </tr>
@@ -219,6 +308,9 @@ export default function CertifiedLogsPage() {
                                                     <span className="mx-1">-</span>
                                                     <span className="text-primary-600">{log.lastSerial}</span>
                                                 </td>
+                                                <td className="py-3 px-4 text-center font-bold text-blue-600">
+                                                    {(log as any).numberOfBooks || Math.ceil(log.totalChecks / 50)}
+                                                </td>
                                                 <td className="py-3 px-4 text-center font-bold text-primary-600">{log.totalChecks}</td>
                                                 <td className="py-3 px-4">
                                                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${log.operationType === 'print'
@@ -230,21 +322,23 @@ export default function CertifiedLogsPage() {
                                                 </td>
                                                 <td className="py-3 px-4 text-sm text-gray-600">
                                                     <Calendar className="w-4 h-4 inline ml-1" />
-                                                    {new Date(log.printDate).toLocaleDateString('ar-LY')}
+                                                    {new Date(log.printDate).toLocaleString('ar-LY', {
+                                                        year: 'numeric',
+                                                        month: '2-digit',
+                                                        day: '2-digit',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                    })}
                                                 </td>
                                                 <td className="py-3 px-4 text-sm">{log.printedByName}</td>
                                                 <td className="py-3 px-4">
                                                     {canReprint && (
                                                         <button
-                                                            onClick={() => handleReprint(log.id)}
-                                                            disabled={reprinting === log.id}
+                                                            onClick={() => openReprintModal(log)}
+                                                            disabled={reprinting}
                                                             className="btn btn-secondary flex items-center gap-1 text-sm py-1.5"
                                                         >
-                                                            {reprinting === log.id ? (
-                                                                <RefreshCw className="w-4 h-4 animate-spin" />
-                                                            ) : (
-                                                                <Printer className="w-4 h-4" />
-                                                            )}
+                                                            <Printer className="w-4 h-4" />
                                                             إعادة طباعة
                                                         </button>
                                                     )}
@@ -283,6 +377,120 @@ export default function CertifiedLogsPage() {
                     )}
                 </div>
             </div>
+
+            {/* Reprint Modal */}
+            {reprintModalOpen && selectedLog && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+                        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+                            <h3 className="text-lg font-semibold text-gray-800">
+                                إعادة طباعة صكوك مصدقة
+                            </h3>
+                            <button
+                                onClick={() => setReprintModalOpen(false)}
+                                className="text-gray-500 hover:text-gray-700 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                                <p className="font-medium mb-1">تفاصيل الدفتر الأصلي:</p>
+                                <p>الفرع: <span className="font-bold">{selectedLog.branchName}</span></p>
+                                <p>النطاق: <span className="font-mono font-bold">{selectedLog.firstSerial} - {selectedLog.lastSerial}</span></p>
+                                <p>عدد الصكوك: <span className="font-bold">{selectedLog.totalChecks}</span></p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        من رقم تسلسلي
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={reprintStartSerial}
+                                        onChange={(e) => setReprintStartSerial(parseInt(e.target.value) || 0)}
+                                        className="input w-full"
+                                        min={selectedLog.firstSerial}
+                                        max={selectedLog.lastSerial}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        إلى رقم تسلسلي
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={reprintEndSerial}
+                                        onChange={(e) => setReprintEndSerial(parseInt(e.target.value) || 0)}
+                                        className="input w-full"
+                                        min={selectedLog.firstSerial}
+                                        max={selectedLog.lastSerial}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="text-sm text-gray-500">
+                                عدد الصكوك المحدد: <span className="font-bold text-gray-900">{Math.max(0, reprintEndSerial - reprintStartSerial + 1)}</span>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    سبب إعادة الطباعة <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={reprintReason}
+                                    onChange={(e) => setReprintReason(e.target.value as 'damaged' | 'not_printed' | '')}
+                                    className="input w-full"
+                                    required
+                                >
+                                    <option value="">-- اختر السبب --</option>
+                                    <option value="damaged">ورقة تالفة (سيتم خصم من المخزون)</option>
+                                    <option value="not_printed">ورقة لم تطبع (لن يتم خصم من المخزون)</option>
+                                </select>
+                                {reprintReason === 'damaged' && (
+                                    <p className="text-xs text-amber-600 mt-1">
+                                        ⚠️ سيتم خصم {Math.max(0, reprintEndSerial - reprintStartSerial + 1)} ورقة من المخزون
+                                    </p>
+                                )}
+                                {reprintReason === 'not_printed' && (
+                                    <p className="text-xs text-green-600 mt-1">
+                                        ✓ لن يتم خصم من المخزون لأن الورقة لم تطبع أصلاً
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+                            <button
+                                onClick={() => setReprintModalOpen(false)}
+                                className="btn bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                disabled={reprinting}
+                            >
+                                إلغاء
+                            </button>
+                            <button
+                                onClick={handleConfirmReprint}
+                                className="btn btn-primary flex items-center gap-2"
+                                disabled={reprinting}
+                            >
+                                {reprinting ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        جاري الطباعة...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Printer className="w-4 h-4" />
+                                        تأكيد الطباعة
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 }

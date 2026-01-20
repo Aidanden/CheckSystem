@@ -17,7 +17,10 @@ export interface CertifiedSerialRange {
     routingNumber: string;
     firstSerial: number;
     lastSerial: number;
-    checksCount: number;
+    checksCount?: number;
+    numberOfBooks?: number;
+    totalChecks?: number;
+    checksPerBook?: number;
 }
 
 export interface CertifiedCheckLog {
@@ -29,6 +32,8 @@ export interface CertifiedCheckLog {
     firstSerial: number;
     lastSerial: number;
     totalChecks: number;
+    numberOfBooks?: number;
+    customStartSerial?: number;
     operationType: 'print' | 'reprint';
     printedBy: number;
     printedByName: string;
@@ -54,7 +59,10 @@ export interface CertifiedPrintResult {
         routingNumber: string;
         firstSerial: number;
         lastSerial: number;
-        checksCount: number;
+        checksCount?: number;
+        numberOfBooks?: number;
+        totalChecks?: number;
+        checksPerBook?: number;
     };
 }
 
@@ -122,27 +130,49 @@ export const certifiedCheckService = {
     },
 
     // Get next serial range for a branch
-    getNextSerialRange: async (branchId: number): Promise<CertifiedSerialRange> => {
+    getNextSerialRange: async (branchId: number, params?: {
+        customStartSerial?: number;
+        numberOfBooks?: number;
+    }): Promise<CertifiedSerialRange> => {
         return request<CertifiedSerialRange>({
             url: `/certified-checks/serial/${branchId}`,
             method: 'GET',
+            params,
         });
     },
 
     // Print a new certified check book
-    printBook: async (branchId: number, notes?: string): Promise<CertifiedPrintResult> => {
+    printBook: async (
+        branchId: number, 
+        notes?: string,
+        customStartSerial?: number,
+        numberOfBooks?: number
+    ): Promise<CertifiedPrintResult> => {
         return request<CertifiedPrintResult>({
             url: '/certified-checks/print',
             method: 'POST',
-            data: { branchId, notes },
+            data: { 
+                branchId, 
+                notes,
+                customStartSerial,
+                numberOfBooks,
+            },
         });
     },
 
     // Reprint a certified check book
-    reprintBook: async (logId: number): Promise<CertifiedPrintResult> => {
+    reprintBook: async (
+        logId: number,
+        options?: {
+            firstSerial?: number;
+            lastSerial?: number;
+            reprintReason?: 'damaged' | 'not_printed';
+        }
+    ): Promise<CertifiedPrintResult> => {
         return request<CertifiedPrintResult>({
             url: `/certified-checks/reprint/${logId}`,
             method: 'POST',
+            data: options || {},
         });
     },
 

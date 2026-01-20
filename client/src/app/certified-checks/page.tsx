@@ -16,6 +16,10 @@ export default function CertifiedChecksPage() {
     const [notes, setNotes] = useState('');
     const [success, setSuccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    
+    // حقول جديدة
+    const [customStartSerial, setCustomStartSerial] = useState<string>('');
+    const [numberOfBooks, setNumberOfBooks] = useState<number>(1);
 
     useEffect(() => {
         loadData();
@@ -27,7 +31,7 @@ export default function CertifiedChecksPage() {
         } else {
             setSerialRange(null);
         }
-    }, [selectedBranch]);
+    }, [selectedBranch, customStartSerial, numberOfBooks]);
 
     const loadData = async () => {
         try {
@@ -48,23 +52,51 @@ export default function CertifiedChecksPage() {
 
     const loadSerialRange = async (branchId: number) => {
         try {
-            const range = await certifiedCheckService.getNextSerialRange(branchId);
+            const params: any = {};
+            if (customStartSerial && parseInt(customStartSerial) > 0) {
+                params.customStartSerial = parseInt(customStartSerial);
+            }
+            if (numberOfBooks > 0) {
+                params.numberOfBooks = numberOfBooks;
+            }
+            const range = await certifiedCheckService.getNextSerialRange(branchId, params);
             setSerialRange(range);
         } catch (err) {
             console.error('Error loading serial range:', err);
         }
     };
 
+    useEffect(() => {
+        if (selectedBranch) {
+            loadSerialRange(selectedBranch);
+        }
+    }, [selectedBranch, customStartSerial, numberOfBooks]);
+
     const handlePrint = async () => {
-        if (!selectedBranch || !serialRange) {
+        if (!selectedBranch) {
             setError('يرجى اختيار الفرع أولاً');
             return;
         }
 
         // Find selected branch
         const branch = branches.find(b => b.id === selectedBranch);
-        if (!branch?.accountingNumber) {
+        if (!branch) {
+            setError('الفرع غير موجود');
+            return;
+        }
+
+        if (!branch.accountingNumber) {
             setError('الفرع ليس لديه رقم محاسبي. يرجى تحديثه في إدارة الفروع أولاً.');
+            return;
+        }
+
+        if (!branch.routingNumber) {
+            setError('الفرع ليس لديه رقم توجيهي. يرجى تحديثه في إدارة الفروع أولاً.');
+            return;
+        }
+
+        if (!serialRange) {
+            setError('يرجى الانتظار حتى يتم تحميل نطاق الأرقام التسلسلية');
             return;
         }
 
@@ -73,30 +105,73 @@ export default function CertifiedChecksPage() {
             setError(null);
             setSuccess(null);
 
-            const result = await certifiedCheckService.printBook(selectedBranch, notes);
+            console.log('🖨️ Starting print with:', {
+                branchId: selectedBranch,
+                notes,
+                customStartSerial: customStartSerial ? parseInt(customStartSerial) : undefined,
+                numberOfBooks
+            });
 
-            if (result.success) {
+            const result = await certifiedCheckService.printBook(
+                selectedBranch, 
+                notes,
+                customStartSerial ? parseInt(customStartSerial) : undefined,
+                numberOfBooks
+            );
+
+            console.log('✅ Print result:', result);
+
+            if (result && result.success) {
                 // Generate print HTML and open print dialog
                 const printData = result.printData;
+                if (!printData) {
+                    throw new Error('لم يتم إرجاع بيانات الطباعة');
+                }
+
+                console.log('📄 Opening print window with data:', printData);
                 openPrintWindow(printData);
 
-                setSuccess(`تم إصدار دفتر الصكوك المصدقة بنجاح! (${printData.firstSerial} - ${printData.lastSerial})`);
+                const booksCount = printData.numberOfBooks || 1;
+                setSuccess(`تم إصدار ${booksCount} ${booksCount === 1 ? 'دفتر' : 'دفاتر'} بنجاح! (${printData.firstSerial} - ${printData.lastSerial})`);
                 setNotes('');
+                setCustomStartSerial(''); // إعادة تعيين بداية التسلسل
                 loadData(); // Reload statistics
                 loadSerialRange(selectedBranch); // Reload serial range
+            } else {
+                throw new Error('فشل في إصدار دفتر الصكوك: لم يتم إرجاع نتيجة ناجحة');
             }
         } catch (err: any) {
-            console.error('Error printing:', err);
-            setError(err.response?.data?.error || 'فشل في إصدار دفتر الصكوك');
+            console.error('❌ Error printing:', err);
+            const errorMessage = err.response?.data?.error || err.message || 'فشل في إصدار دفتر الصكوك';
+            setError(errorMessage);
         } finally {
             setPrinting(false);
         }
     };
 
     const openPrintWindow = (printData: CertifiedSerialRange) => {
-        // Build MICR line for certified checks: 03 C{accountingNumber} A{routing}A C{serial}C
+        if (!printData) {
+            console.error('❌ printData is null or undefined');
+            alert('خطأ: لا توجد بيانات للطباعة');
+            return;
+        }
+
+        if (!printData.accountingNumber || !printData.routingNumber) {
+            console.error('❌ Missing accounting or routing number:', printData);
+            alert('خطأ: البيانات غير مكتملة (الرقم المحاسبي أو التوجيهي مفقود)');
+            return;
+        }
+
+        // Build MICR line for certified checks: من اليمين لليسار: 03 + محاسبي + توجيهي + تسلسلي
+        // الصيغة: 03 C{accountingNumber}C A{routingNumber}A C{serial}C
+        // رقم الترميز: من اليمين لليسار = 03 + محاسبي + توجيهي + تسلسلي
+        // في MICR (من اليسار لليمين): C{serial}C A{routing}A {accounting}C 03
         const buildMicrLine = (serial: number) => {
-            return `C${String(serial).padStart(6, '0')}C A${printData.routingNumber}A ${printData.accountingNumber}C 03`;
+            const serialStr = String(serial).padStart(9, '0'); // 9 أرقام للتسلسل
+            const accountingStr = String(printData.accountingNumber || '').padStart(10, '0'); // الرقم المحاسبي
+            const routingStr = String(printData.routingNumber || '').padStart(8, '0'); // الرقم التوجيهي
+            // في MICR نكتب من اليسار لليمين: تسلسلي + توجيهي + محاسبي + 03
+            return `C${serialStr}C A${routingStr}A ${accountingStr}C 03`;
         };
 
         const checksHtml = [];
@@ -106,8 +181,8 @@ export default function CertifiedChecksPage() {
         <div class="check-wrapper">
           <section class="check">
             <div class="branch-name">${printData.branchName}</div>
-            <div class="serial-left">${String(i).padStart(6, '0')}</div>
-            <div class="serial-right">${String(i).padStart(6, '0')}</div>
+            <div class="serial-left">${String(i).padStart(9, '0')}</div>
+            <div class="serial-right">${String(i).padStart(9, '0')}</div>
             <div class="micr-line">${micrLine}</div>
           </section>
         </div>
@@ -229,13 +304,35 @@ export default function CertifiedChecksPage() {
 </body>
 </html>`;
 
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
+        const printWindow = window.open('', '_blank', 'width=1024,height=768');
+        if (!printWindow) {
+            console.error('❌ Failed to open print window');
+            alert('فشل في فتح نافذة الطباعة. يرجى التحقق من إعدادات المتصفح.');
+            return;
+        }
+
+        try {
             printWindow.document.write(printHtml);
             printWindow.document.close();
+            
             printWindow.onload = () => {
-                printWindow.print();
+                setTimeout(() => {
+                    printWindow.focus();
+                    printWindow.print();
+                }, 500);
             };
+
+            // Fallback if onload doesn't fire
+            setTimeout(() => {
+                if (printWindow && !printWindow.closed) {
+                    printWindow.focus();
+                    printWindow.print();
+                }
+            }, 1000);
+        } catch (err) {
+            console.error('❌ Error writing to print window:', err);
+            alert('خطأ في إنشاء محتوى الطباعة');
+            printWindow.close();
         }
     };
 
@@ -351,10 +448,10 @@ export default function CertifiedChecksPage() {
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                اختر الفرع
+                                اختر الفرع <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={selectedBranch || ''}
@@ -368,6 +465,40 @@ export default function CertifiedChecksPage() {
                                     </option>
                                 ))}
                             </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                بداية التسلسل (اختياري)
+                            </label>
+                            <input
+                                type="number"
+                                value={customStartSerial}
+                                onChange={(e) => setCustomStartSerial(e.target.value)}
+                                className="input"
+                                placeholder="مثال: 000000001"
+                                min="1"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                                اتركه فارغاً للاستمرار من آخر تسلسل
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                عدد الدفاتر <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="number"
+                                value={numberOfBooks}
+                                onChange={(e) => setNumberOfBooks(Math.max(1, parseInt(e.target.value) || 1))}
+                                className="input"
+                                min="1"
+                                max="100"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                                كل دفتر = 50 ورقة
+                            </p>
                         </div>
 
                         <div>
@@ -405,12 +536,28 @@ export default function CertifiedChecksPage() {
                                     <p className="text-sm text-gray-600">إلى رقم</p>
                                     <p className="font-bold font-mono text-primary-600">{serialRange.lastSerial}</p>
                                 </div>
+                                {serialRange.numberOfBooks && (
+                                    <div>
+                                        <p className="text-sm text-gray-600">عدد الدفاتر</p>
+                                        <p className="font-bold text-primary-600">{serialRange.numberOfBooks}</p>
+                                    </div>
+                                )}
+                                <div>
+                                    <p className="text-sm text-gray-600">إجمالي الأوراق</p>
+                                    <p className="font-bold text-primary-600">{serialRange.totalChecks || (serialRange.lastSerial - serialRange.firstSerial + 1)}</p>
+                                </div>
                             </div>
 
                             <div className="mt-4 p-4 bg-white rounded-lg border">
-                                <p className="text-sm text-gray-600 mb-2">نموذج خط MICR:</p>
+                                <p className="text-sm text-gray-600 mb-2">نموذج خط MICR (من اليمين لليسار: 03 + محاسبي + توجيهي + تسلسلي):</p>
                                 <p className="font-mono text-sm text-gray-800 direction-ltr text-left">
-                                    C{String(serialRange.firstSerial).padStart(6, '0')}C A{serialRange.routingNumber}A {serialRange.accountingNumber}C 03
+                                    {(() => {
+                                        const serialStr = String(serialRange.firstSerial).padStart(9, '0');
+                                        const accountingStr = String(serialRange.accountingNumber || '').padStart(10, '0');
+                                        const routingStr = String(serialRange.routingNumber || '').padStart(8, '0');
+                                        // في MICR: C{serial}C A{routing}A {accounting}C 03
+                                        return `C${serialStr}C A${routingStr}A ${accountingStr}C 03`;
+                                    })()}
                                 </p>
                             </div>
                         </div>
@@ -430,7 +577,7 @@ export default function CertifiedChecksPage() {
                             ) : (
                                 <>
                                     <Printer className="w-5 h-5" />
-                                    طباعة الدفتر (50 ورقة)
+                                    طباعة {numberOfBooks} {numberOfBooks === 1 ? 'دفتر' : 'دفاتر'} ({numberOfBooks * 50} ورقة)
                                 </>
                             )}
                         </button>

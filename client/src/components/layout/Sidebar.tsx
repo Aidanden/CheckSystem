@@ -14,12 +14,15 @@ import {
   FileText,
   Settings,
   ClipboardList,
+  Stamp,
 } from 'lucide-react';
 
 const navigation = [
   { name: 'لوحة التحكم', href: '/dashboard', icon: Home },
   { name: 'طباعة شيك', href: '/print', icon: Printer, permission: 'SCREEN_PRINT' },
+  { name: 'الشيكات المصدقة', href: '/certified-checks', icon: Stamp, permission: 'SCREEN_CERTIFIED_CHECKS' },
   { name: 'سجلات الطباعة', href: '/print-logs', icon: ClipboardList, permission: 'SCREEN_PRINT_LOGS' },
+  { name: 'سجل الشيكات المصدقة', href: '/certified-logs', icon: ClipboardList, permission: 'SCREEN_CERTIFIED_LOGS' },
   { name: 'المخزون', href: '/inventory', icon: Package, permission: 'INVENTORY_MANAGEMENT' },
   { name: 'المستخدمين', href: '/users', icon: Users, permission: 'MANAGE_USERS' },
   { name: 'الفروع', href: '/branches', icon: Building2, permission: 'MANAGE_BRANCHES' },

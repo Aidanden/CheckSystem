@@ -363,9 +363,18 @@ export default function SettingsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-6xl mx-auto">
-        <div className="flex items-center gap-3">
-          <SettingsIcon className="w-8 h-8 text-blue-600" />
-          <h1 className="text-2xl font-bold text-gray-800">إعدادات الطباعة</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <SettingsIcon className="w-8 h-8 text-blue-600" />
+            <h1 className="text-2xl font-bold text-gray-800">إعدادات الطباعة</h1>
+          </div>
+          <a
+            href="/settings/certified-checks"
+            className="btn btn-outline flex items-center gap-2"
+          >
+            <SettingsIcon className="w-5 h-5" />
+            إعدادات الشيكات المصدقة
+          </a>
         </div>
 
         <div className="card space-y-4">

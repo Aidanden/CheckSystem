@@ -9,7 +9,10 @@ export interface CreateCertifiedCheckLogData {
     firstSerial: number;
     lastSerial: number;
     totalChecks: number;
+    numberOfBooks?: number; // عدد الدفاتر
+    customStartSerial?: number; // بداية التسلسل المخصصة
     operationType: 'print' | 'reprint';
+    reprintReason?: 'damaged' | 'not_printed'; // سبب إعادة الطباعة
     printedBy: number;
     printedByName: string;
     notes?: string;
@@ -35,23 +38,98 @@ export class CertifiedCheckModel {
     }
 
     // Get next serial range for printing (50 checks per book)
-    static async getNextSerialRange(branchId: number, checksCount: number = 50): Promise<{ firstSerial: number; lastSerial: number }> {
+    static async getNextSerialRange(
+        branchId: number, 
+        checksCount: number = 50,
+        customStartSerial?: number
+    ): Promise<{ firstSerial: number; lastSerial: number }> {
         const serial = await this.getOrCreateSerial(branchId);
-        const firstSerial = serial.lastSerial + 1;
-        const lastSerial = serial.lastSerial + checksCount;
+        
+        let firstSerial: number;
+        if (customStartSerial !== undefined && customStartSerial > 0) {
+            // استخدام بداية التسلسل المخصصة
+            firstSerial = customStartSerial;
+        } else {
+            // استخدام التسلسل التلقائي
+            firstSerial = serial.lastSerial + 1;
+        }
+        
+        const lastSerial = firstSerial + checksCount - 1;
         return { firstSerial, lastSerial };
+    }
+
+    // التحقق من عدم تداخل الأرقام التسلسلية
+    static async checkSerialOverlap(
+        branchId: number,
+        firstSerial: number,
+        lastSerial: number,
+        excludeLogId?: number
+    ): Promise<boolean> {
+        const where: any = {
+            branchId,
+            OR: [
+                // تداخل من البداية
+                {
+                    AND: [
+                        { firstSerial: { lte: firstSerial } },
+                        { lastSerial: { gte: firstSerial } }
+                    ]
+                },
+                // تداخل من النهاية
+                {
+                    AND: [
+                        { firstSerial: { lte: lastSerial } },
+                        { lastSerial: { gte: lastSerial } }
+                    ]
+                },
+                // احتواء كامل
+                {
+                    AND: [
+                        { firstSerial: { gte: firstSerial } },
+                        { lastSerial: { lte: lastSerial } }
+                    ]
+                }
+            ]
+        };
+
+        if (excludeLogId) {
+            where.id = { not: excludeLogId };
+        }
+
+        const overlapping = await prisma.certifiedCheckLog.findFirst({
+            where,
+        });
+
+        return !!overlapping;
     }
 
     // Print a new certified check book
     static async printBook(data: CreateCertifiedCheckLogData): Promise<CertifiedCheckLog> {
         return prisma.$transaction(async (tx) => {
+            // التحقق من عدم تداخل الأرقام التسلسلية
+            const hasOverlap = await this.checkSerialOverlap(
+                data.branchId,
+                data.firstSerial,
+                data.lastSerial
+            );
+
+            if (hasOverlap) {
+                throw new Error(`الأرقام التسلسلية من ${data.firstSerial} إلى ${data.lastSerial} متداخلة مع عملية طباعة سابقة`);
+            }
+
             // Update the serial tracker
+            const updateData: any = { lastSerial: data.lastSerial };
+            if (data.customStartSerial !== undefined) {
+                updateData.customStartSerial = data.customStartSerial;
+            }
+
             await tx.certifiedCheckSerial.upsert({
                 where: { branchId: data.branchId },
-                update: { lastSerial: data.lastSerial },
+                update: updateData,
                 create: {
                     branchId: data.branchId,
                     lastSerial: data.lastSerial,
+                    customStartSerial: data.customStartSerial,
                 },
             });
 
@@ -65,7 +143,10 @@ export class CertifiedCheckModel {
                     firstSerial: data.firstSerial,
                     lastSerial: data.lastSerial,
                     totalChecks: data.totalChecks,
+                    numberOfBooks: data.numberOfBooks || 1,
+                    customStartSerial: data.customStartSerial,
                     operationType: data.operationType,
+                    reprintReason: data.reprintReason || null,
                     printedBy: data.printedBy,
                     printedByName: data.printedByName,
                     notes: data.notes,
@@ -169,13 +250,15 @@ export class CertifiedCheckModel {
 
         const stats = await prisma.certifiedCheckLog.aggregate({
             where,
-            _count: { id: true },
-            _sum: { totalChecks: true },
+            _sum: { 
+                totalChecks: true,
+                numberOfBooks: true, // مجموع عدد الدفاتر
+            },
             _max: { printDate: true },
         });
 
         return {
-            totalBooks: stats._count.id || 0,
+            totalBooks: stats._sum.numberOfBooks || 0, // مجموع عدد الدفاتر وليس عدد السجلات
             totalChecks: stats._sum.totalChecks || 0,
             lastPrintDate: stats._max.printDate || null,
         };

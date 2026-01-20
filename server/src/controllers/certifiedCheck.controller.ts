@@ -39,7 +39,21 @@ export const getNextSerialRange = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'الفرع غير موجود' });
         }
 
-        const range = await CertifiedCheckModel.getNextSerialRange(branchId, 50);
+        // الحصول على المعاملات من query string
+        const customStartSerial = req.query.customStartSerial 
+            ? parseInt(req.query.customStartSerial as string) 
+            : undefined;
+        const numberOfBooks = req.query.numberOfBooks 
+            ? parseInt(req.query.numberOfBooks as string) 
+            : 1;
+        const checksPerBook = 50;
+        const totalChecks = numberOfBooks * checksPerBook;
+
+        const range = await CertifiedCheckModel.getNextSerialRange(
+            branchId, 
+            totalChecks,
+            customStartSerial
+        );
 
         return res.json({
             branchId,
@@ -47,7 +61,9 @@ export const getNextSerialRange = async (req: Request, res: Response) => {
             accountingNumber: branch.accountingNumber,
             routingNumber: branch.routingNumber,
             ...range,
-            checksCount: 50,
+            numberOfBooks,
+            checksPerBook,
+            totalChecks,
         });
     } catch (error) {
         console.error('Error getting next serial range:', error);
@@ -58,8 +74,12 @@ export const getNextSerialRange = async (req: Request, res: Response) => {
 // Print a new certified check book
 export const printBook = async (req: Request, res: Response) => {
     try {
-        const { branchId, notes } = req.body;
+        const { branchId, notes, customStartSerial, numberOfBooks } = req.body;
         const user = (req as any).user;
+
+        if (!user || !user.userId) {
+            return res.status(401).json({ error: 'يجب تسجيل الدخول أولاً' });
+        }
 
         if (!branchId) {
             return res.status(400).json({ error: 'يرجى تحديد الفرع' });
@@ -74,7 +94,38 @@ export const printBook = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'الفرع ليس لديه رقم محاسبي. يرجى تحديثه أولاً.' });
         }
 
-        const range = await CertifiedCheckModel.getNextSerialRange(branchId, 50);
+        if (!branch.routingNumber) {
+            return res.status(400).json({ error: 'الفرع ليس لديه رقم توجيهي. يرجى تحديثه أولاً.' });
+        }
+
+        // التحقق من عدد الدفاتر
+        const booksCount = numberOfBooks && numberOfBooks > 0 ? numberOfBooks : 1;
+        const checksPerBook = 50;
+        const totalChecks = booksCount * checksPerBook;
+
+        // الحصول على نطاق التسلسل
+        const startSerial = customStartSerial && customStartSerial > 0 
+            ? parseInt(customStartSerial.toString()) 
+            : undefined;
+
+        const range = await CertifiedCheckModel.getNextSerialRange(
+            branchId, 
+            totalChecks,
+            startSerial
+        );
+
+        // التحقق من عدم التكرار
+        const hasOverlap = await CertifiedCheckModel.checkSerialOverlap(
+            branchId,
+            range.firstSerial,
+            range.lastSerial
+        );
+
+        if (hasOverlap) {
+            return res.status(400).json({ 
+                error: `الأرقام التسلسلية من ${range.firstSerial} إلى ${range.lastSerial} متداخلة مع عملية طباعة سابقة` 
+            });
+        }
 
         const log = await CertifiedCheckModel.printBook({
             branchId,
@@ -83,9 +134,11 @@ export const printBook = async (req: Request, res: Response) => {
             routingNumber: branch.routingNumber,
             firstSerial: range.firstSerial,
             lastSerial: range.lastSerial,
-            totalChecks: 50,
+            totalChecks,
+            numberOfBooks: booksCount,
+            customStartSerial: startSerial,
             operationType: 'print',
-            printedBy: user.id,
+            printedBy: user.userId,
             printedByName: user.username,
             notes,
         });
@@ -100,12 +153,15 @@ export const printBook = async (req: Request, res: Response) => {
                 routingNumber: branch.routingNumber,
                 firstSerial: range.firstSerial,
                 lastSerial: range.lastSerial,
-                checksCount: 50,
+                numberOfBooks: booksCount,
+                checksPerBook,
+                totalChecks,
             },
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error printing certified check book:', error);
-        return res.status(500).json({ error: 'فشل في طباعة دفتر الصكوك المصدقة' });
+        const errorMessage = error.message || 'فشل في طباعة دفتر الصكوك المصدقة';
+        return res.status(500).json({ error: errorMessage });
     }
 };
 
@@ -113,10 +169,19 @@ export const printBook = async (req: Request, res: Response) => {
 export const reprintBook = async (req: Request, res: Response) => {
     try {
         const logId = parseInt(req.params.logId);
+        const { firstSerial, lastSerial, reprintReason } = req.body;
         const user = (req as any).user;
+
+        if (!user || !user.userId) {
+            return res.status(401).json({ error: 'يجب تسجيل الدخول أولاً' });
+        }
 
         if (isNaN(logId)) {
             return res.status(400).json({ error: 'رقم السجل غير صالح' });
+        }
+
+        if (!reprintReason || (reprintReason !== 'damaged' && reprintReason !== 'not_printed')) {
+            return res.status(400).json({ error: 'يجب اختيار سبب إعادة الطباعة: damaged أو not_printed' });
         }
 
         const originalLog = await CertifiedCheckModel.findLogById(logId);
@@ -124,17 +189,37 @@ export const reprintBook = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'السجل غير موجود' });
         }
 
+        // استخدام النطاق المحدد أو النطاق الأصلي
+        const reprintFirstSerial = firstSerial || originalLog.firstSerial;
+        const reprintLastSerial = lastSerial || originalLog.lastSerial;
+
+        // التحقق من أن النطاق ضمن النطاق الأصلي
+        if (reprintFirstSerial < originalLog.firstSerial || reprintLastSerial > originalLog.lastSerial) {
+            return res.status(400).json({ 
+                error: `النطاق يجب أن يكون ضمن النطاق الأصلي (${originalLog.firstSerial} - ${originalLog.lastSerial})` 
+            });
+        }
+
+        if (reprintFirstSerial > reprintLastSerial) {
+            return res.status(400).json({ error: 'رقم البداية يجب أن يكون أصغر من أو يساوي رقم النهاية' });
+        }
+
+        const reprintTotalChecks = reprintLastSerial - reprintFirstSerial + 1;
+
         // Create a new log for the reprint
         const log = await CertifiedCheckModel.printBook({
             branchId: originalLog.branchId,
             branchName: originalLog.branchName,
             accountingNumber: originalLog.accountingNumber,
             routingNumber: originalLog.routingNumber,
-            firstSerial: originalLog.firstSerial,
-            lastSerial: originalLog.lastSerial,
-            totalChecks: originalLog.totalChecks,
+            firstSerial: reprintFirstSerial,
+            lastSerial: reprintLastSerial,
+            totalChecks: reprintTotalChecks,
+            numberOfBooks: Math.ceil(reprintTotalChecks / 50),
+            customStartSerial: undefined, // لا نستخدم custom serial في إعادة الطباعة
             operationType: 'reprint',
-            printedBy: user.id,
+            reprintReason: reprintReason as 'damaged' | 'not_printed',
+            printedBy: user.userId,
             printedByName: user.username,
             notes: `إعادة طباعة للسجل رقم ${logId}`,
         });
@@ -147,9 +232,12 @@ export const reprintBook = async (req: Request, res: Response) => {
                 branchName: originalLog.branchName,
                 accountingNumber: originalLog.accountingNumber,
                 routingNumber: originalLog.routingNumber,
-                firstSerial: originalLog.firstSerial,
-                lastSerial: originalLog.lastSerial,
-                checksCount: originalLog.totalChecks,
+                firstSerial: reprintFirstSerial,
+                lastSerial: reprintLastSerial,
+                checksCount: reprintTotalChecks,
+                numberOfBooks: Math.ceil(reprintTotalChecks / 50),
+                totalChecks: reprintTotalChecks,
+                checksPerBook: 50,
             },
         });
     } catch (error) {
