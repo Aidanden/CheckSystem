@@ -200,7 +200,21 @@ export function buildPreviewFromSoap(
     status => status && status.chequeNumber && status.chequeNumber > 0
   );
   const sortedStatuses = [...validStatuses].sort((a, b) => a.chequeNumber - b.chequeNumber);
-  const accountType = data.accountNumber.startsWith('2') ? 2 : 1;
+  
+  // تحديد نوع الحساب بناءً على عدد الأوراق (chequeLeaves)
+  // 10 = Employee (3), 25 = Individual (1), 50 = Corporate (2)
+  let accountType: 1 | 2 | 3;
+  if (data.chequeLeaves === 10) {
+    accountType = 3; // Employee
+  } else if (data.chequeLeaves === 25) {
+    accountType = 1; // Individual
+  } else if (data.chequeLeaves === 50) {
+    accountType = 2; // Corporate
+  } else {
+    // Fallback: استخدام رقم الحساب إذا لم يكن chequeLeaves متوفراً
+    accountType = data.accountNumber.startsWith('2') ? 2 : 1;
+  }
+  
   const accountHolderName = options.accountHolderName || data.customerName || 'صاحب الحساب';
 
   const layout = options.layout;
@@ -219,44 +233,47 @@ export function buildPreviewFromSoap(
   const branchLabel = options.branchName ?? `فرع ${data.accountBranch}`;
   const routingNumber = options.routingNumber ?? data.accountBranch;
 
-  const checks = sortedStatuses.map((status, index) => {
-    const serialNumber = padNumber(status.chequeNumber);
-    return {
-      checkNumber: index + 1,
-      serialNumber,
-      accountHolderName,
-      accountNumber: data.accountNumber,
-      accountType: accountType === 1 ? '01' : '02',
-      branchName: branchLabel,
-      routingNumber,
-      checkSize: { width: checkWidth, height: checkHeight, unit: 'mm' },
-      micrLine: buildMicrLine(serialNumber, data.accountNumber, routingNumber, accountType),
-      branchNameX: positions.branchName.x,
-      branchNameY: positions.branchName.y,
-      branchNameFontSize: positions.branchName.fontSize,
-      branchNameAlign: positions.branchName.align,
-      accountNumberX: positions.accountNumber.x,
-      accountNumberY: positions.accountNumber.y,
-      accountNumberFontSize: positions.accountNumber.fontSize,
-      accountNumberAlign: positions.accountNumber.align,
-      serialNumberX: positions.serialNumber.x,
-      serialNumberY: positions.serialNumber.y,
-      serialNumberFontSize: positions.serialNumber.fontSize,
-      serialNumberAlign: positions.serialNumber.align,
-      checkSequenceX: positions.checkSequence.x,
-      checkSequenceY: positions.checkSequence.y,
-      checkSequenceFontSize: positions.checkSequence.fontSize,
-      checkSequenceAlign: positions.checkSequence.align,
-      accountHolderNameX: positions.accountHolderName.x,
-      accountHolderNameY: positions.accountHolderName.y,
-      accountHolderNameFontSize: positions.accountHolderName.fontSize,
-      accountHolderNameAlign: positions.accountHolderName.align,
-      micrLineX: positions.micrLine.x,
-      micrLineY: positions.micrLine.y,
-      micrLineFontSize: positions.micrLine.fontSize,
-      micrLineAlign: positions.micrLine.align,
-    };
-  });
+  // إنشاء الشيكات فقط للشيكات الصالحة
+  const checks = sortedStatuses
+    .filter(status => status && status.chequeNumber && status.chequeNumber > 0)
+    .map((status, index) => {
+      const serialNumber = padNumber(status.chequeNumber);
+      return {
+        checkNumber: index + 1,
+        serialNumber,
+        accountHolderName,
+        accountNumber: data.accountNumber,
+        accountType: accountType === 1 ? '01' : accountType === 2 ? '02' : '01',
+        branchName: branchLabel,
+        routingNumber,
+        checkSize: { width: checkWidth, height: checkHeight, unit: 'mm' },
+        micrLine: buildMicrLine(serialNumber, data.accountNumber, routingNumber, accountType),
+        branchNameX: positions.branchName.x,
+        branchNameY: positions.branchName.y,
+        branchNameFontSize: positions.branchName.fontSize,
+        branchNameAlign: positions.branchName.align,
+        accountNumberX: positions.accountNumber.x,
+        accountNumberY: positions.accountNumber.y,
+        accountNumberFontSize: positions.accountNumber.fontSize,
+        accountNumberAlign: positions.accountNumber.align,
+        serialNumberX: positions.serialNumber.x,
+        serialNumberY: positions.serialNumber.y,
+        serialNumberFontSize: positions.serialNumber.fontSize,
+        serialNumberAlign: positions.serialNumber.align,
+        checkSequenceX: positions.checkSequence.x,
+        checkSequenceY: positions.checkSequence.y,
+        checkSequenceFontSize: positions.checkSequence.fontSize,
+        checkSequenceAlign: positions.checkSequence.align,
+        accountHolderNameX: positions.accountHolderName.x,
+        accountHolderNameY: positions.accountHolderName.y,
+        accountHolderNameFontSize: positions.accountHolderName.fontSize,
+        accountHolderNameAlign: positions.accountHolderName.align,
+        micrLineX: positions.micrLine.x,
+        micrLineY: positions.micrLine.y,
+        micrLineFontSize: positions.micrLine.fontSize,
+        micrLineAlign: positions.micrLine.align,
+      };
+    });
 
   const serialFrom = sortedStatuses[0]?.chequeNumber || data.firstChequeNumber || 0;
   const serialTo = sortedStatuses[sortedStatuses.length - 1]?.chequeNumber || serialFrom;

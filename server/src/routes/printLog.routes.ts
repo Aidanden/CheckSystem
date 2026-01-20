@@ -46,6 +46,7 @@ router.get(
     query('accountNumber').optional().isString(),
     query('startDate').optional().isISO8601(),
     query('endDate').optional().isISO8601(),
+    query('userId').optional().isInt(),
   ]),
   PrintLogController.getAllLogs
 );

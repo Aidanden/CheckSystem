@@ -147,6 +147,13 @@ export default function ReportsPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-800">التقارير والإحصائيات</h1>
           <div className="flex gap-2">
+            <a
+              href="/reports/employee-activity"
+              className="btn btn-outline flex items-center gap-2"
+            >
+              <FileText className="w-5 h-5" />
+              تقرير عمل الموظفين
+            </a>
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`btn ${showFilters ? 'btn-secondary' : 'btn-outline'} flex items-center gap-2`}

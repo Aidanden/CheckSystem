@@ -17,6 +17,8 @@ export class PrintLogService {
           ? StockType.CORPORATE
           : StockType.INDIVIDUAL;
 
+        console.log(`📊 تحديد نوع المخزون: accountType=${data.accountType} (${data.accountType === AccountType.CORPORATE ? 'شركة' : data.accountType === AccountType.EMPLOYEE ? 'موظف' : 'فردي'}) => stockType=${stockType} (${stockType === StockType.CORPORATE ? 'شركة' : 'فردي'})`);
+
         // عدد الأوراق المطبوعة (يجب خصمها من المخزون)
         const sheetsToDeduct = data.totalCheques;
 
@@ -58,6 +60,8 @@ export class PrintLogService {
           const stockType: StockType = data.accountType === AccountType.CORPORATE
             ? StockType.CORPORATE
             : StockType.INDIVIDUAL;
+
+          console.log(`📊 إعادة طباعة - تحديد نوع المخزون: accountType=${data.accountType} (${data.accountType === AccountType.CORPORATE ? 'شركة' : data.accountType === AccountType.EMPLOYEE ? 'موظف' : 'فردي'}) => stockType=${stockType} (${stockType === StockType.CORPORATE ? 'شركة' : 'فردي'})`);
 
           // عدد الأوراق المعاد طباعتها (يجب خصمها من المخزون)
           const sheetsToDeduct = data.totalCheques;
@@ -160,6 +164,7 @@ export class PrintLogService {
     accountNumber?: string;
     startDate?: string;
     endDate?: string;
+    userId?: number;
   }) {
     const page = options?.page || 1;
     const limit = options?.limit || 50;
@@ -175,6 +180,7 @@ export class PrintLogService {
       accountNumber: options?.accountNumber,
       startDate,
       endDate,
+      userId: options?.userId,
     });
   }
 

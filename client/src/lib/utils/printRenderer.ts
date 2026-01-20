@@ -158,8 +158,17 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
   const micrFontUrl = new URL('/font/micrenc.ttf', window.location.origin).toString();
   
   // تصفية الشيكات الفارغة أو غير الصالحة قبل المعالجة
+  // التأكد من أن الشيك يحتوي على serialNumber صالح و accountNumber
   const validChecks = checkbookData.checks.filter(
-    check => check && check.serialNumber && check.serialNumber.trim() !== '' && check.accountNumber
+    check => {
+      if (!check) return false;
+      if (!check.serialNumber || check.serialNumber.trim() === '') return false;
+      if (!check.accountNumber || check.accountNumber.trim() === '') return false;
+      // التأكد من أن serialNumber هو رقم صالح
+      const serialNum = parseInt(check.serialNumber, 10);
+      if (isNaN(serialNum) || serialNum <= 0) return false;
+      return true;
+    }
   );
   
   if (validChecks.length === 0) {
@@ -185,6 +194,11 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
     @page {
       size: ${defaultWidthMm}mm ${defaultHeightMm}mm;
       margin: 0;
+    }
+
+    /* منع الصفحات الفارغة في النهاية */
+    @page :blank {
+      display: none;
     }
 
     @font-face {
@@ -214,14 +228,19 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
       width: ${defaultWidthMm}mm;
       height: ${defaultHeightMm}mm;
       display: block;
-      page-break-after: always;
       page-break-inside: avoid;
       overflow: hidden;
     }
 
-    /* إزالة page-break من آخر شيك */
+    /* إضافة page-break فقط للشيكات التي ليست الأخيرة */
+    .check-wrapper:not(:last-child) {
+      page-break-after: always;
+    }
+
+    /* إزالة page-break من آخر شيك بشكل صريح */
     .check-wrapper:last-child {
-      page-break-after: auto;
+      page-break-after: avoid !important;
+      page-break-inside: avoid;
     }
 
     .check {
@@ -272,6 +291,9 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
         padding: 0;
         width: auto;
         height: auto;
+        /* منع الصفحات الفارغة */
+        orphans: 0;
+        widows: 0;
       }
       
       .check-wrapper {
@@ -279,12 +301,18 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
         height: ${defaultHeightMm}mm;
         margin: 0;
         padding: 0;
-        page-break-after: always;
         page-break-inside: avoid;
       }
 
+      /* إضافة page-break فقط للشيكات التي ليست الأخيرة */
+      .check-wrapper:not(:last-child) {
+        page-break-after: always;
+      }
+
+      /* إزالة page-break من آخر شيك بشكل صريح */
       .check-wrapper:last-child {
-        page-break-after: auto;
+        page-break-after: avoid !important;
+        page-break-inside: avoid;
       }
       
       .check {
@@ -315,7 +343,7 @@ export default function renderCheckbookHtml(checkbookData: CheckbookData): strin
   </style>
 </head>
 <body>
-  ${checksHtml}
+${checksHtml}
 </body>
 </html>`;
 }

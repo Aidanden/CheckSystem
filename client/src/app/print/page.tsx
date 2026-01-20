@@ -262,7 +262,7 @@ export default function PrintPage() {
               />
             </div>
             <div className="md:col-span-1">
-              <label className="block text-sm text-gray-600 mb-1">أول رقم شيك (اختياري)</label>
+              <label className="block text-sm text-gray-600 mb-1">أول رقم شيك </label>
               <input
                 type="number"
                 value={firstChequeNumber}

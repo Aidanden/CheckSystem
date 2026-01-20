@@ -106,6 +106,7 @@ export class PrintLogModel {
     accountNumber?: string;
     startDate?: Date;
     endDate?: Date;
+    userId?: number;
   }): Promise<{ logs: PrintLog[]; total: number }> {
     const where: any = {};
 
@@ -115,6 +116,10 @@ export class PrintLogModel {
 
     if (options?.accountNumber) {
       where.accountNumber = { contains: options.accountNumber };
+    }
+
+    if (options?.userId) {
+      where.printedBy = options.userId;
     }
 
     if (options?.startDate || options?.endDate) {

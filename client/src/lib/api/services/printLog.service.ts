@@ -66,6 +66,7 @@ export const printLogService = {
     accountNumber?: string;
     startDate?: string;
     endDate?: string;
+    userId?: number;
   }): Promise<{ logs: PrintLog[]; total: number }> => {
     return request<{ logs: PrintLog[]; total: number }>({
       url: '/print-logs',

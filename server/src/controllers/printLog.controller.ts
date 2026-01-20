@@ -111,7 +111,19 @@ export class PrintLogController {
         accountNumber,
         startDate,
         endDate,
+        userId,
       } = req.query;
+
+      // التحقق من الصلاحيات: فقط المدير يمكنه فلترة حسب أي مستخدم
+      let finalUserId: number | undefined;
+      if (userId) {
+        if (req.user?.isAdmin) {
+          finalUserId = parseInt(userId as string);
+        } else {
+          // المستخدمون العاديون يمكنهم فقط رؤية سجلاتهم الخاصة
+          finalUserId = req.user?.userId;
+        }
+      }
 
       const result = await PrintLogService.getAllLogs({
         page: page ? parseInt(page as string) : undefined,
@@ -120,6 +132,7 @@ export class PrintLogController {
         accountNumber: accountNumber as string | undefined,
         startDate: startDate as string | undefined,
         endDate: endDate as string | undefined,
+        userId: finalUserId,
       });
 
       res.json(result);

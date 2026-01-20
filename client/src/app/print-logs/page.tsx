@@ -81,6 +81,12 @@ export default function PrintLogsPage() {
     setPage(1);
   };
 
+  const handleClearSearch = () => {
+    setAccountNumber('');
+    setSearchTerm('');
+    setPage(1);
+  };
+
   const resolveAccountType = (data: SoapCheckbookResponse): 1 | 2 | 3 => {
     if (data.chequeLeaves === 10) return 3;
     if (data.chequeLeaves === 25) return 1;
@@ -138,9 +144,11 @@ export default function PrintLogsPage() {
         throw new Error('لم يتم العثور على شيكات في النطاق المحدد');
       }
 
-      const filteredSoapResponse = {
+      // إنشاء استجابة SOAP مصفاة مع الحفاظ على chequeLeaves الأصلي لتحديد نوع الحساب بشكل صحيح
+      const filteredSoapResponse: SoapCheckbookResponse = {
         ...soapResponse,
         chequeStatuses: filteredStatuses
+        // نترك chequeLeaves كما هو من الاستجابة الأصلية لتحديد نوع الحساب (Corporate = 50, Individual = 25, Employee = 10)
       };
 
       const accountType = resolveAccountType(soapResponse);
@@ -312,6 +320,16 @@ export default function PrintLogsPage() {
                   <Search className="w-5 h-5" />
                   بحث
                 </button>
+                {searchTerm && (
+                  <button
+                    onClick={handleClearSearch}
+                    className="btn bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 flex items-center gap-2"
+                    title="إلغاء البحث"
+                  >
+                    <X className="w-5 h-5" />
+                    <span className="hidden sm:inline">إلغاء</span>
+                  </button>
+                )}
               </div>
             </div>
 
