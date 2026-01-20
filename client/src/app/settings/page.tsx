@@ -63,10 +63,11 @@ const DEFAULT_BANK_STAFF: PrintSettings = {
 };
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<1 | 2 | 3>(1);
+  const [activeTab, setActiveTab] = useState<1 | 2 | 3 | 4>(1);
   const [individualSettings, setIndividualSettings] = useState<PrintSettings>(DEFAULT_INDIVIDUAL);
   const [corporateSettings, setCorporateSettings] = useState<PrintSettings>(DEFAULT_CORPORATE);
   const [bankStaffSettings, setBankStaffSettings] = useState<PrintSettings>(DEFAULT_BANK_STAFF);
+  const [certifiedSettings, setCertifiedSettings] = useState<PrintSettings>(DEFAULT_CORPORATE); // نفس إعدادات الشركات
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -84,6 +85,7 @@ export default function SettingsPage() {
   const getCurrentSettings = () => {
     if (activeTab === 1) return individualSettings;
     if (activeTab === 2) return corporateSettings;
+    if (activeTab === 4) return certifiedSettings;
     return bankStaffSettings;
   };
 
@@ -134,6 +136,8 @@ export default function SettingsPage() {
       setIndividualSettings(updater);
     } else if (activeTab === 2) {
       setCorporateSettings(updater);
+    } else if (activeTab === 4) {
+      setCertifiedSettings(updater);
     } else {
       setBankStaffSettings(updater);
     }
@@ -198,6 +202,8 @@ export default function SettingsPage() {
           setIndividualSettings(data);
         } else if (activeTab === 2) {
           setCorporateSettings(data);
+        } else if (activeTab === 4) {
+          setCertifiedSettings(data);
         } else {
           setBankStaffSettings(data);
         }
@@ -269,14 +275,67 @@ export default function SettingsPage() {
         ? DEFAULT_INDIVIDUAL
         : activeTab === 2
           ? DEFAULT_CORPORATE
-          : DEFAULT_BANK_STAFF;
+          : activeTab === 4
+            ? DEFAULT_CORPORATE // الشيكات المصدقة تستخدم نفس إعدادات الشركات
+            : DEFAULT_BANK_STAFF;
       setCurrentSettings(() => defaults);
       setSuccess('تم إعادة تعيين الإعدادات');
     }
   };
 
   const handleTestPrint = () => {
-    // استخدام نفس نظام الطباعة الفعلي
+    // للشيكات المصدقة (Tab 4)، نستخدم معاينة مختلفة
+    if (activeTab === 4) {
+      const testSerialNumber = '000000001';
+      const testBranchName = 'فرع طرابلس';
+      const testAccountingNumber = '0010010001';
+      const testRoutingNumber = '11000000';
+
+      // بناء خط MICR للشيك المصدق: C{serial}C A{routing}A {accounting}C 03
+      const micrLine = `C${testSerialNumber}C A${testRoutingNumber}A ${testAccountingNumber}C 03`;
+
+      const certifiedCheckHtml = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>معاينة شيك مصدق</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page { size: ${currentSettings.checkWidth}mm ${currentSettings.checkHeight}mm; margin: 0; }
+    @page :blank { display: none; }
+    @font-face { font-family: 'MICR'; src: url('/font/micrenc.ttf') format('truetype'); }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body { margin: 0; padding: 0; background: #fff; font-family: 'Cairo', sans-serif; }
+    .check-wrapper { margin: 0; padding: 0; width: ${currentSettings.checkWidth}mm; height: ${currentSettings.checkHeight}mm; page-break-inside: avoid; overflow: hidden; display: block; }
+    .check { position: relative; width: ${currentSettings.checkWidth}mm; height: ${currentSettings.checkHeight}mm; background: #fff; border: 1px dashed #ccc; }
+    .branch-name { position: absolute; left: ${currentSettings.branchName.x}mm; top: ${currentSettings.branchName.y}mm; font-size: ${currentSettings.branchName.fontSize}pt; text-align: ${currentSettings.branchName.align}; font-weight: bold; }
+    .serial-left { position: absolute; left: ${currentSettings.serialNumber.x}mm; top: ${currentSettings.serialNumber.y}mm; font-size: ${currentSettings.serialNumber.fontSize}pt; text-align: ${currentSettings.serialNumber.align}; font-family: 'Courier New', monospace; font-weight: bold; direction: ltr; }
+    .serial-right { position: absolute; left: ${currentSettings.checkSequence.x}mm; top: ${currentSettings.checkSequence.y}mm; font-size: ${currentSettings.checkSequence.fontSize}pt; text-align: ${currentSettings.checkSequence.align}; font-family: 'Courier New', monospace; font-weight: bold; direction: ltr; }
+    .micr-line { position: absolute; left: ${currentSettings.micrLine.x}mm; top: ${currentSettings.micrLine.y}mm; font-size: ${currentSettings.micrLine.fontSize}pt; text-align: ${currentSettings.micrLine.align}; font-family: 'MICR', monospace; letter-spacing: 0.15em; direction: ltr; white-space: nowrap; font-weight: bold; }
+    @media screen { body { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px; background: #f3f4f6; } .check-wrapper { box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; } }
+  </style>
+</head>
+<body>
+  <div class="check-wrapper">
+    <section class="check">
+      <div class="branch-name">${testBranchName}</div>
+      <div class="serial-left">${testSerialNumber}</div>
+      <div class="serial-right">${testSerialNumber}</div>
+      <div class="micr-line">${micrLine}</div>
+    </section>
+  </div>
+</body>
+</html>`;
+
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(certifiedCheckHtml);
+        printWindow.document.close();
+      }
+      return;
+    }
+
+    // للشيكات العادية (الأفراد، الشركات، الموظفين)
     const testCheckData = {
       checkNumber: 1,
       serialNumber: '000000001',
@@ -368,13 +427,6 @@ export default function SettingsPage() {
             <SettingsIcon className="w-8 h-8 text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-800">إعدادات الطباعة</h1>
           </div>
-          <a
-            href="/settings/certified-checks"
-            className="btn btn-outline flex items-center gap-2"
-          >
-            <SettingsIcon className="w-5 h-5" />
-            إعدادات الشيكات المصدقة
-          </a>
         </div>
 
         <div className="card space-y-4">
@@ -531,6 +583,15 @@ export default function SettingsPage() {
             >
               شيكات موظفين (10 ورقة)
             </button>
+            <button
+              onClick={() => setActiveTab(4)}
+              className={`px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 4
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-800'
+                }`}
+            >
+              شيكات مصدقة (50 ورقة)
+            </button>
           </div>
         </div>
 
@@ -640,56 +701,58 @@ export default function SettingsPage() {
             </div>
 
             {/* Account Number Position */}
-            <div className="space-y-4 border-t pt-4">
-              <h3 className="font-medium text-gray-700">رقم الحساب</h3>
+            {activeTab !== 4 && (
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-medium text-gray-700">رقم الحساب</h3>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">X (من اليسار)</label>
-                  <input
-                    type="number"
-                    value={currentSettings.accountNumber.x}
-                    onChange={(e) => updatePosition('accountNumber', 'x', parseFloat(e.target.value))}
-                    className="input w-full"
-                    step="0.1"
-                  />
-                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">X (من اليسار)</label>
+                    <input
+                      type="number"
+                      value={currentSettings.accountNumber.x}
+                      onChange={(e) => updatePosition('accountNumber', 'x', parseFloat(e.target.value))}
+                      className="input w-full"
+                      step="0.1"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Y (من الأعلى)</label>
-                  <input
-                    type="number"
-                    value={currentSettings.accountNumber.y}
-                    onChange={(e) => updatePosition('accountNumber', 'y', parseFloat(e.target.value))}
-                    className="input w-full"
-                    step="0.1"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Y (من الأعلى)</label>
+                    <input
+                      type="number"
+                      value={currentSettings.accountNumber.y}
+                      onChange={(e) => updatePosition('accountNumber', 'y', parseFloat(e.target.value))}
+                      className="input w-full"
+                      step="0.1"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
-                  <input
-                    type="number"
-                    value={currentSettings.accountNumber.fontSize}
-                    onChange={(e) => updatePosition('accountNumber', 'fontSize', parseInt(e.target.value))}
-                    className="input w-full"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                    <input
+                      type="number"
+                      value={currentSettings.accountNumber.fontSize}
+                      onChange={(e) => updatePosition('accountNumber', 'fontSize', parseInt(e.target.value))}
+                      className="input w-full"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
-                  <select
-                    value={currentSettings.accountNumber.align}
-                    onChange={(e) => updatePosition('accountNumber', 'align', e.target.value)}
-                    className="input w-full"
-                  >
-                    <option value="left">يسار</option>
-                    <option value="center">وسط</option>
-                    <option value="right">يمين</option>
-                  </select>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                    <select
+                      value={currentSettings.accountNumber.align}
+                      onChange={(e) => updatePosition('accountNumber', 'align', e.target.value)}
+                      className="input w-full"
+                    >
+                      <option value="left">يسار</option>
+                      <option value="center">وسط</option>
+                      <option value="right">يمين</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Serial Number Position */}
             <div className="space-y-4 border-t pt-4">
@@ -796,56 +859,58 @@ export default function SettingsPage() {
             </div>
 
             {/* Account Holder Name Position */}
-            <div className="space-y-4 border-t pt-4">
-              <h3 className="font-medium text-gray-700">اسم صاحب الحساب</h3>
+            {activeTab !== 4 && (
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-medium text-gray-700">اسم صاحب الحساب</h3>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">X</label>
-                  <input
-                    type="number"
-                    value={currentSettings.accountHolderName.x}
-                    onChange={(e) => updatePosition('accountHolderName', 'x', parseFloat(e.target.value))}
-                    className="input w-full"
-                    step="0.1"
-                  />
-                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">X</label>
+                    <input
+                      type="number"
+                      value={currentSettings.accountHolderName.x}
+                      onChange={(e) => updatePosition('accountHolderName', 'x', parseFloat(e.target.value))}
+                      className="input w-full"
+                      step="0.1"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Y</label>
-                  <input
-                    type="number"
-                    value={currentSettings.accountHolderName.y}
-                    onChange={(e) => updatePosition('accountHolderName', 'y', parseFloat(e.target.value))}
-                    className="input w-full"
-                    step="0.1"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Y</label>
+                    <input
+                      type="number"
+                      value={currentSettings.accountHolderName.y}
+                      onChange={(e) => updatePosition('accountHolderName', 'y', parseFloat(e.target.value))}
+                      className="input w-full"
+                      step="0.1"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
-                  <input
-                    type="number"
-                    value={currentSettings.accountHolderName.fontSize}
-                    onChange={(e) => updatePosition('accountHolderName', 'fontSize', parseInt(e.target.value))}
-                    className="input w-full"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                    <input
+                      type="number"
+                      value={currentSettings.accountHolderName.fontSize}
+                      onChange={(e) => updatePosition('accountHolderName', 'fontSize', parseInt(e.target.value))}
+                      className="input w-full"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
-                  <select
-                    value={currentSettings.accountHolderName.align}
-                    onChange={(e) => updatePosition('accountHolderName', 'align', e.target.value)}
-                    className="input w-full"
-                  >
-                    <option value="left">يسار</option>
-                    <option value="center">وسط</option>
-                    <option value="right">يمين</option>
-                  </select>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                    <select
+                      value={currentSettings.accountHolderName.align}
+                      onChange={(e) => updatePosition('accountHolderName', 'align', e.target.value)}
+                      className="input w-full"
+                    >
+                      <option value="left">يسار</option>
+                      <option value="center">وسط</option>
+                      <option value="right">يمين</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* MICR Line Position */}
             <div className="space-y-4 border-t pt-4">

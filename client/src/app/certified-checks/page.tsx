@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { certifiedCheckService, branchService } from '@/lib/api';
+import { certifiedCheckService, branchService, inventoryService } from '@/lib/api';
 import { CertifiedBranch, CertifiedSerialRange, CertifiedStatistics } from '@/lib/api/services/certifiedCheck.service';
-import { Stamp, Printer, RefreshCw, CheckCircle, AlertCircle, Building2 } from 'lucide-react';
+import { Stamp, Printer, RefreshCw, CheckCircle, AlertCircle, Building2, Package } from 'lucide-react';
 
 export default function CertifiedChecksPage() {
     const [branches, setBranches] = useState<CertifiedBranch[]>([]);
@@ -16,10 +16,9 @@ export default function CertifiedChecksPage() {
     const [notes, setNotes] = useState('');
     const [success, setSuccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    
-    // حقول جديدة
     const [customStartSerial, setCustomStartSerial] = useState<string>('');
     const [numberOfBooks, setNumberOfBooks] = useState<number>(1);
+    const [availableStock, setAvailableStock] = useState<number | null>(null);
 
     useEffect(() => {
         loadData();
@@ -36,12 +35,14 @@ export default function CertifiedChecksPage() {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [branchesData, statsData] = await Promise.all([
+            const [branchesData, statsData, stockData] = await Promise.all([
                 certifiedCheckService.getBranches(),
                 certifiedCheckService.getStatistics(),
+                inventoryService.getByStockType(3).catch(() => ({ quantity: 0 })),
             ]);
             setBranches(branchesData);
             setStatistics(statsData);
+            setAvailableStock((stockData as any).quantity);
         } catch (err) {
             console.error('Error loading data:', err);
             setError('فشل في تحميل البيانات');
@@ -113,7 +114,7 @@ export default function CertifiedChecksPage() {
             });
 
             const result = await certifiedCheckService.printBook(
-                selectedBranch, 
+                selectedBranch,
                 notes,
                 customStartSerial ? parseInt(customStartSerial) : undefined,
                 numberOfBooks
@@ -150,27 +151,12 @@ export default function CertifiedChecksPage() {
     };
 
     const openPrintWindow = (printData: CertifiedSerialRange) => {
-        if (!printData) {
-            console.error('❌ printData is null or undefined');
-            alert('خطأ: لا توجد بيانات للطباعة');
-            return;
-        }
-
-        if (!printData.accountingNumber || !printData.routingNumber) {
-            console.error('❌ Missing accounting or routing number:', printData);
-            alert('خطأ: البيانات غير مكتملة (الرقم المحاسبي أو التوجيهي مفقود)');
-            return;
-        }
-
-        // Build MICR line for certified checks: من اليمين لليسار: 03 + محاسبي + توجيهي + تسلسلي
-        // الصيغة: 03 C{accountingNumber}C A{routingNumber}A C{serial}C
         // رقم الترميز: من اليمين لليسار = 03 + محاسبي + توجيهي + تسلسلي
         // في MICR (من اليسار لليمين): C{serial}C A{routing}A {accounting}C 03
         const buildMicrLine = (serial: number) => {
-            const serialStr = String(serial).padStart(9, '0'); // 9 أرقام للتسلسل
-            const accountingStr = String(printData.accountingNumber || '').padStart(10, '0'); // الرقم المحاسبي
-            const routingStr = String(printData.routingNumber || '').padStart(8, '0'); // الرقم التوجيهي
-            // في MICR نكتب من اليسار لليمين: تسلسلي + توجيهي + محاسبي + 03
+            const serialStr = String(serial).padStart(9, '0');
+            const accountingStr = String(printData.accountingNumber || '').padStart(10, '0');
+            const routingStr = String(printData.routingNumber || '').padStart(8, '0');
             return `C${serialStr}C A${routingStr}A ${accountingStr}C 03`;
         };
 
@@ -196,107 +182,20 @@ export default function CertifiedChecksPage() {
   <title>طباعة دفتر الصكوك المصدقة - ${printData.branchName}</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    @page {
-      size: 235mm 86mm;
-      margin: 0;
-    }
-
-    @font-face {
-      font-family: 'MICR';
-      src: url('/font/micrenc.ttf') format('truetype');
-      font-weight: normal;
-      font-style: normal;
-    }
-
-    * {
-      box-sizing: border-box;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #fff;
-      font-family: 'Cairo', sans-serif;
-    }
-
-    .check-wrapper {
-      width: 235mm;
-      height: 86mm;
-      page-break-after: always;
-      page-break-inside: avoid;
-      overflow: hidden;
-    }
-
-    .check-wrapper:last-child {
-      page-break-after: auto;
-    }
-
-    .check {
-      position: relative;
-      width: 235mm;
-      height: 86mm;
-      background: #fff;
-    }
-
-    .branch-name {
-      position: absolute;
-      top: 20mm;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 14pt;
-      font-weight: bold;
-      text-align: center;
-    }
-
-    .serial-left {
-      position: absolute;
-      top: 18mm;
-      left: 15mm;
-      font-size: 12pt;
-      font-family: 'Courier New', monospace;
-      font-weight: bold;
-      direction: ltr;
-    }
-
-    .serial-right {
-      position: absolute;
-      top: 18mm;
-      right: 15mm;
-      font-size: 12pt;
-      font-family: 'Courier New', monospace;
-      font-weight: bold;
-      direction: ltr;
-    }
-
-    .micr-line {
-      position: absolute;
-      bottom: 10mm;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: 'MICR', monospace;
-      font-size: 12pt;
-      font-weight: bold;
-      letter-spacing: 0.15em;
-      direction: ltr;
-      white-space: nowrap;
-    }
-
-    @media screen {
-      body {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-        padding: 20px;
-        background: #f3f4f6;
-      }
-      .check-wrapper {
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        border: 1px solid #e5e7eb;
-      }
-    }
+    @page { size: 235mm 86mm; margin: 0; }
+    @page :blank { display: none; }
+    @font-face { font-family: 'MICR'; src: url('/font/micrenc.ttf') format('truetype'); }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body { margin: 0; padding: 0; background: #fff; font-family: 'Cairo', sans-serif; }
+    .check-wrapper { margin: 0; padding: 0; width: 235mm; height: 86mm; page-break-inside: avoid; overflow: hidden; display: block; }
+    .check-wrapper:not(:last-child) { page-break-after: always; }
+    .check-wrapper:last-child { page-break-after: avoid !important; page-break-inside: avoid; }
+    .check { position: relative; width: 235mm; height: 86mm; background: #fff; }
+    .branch-name { position: absolute; top: 20mm; left: 50%; transform: translateX(-50%); font-size: 14pt; font-weight: bold; text-align: center; }
+    .serial-left { position: absolute; top: 18mm; left: 15mm; font-size: 12pt; font-family: 'Courier New', monospace; font-weight: bold; direction: ltr; }
+    .serial-right { position: absolute; top: 18mm; right: 15mm; font-size: 12pt; font-family: 'Courier New', monospace; font-weight: bold; direction: ltr; }
+    .micr-line { position: absolute; bottom: 10mm; left: 50%; transform: translateX(-50%); font-family: 'MICR', monospace; font-size: 12pt; font-weight: bold; letter-spacing: 0.15em; direction: ltr; white-space: nowrap; }
+    @media screen { body { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px; background: #f3f4f6; } .check-wrapper { box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; } }
   </style>
 </head>
 <body>
@@ -304,35 +203,13 @@ export default function CertifiedChecksPage() {
 </body>
 </html>`;
 
-        const printWindow = window.open('', '_blank', 'width=1024,height=768');
-        if (!printWindow) {
-            console.error('❌ Failed to open print window');
-            alert('فشل في فتح نافذة الطباعة. يرجى التحقق من إعدادات المتصفح.');
-            return;
-        }
-
-        try {
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
             printWindow.document.write(printHtml);
             printWindow.document.close();
-            
             printWindow.onload = () => {
-                setTimeout(() => {
-                    printWindow.focus();
-                    printWindow.print();
-                }, 500);
+                printWindow.print();
             };
-
-            // Fallback if onload doesn't fire
-            setTimeout(() => {
-                if (printWindow && !printWindow.closed) {
-                    printWindow.focus();
-                    printWindow.print();
-                }
-            }, 1000);
-        } catch (err) {
-            console.error('❌ Error writing to print window:', err);
-            alert('خطأ في إنشاء محتوى الطباعة');
-            printWindow.close();
         }
     };
 
@@ -370,7 +247,7 @@ export default function CertifiedChecksPage() {
                 </div>
 
                 {/* Statistics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div className="card bg-gradient-to-br from-amber-50 to-white border-2 border-amber-100">
                         <div className="flex items-center justify-between">
                             <div>
@@ -391,6 +268,18 @@ export default function CertifiedChecksPage() {
                             </div>
                             <div className="bg-blue-100 p-3 rounded-xl">
                                 <CheckCircle className="w-8 h-8 text-blue-600" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="card bg-gradient-to-br from-green-50 to-white border-2 border-green-100">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-600 mb-1">المخزون المتاح</p>
+                                <p className="text-3xl font-bold text-green-600">{availableStock ?? 0}</p>
+                            </div>
+                            <div className="bg-green-100 p-3 rounded-xl">
+                                <Package className="w-8 h-8 text-green-600" />
                             </div>
                         </div>
                     </div>

@@ -185,11 +185,13 @@ export default function CertifiedLogsPage() {
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     @page { size: 235mm 86mm; margin: 0; }
+    @page :blank { display: none; }
     @font-face { font-family: 'MICR'; src: url('/font/micrenc.ttf') format('truetype'); }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     html, body { margin: 0; padding: 0; background: #fff; font-family: 'Cairo', sans-serif; }
-    .check-wrapper { width: 235mm; height: 86mm; page-break-after: always; page-break-inside: avoid; overflow: hidden; }
-    .check-wrapper:last-child { page-break-after: auto; }
+    .check-wrapper { margin: 0; padding: 0; width: 235mm; height: 86mm; page-break-inside: avoid; overflow: hidden; display: block; }
+    .check-wrapper:not(:last-child) { page-break-after: always; }
+    .check-wrapper:last-child { page-break-after: avoid !important; page-break-inside: avoid; }
     .check { position: relative; width: 235mm; height: 86mm; background: #fff; }
     .branch-name { position: absolute; top: 20mm; left: 50%; transform: translateX(-50%); font-size: 14pt; font-weight: bold; text-align: center; }
     .serial-left { position: absolute; top: 18mm; left: 15mm; font-size: 12pt; font-family: 'Courier New', monospace; font-weight: bold; direction: ltr; }
@@ -276,8 +278,8 @@ export default function CertifiedLogsPage() {
                             <ClipboardList className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                             <p className="text-lg font-semibold">لا توجد سجلات حتى الآن</p>
                             <p className="text-sm text-gray-400 mt-2">
-                                {selectedBranch 
-                                    ? 'لا توجد سجلات للفرع المحدد' 
+                                {selectedBranch
+                                    ? 'لا توجد سجلات للفرع المحدد'
                                     : 'لم يتم طباعة أي دفتر صكوك مصدقة بعد'}
                             </p>
                         </div>
@@ -314,8 +316,8 @@ export default function CertifiedLogsPage() {
                                                 <td className="py-3 px-4 text-center font-bold text-primary-600">{log.totalChecks}</td>
                                                 <td className="py-3 px-4">
                                                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${log.operationType === 'print'
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : 'bg-amber-100 text-amber-700'
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : 'bg-amber-100 text-amber-700'
                                                         }`}>
                                                         {log.operationType === 'print' ? 'طباعة' : 'إعادة طباعة'}
                                                     </span>

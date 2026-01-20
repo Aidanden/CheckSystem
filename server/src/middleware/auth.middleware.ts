@@ -59,7 +59,7 @@ export const requireAdmin = (
   next();
 };
 
-export const requirePermission = (permissionCode: string) => {
+export const requirePermission = (permissionCode: string | string[]) => {
   return async (
     req: AuthRequest,
     res: Response,
@@ -77,14 +77,19 @@ export const requirePermission = (permissionCode: string) => {
         return;
       }
 
-      // Check if user has the required permission
-      const hasPermission = await UserModel.hasPermission(
-        req.user.userId,
-        permissionCode
-      );
+      const codes = Array.isArray(permissionCode) ? permissionCode : [permissionCode];
+
+      // Check if user has ANY of the required permissions
+      let hasPermission = false;
+      for (const code of codes) {
+        if (await UserModel.hasPermission(req.user.userId, code)) {
+          hasPermission = true;
+          break;
+        }
+      }
 
       if (!hasPermission) {
-        res.status(403).json({ 
+        res.status(403).json({
           error: 'You do not have permission to perform this action',
           required_permission: permissionCode,
         });

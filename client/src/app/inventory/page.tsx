@@ -13,7 +13,7 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({
-    stock_type: 1 as 1 | 2,
+    stock_type: 1 as 1 | 2 | 3,
     quantity: 0,
     serial_from: '',
     serial_to: '',
@@ -31,8 +31,8 @@ export default function InventoryPage() {
         inventoryService.getAll(),
         inventoryService.getTransactionHistory(undefined, 20),
       ]);
-      setInventory(inv);
-      setTransactions(trans);
+      setInventory(inv.filter(item => item.stockType !== 3));
+      setTransactions(trans.filter(item => item.stockType !== 3));
     } catch (error) {
       console.error('Failed to load inventory:', error);
     } finally {

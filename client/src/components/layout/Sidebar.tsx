@@ -19,11 +19,18 @@ import {
 
 const navigation = [
   { name: 'لوحة التحكم', href: '/dashboard', icon: Home },
+
+  // شيكات الأفراد والشركات
   { name: 'طباعة شيك', href: '/print', icon: Printer, permission: 'SCREEN_PRINT' },
-  { name: 'الشيكات المصدقة', href: '/certified-checks', icon: Stamp, permission: 'SCREEN_CERTIFIED_CHECKS' },
   { name: 'سجلات الطباعة', href: '/print-logs', icon: ClipboardList, permission: 'SCREEN_PRINT_LOGS' },
-  { name: 'سجل الشيكات المصدقة', href: '/certified-logs', icon: ClipboardList, permission: 'SCREEN_CERTIFIED_LOGS' },
   { name: 'المخزون', href: '/inventory', icon: Package, permission: 'INVENTORY_MANAGEMENT' },
+
+  // الشيكات المصدقة
+  { name: 'الشيكات المصدقة', href: '/certified-checks', icon: Stamp, permission: 'SCREEN_CERTIFIED_CHECKS' },
+  { name: 'سجل الشيكات المصدقة', href: '/certified-logs', icon: ClipboardList, permission: 'SCREEN_CERTIFIED_LOGS' },
+  { name: 'مخزن الشيكات المصدقة', href: '/certified-inventory', icon: Package, permission: 'CERTIFIED_INVENTORY_MANAGEMENT' },
+
+  // الإدارة والتقارير
   { name: 'المستخدمين', href: '/users', icon: Users, permission: 'MANAGE_USERS' },
   { name: 'الفروع', href: '/branches', icon: Building2, permission: 'MANAGE_BRANCHES' },
   { name: 'التقارير', href: '/reports', icon: FileText, permission: 'SCREEN_REPORTS' },

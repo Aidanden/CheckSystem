@@ -14,6 +14,7 @@ export enum AccountType {
 export enum StockType {
   INDIVIDUAL = 1,
   CORPORATE = 2,
+  CERTIFIED = 3,
 }
 
 export enum TransactionType {
@@ -33,6 +34,7 @@ export enum PermissionCode {
   HANDOVER = 'HANDOVER',
   REPORTING = 'REPORTING',
   INVENTORY_MANAGEMENT = 'INVENTORY_MANAGEMENT',
+  CERTIFIED_INVENTORY_MANAGEMENT = 'CERTIFIED_INVENTORY_MANAGEMENT',
 }
 
 // Interfaces

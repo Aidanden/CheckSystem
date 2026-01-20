@@ -11,7 +11,7 @@ export const inventoryService = {
   },
 
   // Get inventory by stock type
-  getByStockType: async (stockType: 1 | 2): Promise<Inventory> => {
+  getByStockType: async (stockType: 1 | 2 | 3): Promise<Inventory> => {
     return request<Inventory>({
       url: `/inventory/${stockType}`,
       method: 'GET',
@@ -28,7 +28,7 @@ export const inventoryService = {
   },
 
   // Get transaction history
-  getTransactionHistory: async (stockType?: 1 | 2, limit?: number): Promise<InventoryTransaction[]> => {
+  getTransactionHistory: async (stockType?: 1 | 2 | 3, limit?: number): Promise<InventoryTransaction[]> => {
     const params: any = {};
     if (stockType !== undefined) params.stock_type = stockType;
     if (limit) params.limit = limit;

@@ -39,12 +39,12 @@ export class CertifiedCheckModel {
 
     // Get next serial range for printing (50 checks per book)
     static async getNextSerialRange(
-        branchId: number, 
+        branchId: number,
         checksCount: number = 50,
         customStartSerial?: number
     ): Promise<{ firstSerial: number; lastSerial: number }> {
         const serial = await this.getOrCreateSerial(branchId);
-        
+
         let firstSerial: number;
         if (customStartSerial !== undefined && customStartSerial > 0) {
             // استخدام بداية التسلسل المخصصة
@@ -53,7 +53,7 @@ export class CertifiedCheckModel {
             // استخدام التسلسل التلقائي
             firstSerial = serial.lastSerial + 1;
         }
-        
+
         const lastSerial = firstSerial + checksCount - 1;
         return { firstSerial, lastSerial };
     }
@@ -106,19 +106,27 @@ export class CertifiedCheckModel {
     // Print a new certified check book
     static async printBook(data: CreateCertifiedCheckLogData): Promise<CertifiedCheckLog> {
         return prisma.$transaction(async (tx) => {
-            // التحقق من عدم تداخل الأرقام التسلسلية
-            const hasOverlap = await this.checkSerialOverlap(
-                data.branchId,
-                data.firstSerial,
-                data.lastSerial
-            );
+            // التحقق من عدم تداخل الأرقام التسلسلية (فقط لعمليات الطباعة الجديدة)
+            if (data.operationType === 'print') {
+                const hasOverlap = await this.checkSerialOverlap(
+                    data.branchId,
+                    data.firstSerial,
+                    data.lastSerial
+                );
 
-            if (hasOverlap) {
-                throw new Error(`الأرقام التسلسلية من ${data.firstSerial} إلى ${data.lastSerial} متداخلة مع عملية طباعة سابقة`);
+                if (hasOverlap) {
+                    throw new Error(`الأرقام التسلسلية من ${data.firstSerial} إلى ${data.lastSerial} متداخلة مع عملية طباعة سابقة`);
+                }
             }
 
             // Update the serial tracker
-            const updateData: any = { lastSerial: data.lastSerial };
+            const currentSerial = await tx.certifiedCheckSerial.findUnique({
+                where: { branchId: data.branchId }
+            });
+
+            const newLastSerial = Math.max(currentSerial?.lastSerial || 0, data.lastSerial);
+
+            const updateData: any = { lastSerial: newLastSerial };
             if (data.customStartSerial !== undefined) {
                 updateData.customStartSerial = data.customStartSerial;
             }
@@ -250,7 +258,7 @@ export class CertifiedCheckModel {
 
         const stats = await prisma.certifiedCheckLog.aggregate({
             where,
-            _sum: { 
+            _sum: {
                 totalChecks: true,
                 numberOfBooks: true, // مجموع عدد الدفاتر
             },

@@ -56,7 +56,7 @@ export interface Account {
 // Inventory Types
 export interface Inventory {
   id: number;
-  stockType: 1 | 2; // 1: Individual, 2: Corporate
+  stockType: 1 | 2 | 3; // 1: Individual, 2: Corporate, 3: Certified
   quantity: number;
   createdAt: string;
   updatedAt: string;
@@ -64,7 +64,7 @@ export interface Inventory {
 
 export interface InventoryTransaction {
   id: number;
-  stockType: 1 | 2;
+  stockType: 1 | 2 | 3;
   transactionType: 'ADD' | 'DEDUCT';
   quantity: number;
   serialFrom?: string;
@@ -75,7 +75,7 @@ export interface InventoryTransaction {
 }
 
 export interface AddInventoryRequest {
-  stock_type: 1 | 2;
+  stock_type: 1 | 2 | 3;
   quantity: number;
   serial_from?: string;
   serial_to?: string;

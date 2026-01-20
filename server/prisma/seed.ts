@@ -71,6 +71,11 @@ async function main() {
       permissionCode: 'REPRINT_CERTIFIED',
       description: 'القدرة على إعادة طباعة دفاتر الصكوك المصدقة',
     },
+    {
+      permissionName: 'مخزن الشيكات المصدقة',
+      permissionCode: 'CERTIFIED_INVENTORY_MANAGEMENT',
+      description: 'القدرة على إدارة مخزون الشيكات المصدقة',
+    },
   ];
 
   console.log('Creating permissions...');
@@ -269,7 +274,16 @@ async function main() {
       quantity: 50,
     },
   });
-  console.log('✅ Initial inventory added (100 individual, 50 corporate)');
+
+  await prisma.inventory.upsert({
+    where: { id: 3 },
+    update: { quantity: 200 },
+    create: {
+      stockType: 3, // Certified
+      quantity: 200,
+    },
+  });
+  console.log('✅ Initial inventory added (100 individual, 50 corporate, 200 certified)');
 
   // Create test accounts (15 digits each)
   console.log('Creating test accounts...');

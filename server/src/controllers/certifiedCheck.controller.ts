@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { CertifiedCheckModel } from '../models/CertifiedCheck.model';
 import { BranchModel } from '../models/Branch.model';
 import { PrintSettingsModel } from '../models/PrintSettings.model';
+import { InventoryService } from '../services/inventory.service';
+import { StockType } from '../types';
 
 // Get branches available for certified check printing
 export const getBranches = async (req: Request, res: Response) => {
@@ -40,17 +42,17 @@ export const getNextSerialRange = async (req: Request, res: Response) => {
         }
 
         // الحصول على المعاملات من query string
-        const customStartSerial = req.query.customStartSerial 
-            ? parseInt(req.query.customStartSerial as string) 
+        const customStartSerial = req.query.customStartSerial
+            ? parseInt(req.query.customStartSerial as string)
             : undefined;
-        const numberOfBooks = req.query.numberOfBooks 
-            ? parseInt(req.query.numberOfBooks as string) 
+        const numberOfBooks = req.query.numberOfBooks
+            ? parseInt(req.query.numberOfBooks as string)
             : 1;
         const checksPerBook = 50;
         const totalChecks = numberOfBooks * checksPerBook;
 
         const range = await CertifiedCheckModel.getNextSerialRange(
-            branchId, 
+            branchId,
             totalChecks,
             customStartSerial
         );
@@ -104,12 +106,12 @@ export const printBook = async (req: Request, res: Response) => {
         const totalChecks = booksCount * checksPerBook;
 
         // الحصول على نطاق التسلسل
-        const startSerial = customStartSerial && customStartSerial > 0 
-            ? parseInt(customStartSerial.toString()) 
+        const startSerial = customStartSerial && customStartSerial > 0
+            ? parseInt(customStartSerial.toString())
             : undefined;
 
         const range = await CertifiedCheckModel.getNextSerialRange(
-            branchId, 
+            branchId,
             totalChecks,
             startSerial
         );
@@ -122,8 +124,8 @@ export const printBook = async (req: Request, res: Response) => {
         );
 
         if (hasOverlap) {
-            return res.status(400).json({ 
-                error: `الأرقام التسلسلية من ${range.firstSerial} إلى ${range.lastSerial} متداخلة مع عملية طباعة سابقة` 
+            return res.status(400).json({
+                error: `الأرقام التسلسلية من ${range.firstSerial} إلى ${range.lastSerial} متداخلة مع عملية طباعة سابقة`
             });
         }
 
@@ -142,6 +144,19 @@ export const printBook = async (req: Request, res: Response) => {
             printedByName: user.username,
             notes,
         });
+
+        // خصم من المخزون
+        try {
+            await InventoryService.deductInventory(
+                StockType.CERTIFIED,
+                totalChecks,
+                user.userId,
+                `إصدار دفاتر صكوك مصدقة لفرع ${branch.branchName} (${range.firstSerial} - ${range.lastSerial})`
+            );
+        } catch (invError) {
+            console.error('Error deducting inventory:', invError);
+            // We continue even if inventory deduction fails, but we log it
+        }
 
         return res.json({
             success: true,
@@ -195,8 +210,8 @@ export const reprintBook = async (req: Request, res: Response) => {
 
         // التحقق من أن النطاق ضمن النطاق الأصلي
         if (reprintFirstSerial < originalLog.firstSerial || reprintLastSerial > originalLog.lastSerial) {
-            return res.status(400).json({ 
-                error: `النطاق يجب أن يكون ضمن النطاق الأصلي (${originalLog.firstSerial} - ${originalLog.lastSerial})` 
+            return res.status(400).json({
+                error: `النطاق يجب أن يكون ضمن النطاق الأصلي (${originalLog.firstSerial} - ${originalLog.lastSerial})`
             });
         }
 
@@ -223,6 +238,18 @@ export const reprintBook = async (req: Request, res: Response) => {
             printedByName: user.username,
             notes: `إعادة طباعة للسجل رقم ${logId}`,
         });
+
+        // خصم من المخزون في حالة إعادة الطباعة (لأننا نستخدم أوراقاً جديدة)
+        try {
+            await InventoryService.deductInventory(
+                StockType.CERTIFIED,
+                reprintTotalChecks,
+                user.userId,
+                `إعادة طباعة صكوك مصدقة لفرع ${originalLog.branchName} (${reprintFirstSerial} - ${reprintLastSerial})`
+            );
+        } catch (invError) {
+            console.error('Error deducting inventory for reprint:', invError);
+        }
 
         return res.json({
             success: true,
