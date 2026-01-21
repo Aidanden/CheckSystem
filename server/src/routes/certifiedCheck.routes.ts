@@ -8,6 +8,8 @@ import {
     getStatistics,
     getSettings,
     updateSettings,
+    savePrintRecord,
+    getPrintRecords,
 } from '../controllers/certifiedCheck.controller';
 import { authenticate, requirePermission } from '../middleware/auth.middleware';
 
@@ -39,5 +41,11 @@ router.get('/settings', requirePermission('SYSTEM_SETTINGS'), getSettings);
 
 // Update print settings
 router.put('/settings', requirePermission('SYSTEM_SETTINGS'), updateSettings);
+
+// Save individual certified check print record
+router.post('/print-record', requirePermission('SCREEN_CERTIFIED_CHECKS'), savePrintRecord);
+
+// Get individual certified check print records
+router.get('/print-records', requirePermission('SCREEN_CERTIFIED_CHECKS'), getPrintRecords);
 
 export default router;

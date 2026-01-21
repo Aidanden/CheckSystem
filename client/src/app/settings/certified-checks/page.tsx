@@ -63,43 +63,58 @@ export default function CertifiedCheckSettingsPage() {
     try {
       setInitialLoading(true);
       const data = await certifiedCheckService.getSettings();
+      console.log('📥 Loaded settings from API:', data);
+      
       if (data) {
         // تحويل البيانات من API إلى تنسيق Settings
-        setSettings({
+        // API يرجع البيانات في تنسيق { micrLine: { x, y, ... }, branchName: { x, y, ... }, ... }
+        const settingsData: CertifiedPrintSettings = {
           checkWidth: data.checkWidth || DEFAULT_SETTINGS.checkWidth,
           checkHeight: data.checkHeight || DEFAULT_SETTINGS.checkHeight,
           encodingNumber: {
-            x: data.micrLineX || DEFAULT_SETTINGS.encodingNumber.x,
-            y: data.micrLineY || DEFAULT_SETTINGS.encodingNumber.y,
-            fontSize: data.micrLineFontSize || DEFAULT_SETTINGS.encodingNumber.fontSize,
-            align: (data.micrLineAlign as any) || DEFAULT_SETTINGS.encodingNumber.align,
+            x: (data as any).micrLine?.x ?? data.micrLineX ?? DEFAULT_SETTINGS.encodingNumber.x,
+            y: (data as any).micrLine?.y ?? data.micrLineY ?? DEFAULT_SETTINGS.encodingNumber.y,
+            fontSize: (data as any).micrLine?.fontSize ?? data.micrLineFontSize ?? DEFAULT_SETTINGS.encodingNumber.fontSize,
+            align: ((data as any).micrLine?.align ?? data.micrLineAlign ?? DEFAULT_SETTINGS.encodingNumber.align) as 'left' | 'center' | 'right',
           },
           date: {
-            x: data.serialNumberX || DEFAULT_SETTINGS.date.x,
-            y: data.serialNumberY || DEFAULT_SETTINGS.date.y,
-            fontSize: data.serialNumberFontSize || DEFAULT_SETTINGS.date.fontSize,
-            align: (data.serialNumberAlign as any) || DEFAULT_SETTINGS.date.align,
+            x: (data as any).serialNumber?.x ?? data.serialNumberX ?? DEFAULT_SETTINGS.date.x,
+            y: (data as any).serialNumber?.y ?? data.serialNumberY ?? DEFAULT_SETTINGS.date.y,
+            fontSize: (data as any).serialNumber?.fontSize ?? data.serialNumberFontSize ?? DEFAULT_SETTINGS.date.fontSize,
+            align: ((data as any).serialNumber?.align ?? data.serialNumberAlign ?? DEFAULT_SETTINGS.date.align) as 'left' | 'center' | 'right',
           },
           branchName: {
-            x: data.branchNameX || DEFAULT_SETTINGS.branchName.x,
-            y: data.branchNameY || DEFAULT_SETTINGS.branchName.y,
-            fontSize: data.branchNameFontSize || DEFAULT_SETTINGS.branchName.fontSize,
-            align: (data.branchNameAlign as any) || DEFAULT_SETTINGS.branchName.align,
+            x: (data as any).branchName?.x ?? data.branchNameX ?? DEFAULT_SETTINGS.branchName.x,
+            y: (data as any).branchName?.y ?? data.branchNameY ?? DEFAULT_SETTINGS.branchName.y,
+            fontSize: (data as any).branchName?.fontSize ?? data.branchNameFontSize ?? DEFAULT_SETTINGS.branchName.fontSize,
+            align: ((data as any).branchName?.align ?? data.branchNameAlign ?? DEFAULT_SETTINGS.branchName.align) as 'left' | 'center' | 'right',
           },
-          beneficiaryName: {
-            x: data.accountHolderNameX || DEFAULT_SETTINGS.beneficiaryName?.x || 20,
-            y: data.accountHolderNameY || DEFAULT_SETTINGS.beneficiaryName?.y || 70,
-            fontSize: data.accountHolderNameFontSize || DEFAULT_SETTINGS.beneficiaryName?.fontSize || 10,
-            align: (data.accountHolderNameAlign as any) || DEFAULT_SETTINGS.beneficiaryName?.align || 'left',
-          },
+          beneficiaryName: (() => {
+            const nameX = (data as any).accountHolderName?.x ?? data.accountHolderNameX;
+            const nameY = (data as any).accountHolderName?.y ?? data.accountHolderNameY;
+            // إذا كانت القيم سالبة كبيرة (خارج الشيك)، لا نعرضها
+            if (nameX !== undefined && nameX !== null && nameX < -500) {
+              return undefined;
+            }
+            return {
+              x: nameX ?? DEFAULT_SETTINGS.beneficiaryName?.x ?? 20,
+              y: nameY ?? DEFAULT_SETTINGS.beneficiaryName?.y ?? 70,
+              fontSize: (data as any).accountHolderName?.fontSize ?? data.accountHolderNameFontSize ?? DEFAULT_SETTINGS.beneficiaryName?.fontSize ?? 10,
+              align: ((data as any).accountHolderName?.align ?? data.accountHolderNameAlign ?? DEFAULT_SETTINGS.beneficiaryName?.align ?? 'left') as 'left' | 'center' | 'right',
+            };
+          })(),
           margins: DEFAULT_SETTINGS.margins, // TODO: إضافة دعم للهوامش في API
           printOrientation: DEFAULT_SETTINGS.printOrientation,
           defaultCopies: DEFAULT_SETTINGS.defaultCopies,
           enablePrintPreview: DEFAULT_SETTINGS.enablePrintPreview,
-        });
+        };
+        
+        console.log('✅ Converted settings:', settingsData);
+        setSettings(settingsData);
       }
     } catch (err) {
-      console.error('Error loading settings:', err);
+      console.error('❌ Error loading settings:', err);
+      setError('فشل في تحميل الإعدادات');
     } finally {
       setInitialLoading(false);
     }

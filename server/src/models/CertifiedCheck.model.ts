@@ -295,4 +295,72 @@ export class CertifiedCheckModel {
             lastSerial: s.lastSerial,
         }));
     }
+
+    // Save an individual certified check print record
+    static async savePrintRecord(data: {
+        accountHolderName: string;
+        beneficiaryName: string;
+        accountNumber: string;
+        amountDinars: string;
+        amountDirhams: string;
+        amountInWords: string;
+        issueDate: string;
+        checkType: string;
+        checkNumber: string;
+        branchId: number;
+        createdBy: number;
+        createdByName?: string;
+    }) {
+        return prisma.certifiedCheckPrintRecord.create({
+            data: {
+                accountHolderName: data.accountHolderName,
+                beneficiaryName: data.beneficiaryName,
+                accountNumber: data.accountNumber,
+                amountDinars: data.amountDinars,
+                amountDirhams: data.amountDirhams,
+                amountInWords: data.amountInWords,
+                issueDate: data.issueDate,
+                checkType: data.checkType,
+                checkNumber: data.checkNumber,
+                branchId: data.branchId,
+                createdBy: data.createdBy,
+                createdByName: data.createdByName,
+            },
+        });
+    }
+
+    // Find all individual certified check print records
+    static async findAllRecords(options?: {
+        skip?: number;
+        take?: number;
+        branchId?: number;
+        search?: string;
+    }) {
+        const where: any = {};
+
+        if (options?.branchId) {
+            where.branchId = options.branchId;
+        }
+
+        if (options?.search) {
+            where.OR = [
+                { beneficiaryName: { contains: options.search, mode: 'insensitive' } },
+                { accountHolderName: { contains: options.search, mode: 'insensitive' } },
+                { checkNumber: { contains: options.search, mode: 'insensitive' } },
+                { accountNumber: { contains: options.search, mode: 'insensitive' } },
+            ];
+        }
+
+        const [records, total] = await Promise.all([
+            prisma.certifiedCheckPrintRecord.findMany({
+                where,
+                skip: options?.skip,
+                take: options?.take,
+                orderBy: { createdAt: 'desc' },
+            }),
+            prisma.certifiedCheckPrintRecord.count({ where }),
+        ]);
+
+        return { records, total };
+    }
 }

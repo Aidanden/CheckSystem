@@ -15,12 +15,12 @@ interface PrintPosition {
 
 interface PrintSettings {
   id?: number;
-  accountType: 1 | 2 | 3;
+  accountType: 1 | 2 | 3 | 4;
   checkWidth: number;
   checkHeight: number;
   branchName: PrintPosition;
   serialNumber: PrintPosition;
-  accountNumber: PrintPosition;
+  accountNumber: PrintPosition | null;
   checkSequence: PrintPosition;
   accountHolderName: PrintPosition;
   micrLine: PrintPosition;
@@ -63,11 +63,10 @@ const DEFAULT_BANK_STAFF: PrintSettings = {
 };
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<1 | 2 | 3 | 4>(1);
+  const [activeTab, setActiveTab] = useState<1 | 2 | 3>(1);
   const [individualSettings, setIndividualSettings] = useState<PrintSettings>(DEFAULT_INDIVIDUAL);
   const [corporateSettings, setCorporateSettings] = useState<PrintSettings>(DEFAULT_CORPORATE);
   const [bankStaffSettings, setBankStaffSettings] = useState<PrintSettings>(DEFAULT_BANK_STAFF);
-  const [certifiedSettings, setCertifiedSettings] = useState<PrintSettings>(DEFAULT_CORPORATE); // نفس إعدادات الشركات
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -85,7 +84,6 @@ export default function SettingsPage() {
   const getCurrentSettings = () => {
     if (activeTab === 1) return individualSettings;
     if (activeTab === 2) return corporateSettings;
-    if (activeTab === 4) return certifiedSettings;
     return bankStaffSettings;
   };
 
@@ -136,8 +134,6 @@ export default function SettingsPage() {
       setIndividualSettings(updater);
     } else if (activeTab === 2) {
       setCorporateSettings(updater);
-    } else if (activeTab === 4) {
-      setCertifiedSettings(updater);
     } else {
       setBankStaffSettings(updater);
     }
@@ -202,8 +198,6 @@ export default function SettingsPage() {
           setIndividualSettings(data);
         } else if (activeTab === 2) {
           setCorporateSettings(data);
-        } else if (activeTab === 4) {
-          setCertifiedSettings(data);
         } else {
           setBankStaffSettings(data);
         }
@@ -275,9 +269,7 @@ export default function SettingsPage() {
         ? DEFAULT_INDIVIDUAL
         : activeTab === 2
           ? DEFAULT_CORPORATE
-          : activeTab === 4
-            ? DEFAULT_CORPORATE // الشيكات المصدقة تستخدم نفس إعدادات الشركات
-            : DEFAULT_BANK_STAFF;
+          : DEFAULT_BANK_STAFF;
       setCurrentSettings(() => defaults);
       setSuccess('تم إعادة تعيين الإعدادات');
     }
@@ -358,10 +350,10 @@ export default function SettingsPage() {
       serialNumberY: currentSettings.serialNumber.y,
       serialNumberFontSize: currentSettings.serialNumber.fontSize,
       serialNumberAlign: currentSettings.serialNumber.align,
-      accountNumberX: currentSettings.accountNumber.x,
-      accountNumberY: currentSettings.accountNumber.y,
-      accountNumberFontSize: currentSettings.accountNumber.fontSize,
-      accountNumberAlign: currentSettings.accountNumber.align,
+      accountNumberX: currentSettings.accountNumber?.x ?? 0,
+      accountNumberY: currentSettings.accountNumber?.y ?? 0,
+      accountNumberFontSize: currentSettings.accountNumber?.fontSize ?? 0,
+      accountNumberAlign: currentSettings.accountNumber?.align ?? 'center',
       checkSequenceX: currentSettings.checkSequence.x,
       checkSequenceY: currentSettings.checkSequence.y,
       checkSequenceFontSize: currentSettings.checkSequence.fontSize,
@@ -583,15 +575,6 @@ export default function SettingsPage() {
             >
               شيكات موظفين (10 ورقة)
             </button>
-            <button
-              onClick={() => setActiveTab(4)}
-              className={`px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 4
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-800'
-                }`}
-            >
-              شيكات مصدقة (50 ورقة)
-            </button>
           </div>
         </div>
 
@@ -701,7 +684,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Account Number Position */}
-            {activeTab !== 4 && (
+            {activeTab !== 4 && currentSettings.accountNumber && (
               <div className="space-y-4 border-t pt-4">
                 <h3 className="font-medium text-gray-700">رقم الحساب</h3>
 
@@ -753,7 +736,6 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
-
             {/* Serial Number Position */}
             <div className="space-y-4 border-t pt-4">
               <h3 className="font-medium text-gray-700">الرقم التسلسلي</h3>
@@ -1034,19 +1016,21 @@ export default function SettingsPage() {
               </div>
 
               {/* Account Number */}
-              <div
-                className="absolute"
-                style={{
-                  left: `${currentSettings.accountNumber.x * 2}px`,
-                  top: `${currentSettings.accountNumber.y * 2}px`,
-                  fontSize: `${currentSettings.accountNumber.fontSize * 1.5}px`,
-                  textAlign: currentSettings.accountNumber.align,
-                  transform: currentSettings.accountNumber.align === 'center' ? 'translateX(-50%)' : 'none',
-                  fontFamily: 'monospace',
-                }}
-              >
-                001001000811217
-              </div>
+              {currentSettings.accountNumber && (
+                <div
+                  className="absolute"
+                  style={{
+                    left: `${currentSettings.accountNumber.x * 2}px`,
+                    top: `${currentSettings.accountNumber.y * 2}px`,
+                    fontSize: `${currentSettings.accountNumber.fontSize * 1.5}px`,
+                    textAlign: currentSettings.accountNumber.align,
+                    transform: currentSettings.accountNumber.align === 'center' ? 'translateX(-50%)' : 'none',
+                    fontFamily: 'monospace',
+                  }}
+                >
+                  001001000811217
+                </div>
+              )}
 
               {/* Serial Number */}
               <div

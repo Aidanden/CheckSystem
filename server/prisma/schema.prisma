@@ -160,6 +160,37 @@ model PrintSettings {
   checkSequenceX            Float?   @map("check_sequence_x")
   checkSequenceY            Float?   @map("check_sequence_y")
 
+  // Specialized fields for individual certified check printing
+  beneficiaryNameX        Float?  @map("beneficiary_name_x")
+  beneficiaryNameY        Float?  @map("beneficiary_name_y")
+  beneficiaryNameFontSize Int?    @default(12) @map("beneficiary_name_font_size")
+  beneficiaryNameAlign    String? @default("right") @map("beneficiary_name_align")
+
+  amountNumbersX        Float?  @map("amount_numbers_x")
+  amountNumbersY        Float?  @map("amount_numbers_y")
+  amountNumbersFontSize Int?    @default(14) @map("amount_numbers_font_size")
+  amountNumbersAlign    String? @default("left") @map("amount_numbers_align")
+
+  amountWordsX        Float?  @map("amount_words_x")
+  amountWordsY        Float?  @map("amount_words_y")
+  amountWordsFontSize Int?    @default(11) @map("amount_words_font_size")
+  amountWordsAlign    String? @default("right") @map("amount_words_align")
+
+  issueDateX        Float?  @map("issue_date_x")
+  issueDateY        Float?  @map("issue_date_y")
+  issueDateFontSize Int?    @default(10) @map("issue_date_font_size")
+  issueDateAlign    String? @default("right") @map("issue_date_align")
+
+  checkTypeX        Float?  @map("check_type_x")
+  checkTypeY        Float?  @map("check_type_y")
+  checkTypeFontSize Int?    @default(12) @map("check_type_font_size")
+  checkTypeAlign    String? @default("center") @map("check_type_align")
+
+  checkNumberX        Float?  @map("check_number_x")
+  checkNumberY        Float?  @map("check_number_y")
+  checkNumberFontSize Int?    @default(11) @map("check_number_font_size")
+  checkNumberAlign    String? @default("left") @map("check_number_align")
+
   @@map("print_settings")
 }
 
@@ -244,4 +275,26 @@ model CertifiedCheckLog {
   @@index([printDate])
   @@index([firstSerial, lastSerial])
   @@map("certified_check_logs")
+}
+
+model CertifiedCheckPrintRecord {
+  id                Int      @id @default(autoincrement())
+  accountHolderName String   @map("account_holder_name")
+  beneficiaryName   String   @map("beneficiary_name")
+  accountNumber     String   @map("account_number")
+  amountDinars      String   @map("amount_dinars")
+  amountDirhams     String   @map("amount_dirhams")
+  amountInWords     String   @map("amount_in_words")
+  issueDate         String   @map("issue_date")
+  checkType         String   @map("check_type")
+  checkNumber       String   @unique @map("check_number")
+  branchId          Int      @map("branch_id")
+  createdBy         Int      @map("created_by")
+  createdByName     String?  @map("created_by_name")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([branchId])
+  @@index([createdAt])
+  @@map("certified_check_print_records")
 }

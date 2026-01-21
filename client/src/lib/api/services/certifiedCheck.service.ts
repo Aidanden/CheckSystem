@@ -77,47 +77,108 @@ export interface CertifiedStatistics {
     }>;
 }
 
+export interface CertifiedPrintRecord {
+    id?: number;
+    accountHolderName: string;
+    beneficiaryName: string;
+    accountNumber: string;
+    amountDinars: string;
+    amountDirhams: string;
+    amountInWords: string;
+    issueDate: string;
+    checkType: string;
+    checkNumber: string;
+    branchId: number;
+    branchName?: string;
+    createdAt?: string;
+    createdBy?: number;
+    createdByName?: string;
+}
+
 export interface CertifiedSettings {
     id?: number;
     accountType: number;
     checkWidth: number;
     checkHeight: number;
-    branchName: {
+
+    // Existing fields for book printing
+    branchName?: {
         x: number;
         y: number;
         fontSize: number;
         align: string;
     };
-    serialNumber: {
+    serialNumber?: {
         x: number;
         y: number;
         fontSize: number;
         align: string;
     };
-    accountNumber: {
+    accountNumber?: {
         x: number;
         y: number;
         fontSize: number;
         align: string;
     };
-    checkSequence: {
+    checkSequence?: {
         x: number;
         y: number;
         fontSize: number;
         align: string;
     };
-    accountHolderName: {
+    accountHolderName?: {
         x: number;
         y: number;
         fontSize: number;
         align: string;
     };
-    micrLine: {
+    micrLine?: {
         x: number;
         y: number;
         fontSize: number;
         align: string;
     };
+
+    // New fields for individual certified check printing
+    beneficiaryNameX?: number;
+    beneficiaryNameY?: number;
+    beneficiaryNameFontSize?: number;
+    beneficiaryNameAlign?: string;
+
+    accountNumberX?: number;
+    accountNumberY?: number;
+    accountNumberFontSize?: number;
+    accountNumberAlign?: string;
+
+    amountNumbersX?: number;
+    amountNumbersY?: number;
+    amountNumbersFontSize?: number;
+    amountNumbersAlign?: string;
+
+    amountWordsX?: number;
+    amountWordsY?: number;
+    amountWordsFontSize?: number;
+    amountWordsAlign?: string;
+
+    issueDateX?: number;
+    issueDateY?: number;
+    issueDateFontSize?: number;
+    issueDateAlign?: string;
+
+    checkTypeX?: number;
+    checkTypeY?: number;
+    checkTypeFontSize?: number;
+    checkTypeAlign?: string;
+
+    checkNumberX?: number;
+    checkNumberY?: number;
+    checkNumberFontSize?: number;
+    checkNumberAlign?: string;
+
+    accountHolderNameX?: number;
+    accountHolderNameY?: number;
+    accountHolderNameFontSize?: number;
+    accountHolderNameAlign?: string;
 }
 
 export const certifiedCheckService = {
@@ -143,7 +204,7 @@ export const certifiedCheckService = {
 
     // Print a new certified check book
     printBook: async (
-        branchId: number, 
+        branchId: number,
         notes?: string,
         customStartSerial?: number,
         numberOfBooks?: number
@@ -151,8 +212,8 @@ export const certifiedCheckService = {
         return request<CertifiedPrintResult>({
             url: '/certified-checks/print',
             method: 'POST',
-            data: { 
-                branchId, 
+            data: {
+                branchId,
                 notes,
                 customStartSerial,
                 numberOfBooks,
@@ -212,6 +273,29 @@ export const certifiedCheckService = {
             url: '/certified-checks/settings',
             method: 'PUT',
             data: settings,
+        });
+    },
+
+    // Save an individual certified check print record
+    savePrintRecord: async (record: CertifiedPrintRecord): Promise<{ success: boolean; record: CertifiedPrintRecord }> => {
+        return request<{ success: boolean; record: CertifiedPrintRecord }>({
+            url: '/certified-checks/print-record',
+            method: 'POST',
+            data: record,
+        });
+    },
+
+    // Get individual certified check print records
+    getPrintRecords: async (options?: {
+        skip?: number;
+        take?: number;
+        branchId?: number;
+        search?: string;
+    }): Promise<{ records: CertifiedPrintRecord[]; total: number }> => {
+        return request<{ records: CertifiedPrintRecord[]; total: number }>({
+            url: '/certified-checks/print-records',
+            method: 'GET',
+            params: options,
         });
     },
 };

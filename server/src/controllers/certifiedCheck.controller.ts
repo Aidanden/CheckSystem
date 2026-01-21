@@ -310,10 +310,10 @@ export const getStatistics = async (req: Request, res: Response) => {
     }
 };
 
-// Get print settings for certified checks (accountType = 3)
+// Get print settings for certified checks (accountType = 4)
 export const getSettings = async (req: Request, res: Response) => {
     try {
-        const settings = await PrintSettingsModel.getOrDefault(3);
+        const settings = await PrintSettingsModel.getOrDefault(4);
         res.json(settings);
     } catch (error) {
         console.error('Error fetching certified check settings:', error);
@@ -325,40 +325,113 @@ export const getSettings = async (req: Request, res: Response) => {
 export const updateSettings = async (req: Request, res: Response) => {
     try {
         const data = req.body;
+        console.log('Updating certified check settings with data:', data);
 
         const settings = await PrintSettingsModel.upsert({
-            accountType: 3,
+            accountType: 4,
             checkWidth: data.checkWidth,
             checkHeight: data.checkHeight,
-            branchNameX: data.branchName.x,
-            branchNameY: data.branchName.y,
-            branchNameFontSize: data.branchName.fontSize,
-            branchNameAlign: data.branchName.align,
-            serialNumberX: data.serialNumber.x,
-            serialNumberY: data.serialNumber.y,
-            serialNumberFontSize: data.serialNumber.fontSize,
-            serialNumberAlign: data.serialNumber.align,
-            accountNumberX: data.accountNumber?.x ?? 117.5,
-            accountNumberY: data.accountNumber?.y ?? 10,
-            accountNumberFontSize: data.accountNumber?.fontSize ?? 14,
-            accountNumberAlign: data.accountNumber?.align ?? 'center',
-            checkSequenceX: data.checkSequence?.x ?? 20,
-            checkSequenceY: data.checkSequence?.y ?? 18,
-            checkSequenceFontSize: data.checkSequence?.fontSize ?? 12,
-            checkSequenceAlign: data.checkSequence?.align ?? 'left',
-            accountHolderNameX: data.accountHolderName.x,
-            accountHolderNameY: data.accountHolderName.y,
-            accountHolderNameFontSize: data.accountHolderName.fontSize,
-            accountHolderNameAlign: data.accountHolderName.align,
-            micrLineX: data.micrLine.x,
-            micrLineY: data.micrLine.y,
-            micrLineFontSize: data.micrLine.fontSize,
-            micrLineAlign: data.micrLine.align,
+            branchNameX: data.branchName?.x ?? data.branchNameX ?? 145,
+            branchNameY: data.branchName?.y ?? data.branchNameY ?? 5,
+            branchNameFontSize: data.branchName?.fontSize ?? data.branchNameFontSize ?? 8,
+            branchNameAlign: data.branchName?.align ?? data.branchNameAlign ?? 'center',
+            serialNumberX: data.serialNumber?.x ?? data.serialNumberX ?? 215,
+            serialNumberY: data.serialNumber?.y ?? data.serialNumberY ?? 18,
+            serialNumberFontSize: data.serialNumber?.fontSize ?? data.serialNumberFontSize ?? 8,
+            serialNumberAlign: data.serialNumber?.align ?? data.serialNumberAlign ?? 'right',
+            accountNumberX: data.accountNumberX ?? data.accountNumber?.x ?? 0,
+            accountNumberY: data.accountNumberY ?? data.accountNumber?.y ?? 0,
+            accountNumberFontSize: data.accountNumberFontSize ?? data.accountNumber?.fontSize ?? 0,
+            accountNumberAlign: data.accountNumberAlign ?? data.accountNumber?.align ?? 'center',
+            checkSequenceX: data.checkSequenceX ?? data.checkSequence?.x ?? 20,
+            checkSequenceY: data.checkSequenceY ?? data.checkSequence?.y ?? 18,
+            checkSequenceFontSize: data.checkSequenceFontSize ?? data.checkSequence?.fontSize ?? 8,
+            checkSequenceAlign: data.checkSequenceAlign ?? data.checkSequence?.align ?? 'left',
+            accountHolderNameX: data.accountHolderNameX ?? data.accountHolderName?.x ?? -1000,
+            accountHolderNameY: data.accountHolderNameY ?? data.accountHolderName?.y ?? -1000,
+            accountHolderNameFontSize: data.accountHolderNameFontSize ?? data.accountHolderName?.fontSize ?? 0,
+            accountHolderNameAlign: data.accountHolderNameAlign ?? data.accountHolderName?.align ?? 'left',
+            micrLineX: data.micrLineX ?? data.micrLine?.x ?? 138,
+            micrLineY: data.micrLineY ?? data.micrLine?.y ?? 70,
+            micrLineFontSize: data.micrLineFontSize ?? data.micrLine?.fontSize ?? 14,
+            micrLineAlign: data.micrLineAlign ?? data.micrLine?.align ?? 'center',
+
+            // New fields
+            beneficiaryNameX: data.beneficiaryNameX,
+            beneficiaryNameY: data.beneficiaryNameY,
+            beneficiaryNameFontSize: data.beneficiaryNameFontSize,
+            beneficiaryNameAlign: data.beneficiaryNameAlign,
+            amountNumbersX: data.amountNumbersX,
+            amountNumbersY: data.amountNumbersY,
+            amountNumbersFontSize: data.amountNumbersFontSize,
+            amountNumbersAlign: data.amountNumbersAlign,
+            amountWordsX: data.amountWordsX,
+            amountWordsY: data.amountWordsY,
+            amountWordsFontSize: data.amountWordsFontSize,
+            amountWordsAlign: data.amountWordsAlign,
+            issueDateX: data.issueDateX,
+            issueDateY: data.issueDateY,
+            issueDateFontSize: data.issueDateFontSize,
+            issueDateAlign: data.issueDateAlign,
+            checkTypeX: data.checkTypeX,
+            checkTypeY: data.checkTypeY,
+            checkTypeFontSize: data.checkTypeFontSize,
+            checkTypeAlign: data.checkTypeAlign,
+            checkNumberX: data.checkNumberX,
+            checkNumberY: data.checkNumberY,
+            checkNumberFontSize: data.checkNumberFontSize,
+            checkNumberAlign: data.checkNumberAlign,
         });
 
         res.json({ success: true, settings });
     } catch (error) {
         console.error('Error updating certified check settings:', error);
         res.status(500).json({ error: 'فشل في حفظ إعدادات الطباعة' });
+    }
+};
+
+// Save individual certified check print record
+export const savePrintRecord = async (req: Request, res: Response) => {
+    try {
+        const data = req.body;
+        const user = (req as any).user;
+
+        if (!user || !user.userId) {
+            return res.status(401).json({ error: 'يجب تسجيل الدخول أولاً' });
+        }
+
+        const record = await CertifiedCheckModel.savePrintRecord({
+            ...data,
+            createdBy: user.userId,
+            createdByName: user.username,
+        });
+
+        return res.json({ success: true, record });
+    } catch (error: any) {
+        console.error('Error saving print record:', error);
+        const message = error.code === 'P2002' ? 'رقم الشيك مكرر ومسجل مسبقاً' : 'فشل في حفظ سجل الطباعة';
+        return res.status(500).json({ error: message });
+    }
+};
+
+// Get individual certified check print records
+export const getPrintRecords = async (req: Request, res: Response) => {
+    try {
+        const skip = parseInt(req.query.skip as string) || 0;
+        const take = parseInt(req.query.take as string) || 20;
+        const branchId = req.query.branchId ? parseInt(req.query.branchId as string) : undefined;
+        const search = req.query.search as string;
+
+        const { records, total } = await CertifiedCheckModel.findAllRecords({
+            skip,
+            take,
+            branchId,
+            search,
+        });
+
+        return res.json({ records, total, skip, take });
+    } catch (error) {
+        console.error('Error fetching print records:', error);
+        return res.status(500).json({ error: 'فشل في جلب سجلات الطباعة' });
     }
 };

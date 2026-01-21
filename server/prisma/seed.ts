@@ -555,9 +555,69 @@ async function main() {
     },
   });
 
+  // Certified checks settings (accountType: 4) - similar to corporate but without account holder name and account number
+  await prisma.printSettings.upsert({
+    where: { accountType: 4 },
+    update: {
+      checkWidth: 240,
+      checkHeight: 86,
+      branchNameX: 145,
+      branchNameY: 5,
+      branchNameFontSize: 8,
+      branchNameAlign: 'center',
+      accountNumberX: undefined,
+      accountNumberY: undefined,
+      accountNumberFontSize: undefined,
+      accountNumberAlign: undefined,
+      serialNumberX: 215,
+      serialNumberY: 18,
+      serialNumberFontSize: 8,
+      serialNumberAlign: 'right',
+      checkSequenceX: 20,
+      checkSequenceY: 18,
+      checkSequenceFontSize: 8,
+      checkSequenceAlign: 'left',
+      accountHolderNameX: -1000, // خارج الشيك - لا يظهر
+      accountHolderNameY: -1000, // خارج الشيك - لا يظهر
+      accountHolderNameFontSize: 0,
+      accountHolderNameAlign: 'left',
+      micrLineX: 138,
+      micrLineY: 70,
+      micrLineFontSize: 14,
+      micrLineAlign: 'center',
+    },
+    create: {
+      accountType: 4,
+      checkWidth: 240,
+      checkHeight: 86,
+      branchNameX: 145,
+      branchNameY: 5,
+      branchNameFontSize: 8,
+      branchNameAlign: 'center',
+      serialNumberX: 215,
+      serialNumberY: 18,
+      serialNumberFontSize: 8,
+      serialNumberAlign: 'right',
+      checkSequenceX: 20,
+      checkSequenceY: 18,
+      checkSequenceFontSize: 8,
+      checkSequenceAlign: 'left',
+      accountHolderNameX: -1000, // خارج الشيك - لا يظهر
+      accountHolderNameY: -1000, // خارج الشيك - لا يظهر
+      accountHolderNameFontSize: 0,
+      accountHolderNameAlign: 'left',
+      micrLineX: 138,
+      micrLineY: 70,
+      micrLineFontSize: 14,
+      micrLineAlign: 'center',
+    },
+  });
+
   console.log('✅ Print settings created:');
   console.log('  - Individual settings (235 x 86 mm)');
   console.log('  - Corporate settings (240 x 86 mm)');
+  console.log('  - Bank staff settings (235 x 86 mm)');
+  console.log('  - Certified checks settings (240 x 86 mm, without account holder name and account number)');
 
   console.log('\n✅ Database seeding completed successfully!');
 }
@@ -565,6 +625,7 @@ async function main() {
 main()
   .catch((e) => {
     console.error('❌ Seeding failed:', e);
+    // @ts-ignore - process is available in Node.js runtime
     process.exit(1);
   })
   .finally(async () => {
