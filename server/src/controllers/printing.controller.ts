@@ -96,6 +96,9 @@ export class PrintingController {
         ? parseInt(req.query.user_id as string)
         : undefined;
       const accountNumber = req.query.account_number as string | undefined;
+      const accountHolderName = req.query.account_holder_name as string | undefined;
+      const accountType = req.query.account_type ? parseInt(req.query.account_type as string) : undefined;
+      const status = req.query.status as string | undefined;
       const dateFrom = req.query.date_from as string | undefined;
       const dateTo = req.query.date_to as string | undefined;
       const limit = req.query.limit
@@ -123,6 +126,9 @@ export class PrintingController {
         userId,
         branchId,
         accountNumber,
+        accountHolderName,
+        accountType,
+        status,
         dateFrom,
         dateTo,
         limit,

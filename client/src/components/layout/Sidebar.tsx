@@ -26,9 +26,10 @@ const navigation = [
   { name: 'المخزون', href: '/inventory', icon: Package, permission: 'INVENTORY_MANAGEMENT' },
 
   // الشيكات المصدقة
-  { name: 'طباعة شيك مصدق', href: '/certified-print', icon: Printer, permission: 'SCREEN_CERTIFIED_CHECKS' },
-  { name: 'إصدار دفاتر مصدقة', href: '/certified-checks', icon: Stamp, permission: 'SCREEN_CERTIFIED_CHECKS' },
-  { name: 'سجل الشيكات المصدقة', href: '/certified-logs', icon: ClipboardList, permission: 'SCREEN_CERTIFIED_LOGS' },
+  { name: 'طباعة شيك مصدق', href: '/certified-print', icon: Printer, permission: 'SCREEN_CERTIFIED_PRINT' },
+  { name: 'تقارير الشيك المصدقة', href: '/certified-reports', icon: FileText, permission: 'SCREEN_CERTIFIED_REPORTS' },
+  { name: 'إصدار دفاتر مصدقة', href: '/certified-checks', icon: Stamp, permission: 'SCREEN_CERTIFIED_BOOKS' },
+  { name: 'سجل و تقارير دفاتر المصدقة', href: '/certified-logs', icon: ClipboardList, permission: 'SCREEN_CERTIFIED_LOGS' },
   { name: 'مخزن الشيكات المصدقة', href: '/certified-inventory', icon: Package, permission: 'CERTIFIED_INVENTORY_MANAGEMENT' },
 
   // الإدارة والتقارير

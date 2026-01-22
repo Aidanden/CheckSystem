@@ -219,11 +219,14 @@ export class PrintingService {
     userId?: number;
     branchId?: number;
     accountNumber?: string;
+    accountHolderName?: string;
+    accountType?: number;
+    status?: string;
     dateFrom?: string;
     dateTo?: string;
     limit?: number;
   }): Promise<any[]> {
-    const { userId, branchId, accountNumber, dateFrom, dateTo, limit = 100 } = filters;
+    const { userId, branchId, accountNumber, accountHolderName, accountType, status, dateFrom, dateTo, limit = 100 } = filters;
 
     // Build where clause
     const where: any = {};
@@ -237,7 +240,21 @@ export class PrintingService {
     }
 
     if (accountNumber) {
-      where.accountNumber = accountNumber;
+      where.accountNumber = { contains: accountNumber };
+    }
+
+    if (accountHolderName) {
+      where.account = {
+        accountHolderName: { contains: accountHolderName }
+      };
+    }
+
+    if (accountType) {
+      where.accountType = accountType;
+    }
+
+    if (status) {
+      where.status = status;
     }
 
     if (dateFrom || dateTo) {
@@ -248,8 +265,8 @@ export class PrintingService {
       if (dateTo) {
         // Add one day to include the entire end date
         const endDate = new Date(dateTo);
-        endDate.setDate(endDate.getDate() + 1);
-        where.printDate.lt = endDate;
+        endDate.setHours(23, 59, 59, 999);
+        where.printDate.lte = endDate;
       }
     }
 
@@ -270,6 +287,12 @@ export class PrintingService {
             branchName: true,
           },
         },
+        account: {
+          select: {
+            id: true,
+            accountHolderName: true,
+          }
+        }
       },
     });
   }

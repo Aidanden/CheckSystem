@@ -116,17 +116,18 @@ export const printBook = async (req: Request, res: Response) => {
             startSerial
         );
 
-        // التحقق من عدم التكرار
-        const hasOverlap = await CertifiedCheckModel.checkSerialOverlap(
+        // التحقق من عدم التكرار عبر جميع الفروع
+        const overlapResult = await CertifiedCheckModel.checkSerialOverlap(
             branchId,
             range.firstSerial,
             range.lastSerial
         );
 
-        if (hasOverlap) {
-            return res.status(400).json({
-                error: `الأرقام التسلسلية من ${range.firstSerial} إلى ${range.lastSerial} متداخلة مع عملية طباعة سابقة`
-            });
+        if (overlapResult.hasOverlap) {
+            const errorMessage = overlapResult.conflictingBranch
+                ? `الأرقام التسلسلية من ${range.firstSerial} إلى ${range.lastSerial} مستخدمة بالفعل من قبل فرع "${overlapResult.conflictingBranch}"`
+                : `الأرقام التسلسلية من ${range.firstSerial} إلى ${range.lastSerial} متداخلة مع عملية طباعة سابقة`;
+            return res.status(400).json({ error: errorMessage });
         }
 
         const log = await CertifiedCheckModel.printBook({
@@ -279,11 +280,22 @@ export const getLogs = async (req: Request, res: Response) => {
         const skip = parseInt(req.query.skip as string) || 0;
         const take = parseInt(req.query.take as string) || 20;
         const branchId = req.query.branchId ? parseInt(req.query.branchId as string) : undefined;
+        const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+        const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+        let endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+
+        // ضبط نهاية اليوم لتشمل كافة العمليات في ذلك التاريخ
+        if (endDate) {
+            endDate.setHours(23, 59, 59, 999);
+        }
 
         const { logs, total } = await CertifiedCheckModel.findAllLogs({
             skip,
             take,
             branchId,
+            userId,
+            startDate,
+            endDate,
         });
 
         res.json({ logs, total, skip, take });
@@ -414,24 +426,70 @@ export const savePrintRecord = async (req: Request, res: Response) => {
     }
 };
 
+// Update individual certified check print record
+export const updatePrintRecord = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const data = req.body;
+        const user = (req as any).user;
+
+        if (!user || !user.userId) {
+            return res.status(401).json({ error: 'يجب تسجيل الدخول أولاً' });
+        }
+
+        const record = await CertifiedCheckModel.updatePrintRecord(Number(id), data, {
+            userId: user.userId,
+            username: user.username
+        });
+
+        return res.json({ success: true, record });
+    } catch (error: any) {
+        console.error('Error updating print record:', error);
+        const message = error.code === 'P2002' ? 'رقم الشيك مكرر ومسجل مسبقاً' : 'فشل في تحديث سجل الطباعة';
+        return res.status(500).json({ error: message });
+    }
+};
+
 // Get individual certified check print records
 export const getPrintRecords = async (req: Request, res: Response) => {
     try {
         const skip = parseInt(req.query.skip as string) || 0;
         const take = parseInt(req.query.take as string) || 20;
         const branchId = req.query.branchId ? parseInt(req.query.branchId as string) : undefined;
+        const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
         const search = req.query.search as string;
+        const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+        let endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+
+        if (endDate) {
+            endDate.setHours(23, 59, 59, 999);
+        }
 
         const { records, total } = await CertifiedCheckModel.findAllRecords({
             skip,
             take,
             branchId,
+            userId,
             search,
+            startDate,
+            endDate,
         });
 
         return res.json({ records, total, skip, take });
     } catch (error) {
         console.error('Error fetching print records:', error);
         return res.status(500).json({ error: 'فشل في جلب سجلات الطباعة' });
+    }
+};
+
+// Get individual certified check statistics
+export const getRecordStatistics = async (req: Request, res: Response) => {
+    try {
+        const branchId = req.query.branchId ? parseInt(req.query.branchId as string) : undefined;
+        const stats = await CertifiedCheckModel.getRecordStatistics(branchId);
+        res.json(stats);
+    } catch (error) {
+        console.error('Error fetching record statistics:', error);
+        res.status(500).json({ error: 'فشل في جلب الإحصائيات' });
     }
 };

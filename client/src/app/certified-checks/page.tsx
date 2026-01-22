@@ -358,7 +358,7 @@ export default function CertifiedChecksPage() {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                بداية التسلسل (اختياري)
+                                بداية التسلسل
                             </label>
                             <input
                                 type="number"
@@ -437,18 +437,7 @@ export default function CertifiedChecksPage() {
                                 </div>
                             </div>
 
-                            <div className="mt-4 p-4 bg-white rounded-lg border">
-                                <p className="text-sm text-gray-600 mb-2">نموذج خط MICR (من اليمين لليسار: 03 + محاسبي + توجيهي + تسلسلي):</p>
-                                <p className="font-mono text-sm text-gray-800 direction-ltr text-left">
-                                    {(() => {
-                                        const serialStr = String(serialRange.firstSerial).padStart(9, '0');
-                                        const accountingStr = String(serialRange.accountingNumber || '').padStart(10, '0');
-                                        const routingStr = String(serialRange.routingNumber || '').padStart(8, '0');
-                                        // في MICR: C{serial}C A{routing}A {accounting}C 03
-                                        return `C${serialStr}C A${routingStr}A ${accountingStr}C 03`;
-                                    })()}
-                                </p>
-                            </div>
+
                         </div>
                     )}
 

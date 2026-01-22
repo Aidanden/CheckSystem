@@ -58,15 +58,15 @@ export class CertifiedCheckModel {
         return { firstSerial, lastSerial };
     }
 
-    // التحقق من عدم تداخل الأرقام التسلسلية
+    // التحقق من عدم تداخل الأرقام التسلسلية عبر جميع الفروع
     static async checkSerialOverlap(
         branchId: number,
         firstSerial: number,
         lastSerial: number,
         excludeLogId?: number
-    ): Promise<boolean> {
+    ): Promise<{ hasOverlap: boolean; conflictingBranch?: string }> {
         const where: any = {
-            branchId,
+            // إزالة فلتر branchId للتحقق عبر جميع الفروع
             OR: [
                 // تداخل من البداية
                 {
@@ -98,9 +98,23 @@ export class CertifiedCheckModel {
 
         const overlapping = await prisma.certifiedCheckLog.findFirst({
             where,
+            include: {
+                branch: {
+                    select: {
+                        branchName: true,
+                    }
+                }
+            }
         });
 
-        return !!overlapping;
+        if (overlapping) {
+            return {
+                hasOverlap: true,
+                conflictingBranch: overlapping.branchName
+            };
+        }
+
+        return { hasOverlap: false };
     }
 
     // Print a new certified check book
@@ -108,14 +122,17 @@ export class CertifiedCheckModel {
         return prisma.$transaction(async (tx) => {
             // التحقق من عدم تداخل الأرقام التسلسلية (فقط لعمليات الطباعة الجديدة)
             if (data.operationType === 'print') {
-                const hasOverlap = await this.checkSerialOverlap(
+                const overlapResult = await this.checkSerialOverlap(
                     data.branchId,
                     data.firstSerial,
                     data.lastSerial
                 );
 
-                if (hasOverlap) {
-                    throw new Error(`الأرقام التسلسلية من ${data.firstSerial} إلى ${data.lastSerial} متداخلة مع عملية طباعة سابقة`);
+                if (overlapResult.hasOverlap) {
+                    const errorMessage = overlapResult.conflictingBranch
+                        ? `الأرقام التسلسلية من ${data.firstSerial} إلى ${data.lastSerial} مستخدمة بالفعل من قبل فرع "${overlapResult.conflictingBranch}"`
+                        : `الأرقام التسلسلية من ${data.firstSerial} إلى ${data.lastSerial} متداخلة مع عملية طباعة سابقة`;
+                    throw new Error(errorMessage);
                 }
             }
 
@@ -170,6 +187,7 @@ export class CertifiedCheckModel {
         skip?: number;
         take?: number;
         branchId?: number;
+        userId?: number;
         startDate?: Date;
         endDate?: Date;
     }): Promise<{ logs: CertifiedCheckLog[]; total: number }> {
@@ -177,6 +195,10 @@ export class CertifiedCheckModel {
 
         if (options?.branchId) {
             where.branchId = options.branchId;
+        }
+
+        if (options?.userId) {
+            where.printedBy = options.userId;
         }
 
         if (options?.startDate || options?.endDate) {
@@ -329,17 +351,100 @@ export class CertifiedCheckModel {
         });
     }
 
-    // Find all individual certified check print records
+    // Update an individual certified check print record
+    static async updatePrintRecord(id: number, data: {
+        accountHolderName: string;
+        beneficiaryName: string;
+        accountNumber: string;
+        amountDinars: string;
+        amountDirhams: string;
+        amountInWords: string;
+        issueDate: string;
+        checkType: string;
+        checkNumber: string;
+        branchId: number;
+    }, user?: { userId: number; username: string }) {
+        // Find old record for logging
+        const oldRecord = await prisma.certifiedCheckPrintRecord.findUnique({
+            where: { id }
+        });
+
+        const updatedRecord = await prisma.certifiedCheckPrintRecord.update({
+            where: { id },
+            data: {
+                accountHolderName: data.accountHolderName,
+                beneficiaryName: data.beneficiaryName,
+                accountNumber: data.accountNumber,
+                amountDinars: data.amountDinars,
+                amountDirhams: data.amountDirhams,
+                amountInWords: data.amountInWords,
+                issueDate: data.issueDate,
+                checkType: data.checkType,
+                checkNumber: data.checkNumber,
+                branchId: data.branchId,
+            },
+        });
+
+        // Log the change if user is provided
+        if (user && oldRecord) {
+            const changes: any = {};
+            const fields = [
+                'accountHolderName', 'beneficiaryName', 'accountNumber',
+                'amountDinars', 'amountDirhams', 'amountInWords',
+                'issueDate', 'checkType', 'checkNumber', 'branchId'
+            ];
+
+            fields.forEach(field => {
+                if ((oldRecord as any)[field] !== (data as any)[field]) {
+                    changes[field] = {
+                        from: (oldRecord as any)[field],
+                        to: (data as any)[field]
+                    };
+                }
+            });
+
+            if (Object.keys(changes).length > 0) {
+                await prisma.certifiedCheckPrintUpdateLog.create({
+                    data: {
+                        recordId: id,
+                        userId: user.userId,
+                        userName: user.username,
+                        changes: JSON.stringify(changes)
+                    }
+                });
+            }
+        }
+
+        return updatedRecord;
+    }
+
     static async findAllRecords(options?: {
         skip?: number;
         take?: number;
         branchId?: number;
+        userId?: number;
         search?: string;
+        startDate?: Date;
+        endDate?: Date;
     }) {
         const where: any = {};
 
         if (options?.branchId) {
             where.branchId = options.branchId;
+        }
+
+        if (options?.userId) {
+            where.createdBy = options.userId;
+        }
+
+        if (options?.startDate || options?.endDate) {
+            where.createdAt = {};
+            if (options.startDate) {
+                where.createdAt.gte = options.startDate;
+            }
+            if (options.endDate) {
+                where.createdAt.lte = options.endDate;
+            }
         }
 
         if (options?.search) {
@@ -357,10 +462,35 @@ export class CertifiedCheckModel {
                 skip: options?.skip,
                 take: options?.take,
                 orderBy: { createdAt: 'desc' },
+                include: {
+                    branch: true
+                }
             }),
             prisma.certifiedCheckPrintRecord.count({ where }),
         ]);
 
         return { records, total };
+    }
+
+    static async getRecordStatistics(branchId?: number) {
+        const where: any = {};
+        if (branchId) {
+            where.branchId = branchId;
+        }
+
+        const totalCount = await prisma.certifiedCheckPrintRecord.count({ where });
+
+        // Summing amounts is tricky because they are strings (dinars/dirhams)
+        // For a quick report, we can just return the count and maybe most recent
+        const lastRecord = await prisma.certifiedCheckPrintRecord.findFirst({
+            where,
+            orderBy: { createdAt: 'desc' },
+            select: { createdAt: true }
+        });
+
+        return {
+            totalRecords: totalCount,
+            lastRecordDate: lastRecord?.createdAt || null,
+        };
     }
 }

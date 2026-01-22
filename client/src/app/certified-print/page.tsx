@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Stamp, Printer, Eye, Save, AlertCircle, CheckCircle, Calculator } from 'lucide-react';
+import { Stamp, Printer, Eye, Save, AlertCircle, CheckCircle, Calculator, PlusCircle, History, User as UserIcon, Activity, Clock, ArrowLeftRight } from 'lucide-react';
 import { certifiedCheckService } from '@/lib/api';
+import { useAppSelector } from '@/store/hooks';
+import { formatNumber } from '@/utils/locale';
 
 interface CertifiedCheckData {
+    id?: number;
     accountHolderName: string;
     beneficiaryName: string;
     accountNumber: string;
@@ -143,6 +146,7 @@ const numberToArabicWords = (num: number): string => {
 };
 
 export default function CertifiedPrintPage() {
+    const { user } = useAppSelector((state) => state.auth);
     const [formData, setFormData] = useState<CertifiedCheckData>({
         accountHolderName: '',
         beneficiaryName: '',
@@ -170,8 +174,16 @@ export default function CertifiedPrintPage() {
     useEffect(() => {
         loadBranches();
         loadSettings();
-        loadRecords();
     }, []);
+
+    useEffect(() => {
+        if (user) {
+            loadRecords();
+            if (!user.isAdmin && user.branchId) {
+                setFormData(prev => ({ ...prev, branchId: user.branchId as number }));
+            }
+        }
+    }, [user]);
 
     // تحديث المبلغ بالحروف تلقائياً
     useEffect(() => {
@@ -193,12 +205,7 @@ export default function CertifiedPrintPage() {
                 words += ' لا غير';
             }
 
-            // تحديث المبلغ بالحروف فقط إذا كان الفارغ أو يطابق آخر تحويل تلقائي
-            // هذا يسمح للمستخدم بتعديل النص يدوياً دون أن يتم استبداله فوراً
-            if (!formData.amountInWords || formData.amountInWords === lastAutoAmountWords) {
-                setFormData(prev => ({ ...prev, amountInWords: words }));
-                setLastAutoAmountWords(words);
-            }
+            setFormData(prev => ({ ...prev, amountInWords: words }));
         }
     }, [formData.amountDinars, formData.amountDirhams]);
 
@@ -207,19 +214,30 @@ export default function CertifiedPrintPage() {
     const loadBranches = async () => {
         try {
             const data = await certifiedCheckService.getBranches();
-            setBranches(data);
-        } catch (err) {
+            if (user && !user.isAdmin && user.branchId) {
+                // If not admin, only show the user's branch
+                const myBranch = data.find(b => b.id === user.branchId);
+                setBranches(myBranch ? [myBranch] : []);
+            } else {
+                setBranches(data);
+            }
+        } catch (err: any) {
             console.error('Error loading branches:', err);
+            setError(err.response?.data?.error || 'فشل في تحميل قائمة الفروع');
         }
     };
 
     const loadRecords = async () => {
         try {
             setRecordsLoading(true);
-            const data = await certifiedCheckService.getPrintRecords({ take: 10 });
+            const data = await certifiedCheckService.getPrintRecords({
+                take: 15,
+                branchId: user?.isAdmin ? undefined : (user?.branchId || undefined)
+            });
             setRecords(data.records);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error loading records:', err);
+            setError(err.response?.data?.error || 'فشل في تحميل سجل العمليات');
         } finally {
             setRecordsLoading(false);
         }
@@ -282,8 +300,9 @@ export default function CertifiedPrintPage() {
                     },
                 });
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error loading settings:', err);
+            setError(err.response?.data?.error || 'فشل في تحميل إعدادات الطباعة');
         }
     };
 
@@ -319,6 +338,24 @@ export default function CertifiedPrintPage() {
         return true;
     };
 
+    const resetForm = () => {
+        setFormData({
+            accountHolderName: '',
+            beneficiaryName: '',
+            accountNumber: '',
+            amountDinars: '',
+            amountDirhams: '',
+            amountInWords: '',
+            issueDate: new Date().toISOString().split('T')[0],
+            checkType: 'شيك مصدق',
+            checkNumber: '',
+            branchId: formData.branchId, // Keep current branch for convenience
+        });
+        setShowPreview(false);
+        setError(null);
+        setSuccess(null);
+    };
+
     const handleSave = async () => {
         setError(null);
         setSuccess(null);
@@ -327,18 +364,26 @@ export default function CertifiedPrintPage() {
 
         try {
             setLoading(true);
-            // حفظ البيانات في قاعدة البيانات
-            await certifiedCheckService.savePrintRecord({
+            const dataToSave = {
                 ...formData,
                 amountDirhams: formData.amountDirhams.padStart(3, '0'),
                 branchId: formData.branchId!
-            });
+            };
 
-            setSuccess('تم حفظ بيانات الشيك بنجاح');
+            if (formData.id) {
+                // تعديل عملية سابقة
+                await certifiedCheckService.updatePrintRecord(formData.id, dataToSave as any);
+                setSuccess('تم تحديث بيانات الشيك بنجاح');
+            } else {
+                // حفظ عملية جديدة
+                await certifiedCheckService.savePrintRecord(dataToSave as any);
+                setSuccess('تم حفظ بيانات الشيك بنجاح');
+            }
+
             loadRecords(); // تحديث السجل في الشاشة
             setShowPreview(true); // معاينة تلقائية بعد الحفظ
         } catch (err: any) {
-            setError(err.message || 'فشل في حفظ البيانات');
+            setError(err.response?.data?.error || err.message || 'فشل في حفظ البيانات');
         } finally {
             setLoading(false);
         }
@@ -366,15 +411,17 @@ export default function CertifiedPrintPage() {
         try {
             setLoading(true);
             // محاولة حفظ العملية في السجل، مع تجاهل أخطاء التكرار للسماح بإعادة الطباعة
-            try {
-                await certifiedCheckService.savePrintRecord({
-                    ...formData,
-                    amountDirhams: formData.amountDirhams.padStart(3, '0'),
-                    branchId: formData.branchId!
-                });
-                loadRecords(); // تحديث السجل
-            } catch (saveErr) {
-                console.log('Skipping save (possibly duplicate):', saveErr);
+            if (!formData.id) {
+                try {
+                    await certifiedCheckService.savePrintRecord({
+                        ...formData,
+                        amountDirhams: formData.amountDirhams.padStart(3, '0'),
+                        branchId: formData.branchId!
+                    } as any);
+                    loadRecords(); // تحديث السجل
+                } catch (saveErr) {
+                    console.log('Skipping save (possibly duplicate):', saveErr);
+                }
             }
 
             const selectedBranch = branches.find(b => b.id === formData.branchId);
@@ -434,7 +481,7 @@ export default function CertifiedPrintPage() {
 
         } catch (err: any) {
             if (printWindow) printWindow.close();
-            setError(err.message || 'فشل في عملية الطباعة');
+            setError(err.response?.data?.error || err.message || 'فشل في عملية الطباعة');
         } finally {
             setLoading(false);
         }
@@ -450,10 +497,21 @@ export default function CertifiedPrintPage() {
                             <Stamp className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-800">طباعة شيك مصدق</h1>
+                            <h1 className="text-2xl font-bold text-gray-800">
+                                {formData.id ? 'تعديل بيانات شيك مصدق' : 'طباعة شيك مصدق'}
+                            </h1>
                             <p className="text-gray-600">إدخال بيانات ومعاينة وطباعة الشيكات المصدقة</p>
                         </div>
                     </div>
+                    {formData.id && (
+                        <button
+                            onClick={resetForm}
+                            className="btn bg-gray-50 text-gray-700 border border-gray-200 hover:bg-white flex items-center gap-2"
+                        >
+                            <PlusCircle className="w-5 h-5 text-green-600" />
+                            شيك جديد
+                        </button>
+                    )}
                 </div>
 
                 {/* Messages */}
@@ -484,7 +542,8 @@ export default function CertifiedPrintPage() {
                             <select
                                 value={formData.branchId || ''}
                                 onChange={(e) => handleInputChange('branchId', e.target.value ? Number(e.target.value) : null)}
-                                className="input"
+                                className="input disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                disabled={!user?.isAdmin && branches.length === 1}
                             >
                                 <option value="">-- اختر الفرع --</option>
                                 {branches.map((branch) => (
@@ -614,10 +673,10 @@ export default function CertifiedPrintPage() {
                             </label>
                             <textarea
                                 value={formData.amountInWords}
-                                onChange={(e) => handleInputChange('amountInWords', e.target.value)}
-                                className="input min-h-[80px]"
-                                placeholder="سبعة وثلاثون ألفاً وخمسمائة دينار ليبي لا غير"
+                                className="input min-h-[80px] bg-gray-50 cursor-not-allowed"
+                                placeholder="المبلغ بالحروف"
                                 rows={3}
+                                readOnly
                             />
                         </div>
 
@@ -639,10 +698,10 @@ export default function CertifiedPrintPage() {
                             <button
                                 onClick={handleSave}
                                 disabled={loading}
-                                className="btn btn-secondary flex items-center gap-2 flex-1"
+                                className={`btn ${formData.id ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'btn-secondary'} flex items-center gap-2 flex-1`}
                             >
                                 <Save className="w-5 h-5" />
-                                حفظ
+                                {formData.id ? 'حفظ التعديلات' : 'حفظ'}
                             </button>
                             <button
                                 onClick={handlePreview}
@@ -772,7 +831,7 @@ export default function CertifiedPrintPage() {
                             <ul className="text-sm text-amber-700 space-y-1">
                                 <li>• أدخل رقم الشيك المطبوع مسبقاً على الورقة (لا يمكن تكراره)</li>
                                 <li>• تأكد من صحة جميع البيانات قبل الطباعة</li>
-                                <li>• المبلغ بالحروف يتم توليده تلقائياً ويمكن تعديله</li>
+                                <li>• المبلغ بالحروف يتم توليده تلقائياً ولا يمكن تعديله</li>
                                 <li>• استخدم "معاينة" للتحقق من موضع الحقول</li>
                                 <li>• الطباعة تكون بمقاس 1:1 مطابق للشيك الحقيقي</li>
                             </ul>
@@ -831,6 +890,7 @@ export default function CertifiedPrintPage() {
                                                 <button
                                                     onClick={() => {
                                                         setFormData({
+                                                            id: record.id,
                                                             accountHolderName: record.accountHolderName,
                                                             beneficiaryName: record.beneficiaryName,
                                                             accountNumber: record.accountNumber,

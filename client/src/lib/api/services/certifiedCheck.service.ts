@@ -78,7 +78,7 @@ export interface CertifiedStatistics {
 }
 
 export interface CertifiedPrintRecord {
-    id?: number;
+    id: number;
     accountHolderName: string;
     beneficiaryName: string;
     accountNumber: string;
@@ -90,8 +90,9 @@ export interface CertifiedPrintRecord {
     checkNumber: string;
     branchId: number;
     branchName?: string;
-    createdAt?: string;
-    createdBy?: number;
+    createdAt: string;
+    updatedAt: string;
+    createdBy: number;
     createdByName?: string;
 }
 
@@ -242,6 +243,9 @@ export const certifiedCheckService = {
         skip?: number;
         take?: number;
         branchId?: number;
+        userId?: number;
+        startDate?: string;
+        endDate?: string;
     }): Promise<{ logs: CertifiedCheckLog[]; total: number }> => {
         return request<{ logs: CertifiedCheckLog[]; total: number }>({
             url: '/certified-checks/logs',
@@ -285,17 +289,37 @@ export const certifiedCheckService = {
         });
     },
 
+    // Update an individual certified check print record
+    updatePrintRecord: async (id: number, record: CertifiedPrintRecord): Promise<{ success: boolean; record: CertifiedPrintRecord }> => {
+        return request<{ success: boolean; record: CertifiedPrintRecord }>({
+            url: `/certified-checks/print-record/${id}`,
+            method: 'PUT',
+            data: record,
+        });
+    },
+
     // Get individual certified check print records
     getPrintRecords: async (options?: {
         skip?: number;
         take?: number;
         branchId?: number;
         search?: string;
+        startDate?: string;
+        endDate?: string;
     }): Promise<{ records: CertifiedPrintRecord[]; total: number }> => {
         return request<{ records: CertifiedPrintRecord[]; total: number }>({
             url: '/certified-checks/print-records',
             method: 'GET',
             params: options,
+        });
+    },
+
+    // Get individual certified check statistics
+    getRecordStatistics: async (branchId?: number): Promise<{ totalRecords: number; lastRecordDate: string | null }> => {
+        return request<{ totalRecords: number; lastRecordDate: string | null }>({
+            url: '/certified-checks/record-statistics',
+            method: 'GET',
+            params: branchId ? { branchId } : undefined,
         });
     },
 };

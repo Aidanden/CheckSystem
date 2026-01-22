@@ -62,11 +62,24 @@ const DEFAULT_BANK_STAFF: PrintSettings = {
   micrLine: { ...DEFAULT_INDIVIDUAL.micrLine },
 };
 
+const DEFAULT_CERTIFIED: PrintSettings = {
+  accountType: 4,
+  checkWidth: 240,
+  checkHeight: 86,
+  branchName: { x: 145, y: 5, fontSize: 8, align: 'center' },
+  serialNumber: { x: 215, y: 18, fontSize: 8, align: 'right' },
+  accountNumber: null,
+  checkSequence: { x: 20, y: 18, fontSize: 8, align: 'left' },
+  accountHolderName: { x: -1000, y: -1000, fontSize: 0, align: 'left' },
+  micrLine: { x: 138, y: 70, fontSize: 14, align: 'center' },
+};
+
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<1 | 2 | 3>(1);
+  const [activeTab, setActiveTab] = useState<1 | 2 | 3 | 4>(1);
   const [individualSettings, setIndividualSettings] = useState<PrintSettings>(DEFAULT_INDIVIDUAL);
   const [corporateSettings, setCorporateSettings] = useState<PrintSettings>(DEFAULT_CORPORATE);
   const [bankStaffSettings, setBankStaffSettings] = useState<PrintSettings>(DEFAULT_BANK_STAFF);
+  const [certifiedSettings, setCertifiedSettings] = useState<PrintSettings>(DEFAULT_CERTIFIED);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -84,7 +97,8 @@ export default function SettingsPage() {
   const getCurrentSettings = () => {
     if (activeTab === 1) return individualSettings;
     if (activeTab === 2) return corporateSettings;
-    return bankStaffSettings;
+    if (activeTab === 3) return bankStaffSettings;
+    return certifiedSettings;
   };
 
   const handleSoapEndpointSave = async () => {
@@ -134,8 +148,10 @@ export default function SettingsPage() {
       setIndividualSettings(updater);
     } else if (activeTab === 2) {
       setCorporateSettings(updater);
-    } else {
+    } else if (activeTab === 3) {
       setBankStaffSettings(updater);
+    } else {
+      setCertifiedSettings(updater);
     }
   };
 
@@ -198,8 +214,10 @@ export default function SettingsPage() {
           setIndividualSettings(data);
         } else if (activeTab === 2) {
           setCorporateSettings(data);
-        } else {
+        } else if (activeTab === 3) {
           setBankStaffSettings(data);
+        } else {
+          setCertifiedSettings(data);
         }
       }
     } catch (err) {
@@ -269,7 +287,9 @@ export default function SettingsPage() {
         ? DEFAULT_INDIVIDUAL
         : activeTab === 2
           ? DEFAULT_CORPORATE
-          : DEFAULT_BANK_STAFF;
+          : activeTab === 3
+            ? DEFAULT_BANK_STAFF
+            : DEFAULT_CERTIFIED;
       setCurrentSettings(() => defaults);
       setSuccess('تم إعادة تعيين الإعدادات');
     }
@@ -333,7 +353,7 @@ export default function SettingsPage() {
       serialNumber: '000000001',
       accountHolderName: 'أحمد محمد علي السيد',
       accountNumber: '001001000811217',
-      accountType: activeTab === 1 ? 'فردي' : activeTab === 2 ? 'شركة' : 'موظف',
+      accountType: activeTab === 1 ? 'فردي' : activeTab === 2 ? 'شركة' : 'دفتر مصدق',
       routingNumber: '1100000001',
       branchName: 'الفرع الرئيسي',
       micrLine: `0${activeTab} 1100000001 001001000811217 000000001`,
@@ -573,7 +593,16 @@ export default function SettingsPage() {
                 : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
-              شيكات موظفين (10 ورقة)
+              دفاتر الشيكات المصدقة (10 ورقة)
+            </button>
+            <button
+              onClick={() => setActiveTab(4)}
+              className={`px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 4
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-800'
+                }`}
+            >
+              دفاتر الشيكات المصدقة (50 ورقة)
             </button>
           </div>
         </div>

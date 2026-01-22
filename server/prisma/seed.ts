@@ -26,55 +26,70 @@ async function main() {
       description: 'القدرة على إضافة/تعديل الفروع',
     },
     {
-      permissionName: 'إعدادات الطباعة',
+      permissionName: 'إعدادات النظام',
       permissionCode: 'SYSTEM_SETTINGS',
       description: 'الوصول إلى شاشة إعدادات الطباعة وتخطيط الشيكات',
     },
-
-    // الشاشات الرئيسية
     {
-      permissionName: 'شاشة الطباعة',
-      permissionCode: 'SCREEN_PRINT',
-      description: 'الوصول إلى شاشة طباعة الشيكات',
-    },
-    {
-      permissionName: 'شاشة سجلات الطباعة',
-      permissionCode: 'SCREEN_PRINT_LOGS',
-      description: 'الوصول إلى شاشة سجلات الطباعة',
-    },
-    {
-      permissionName: 'شاشة التقارير',
+      permissionName: 'شاشة التقارير العامة',
       permissionCode: 'SCREEN_REPORTS',
-      description: 'الوصول إلى شاشة التقارير',
+      description: 'الوصول إلى الشاشة العامة للتقارير والإحصائيات',
     },
 
-    // عمليات خاصة
+    // شيكات الأفراد والشركات
     {
-      permissionName: 'إعادة الطباعة',
+      permissionName: 'طباعة دفاتر شيكات',
+      permissionCode: 'SCREEN_PRINT',
+      description: 'الوصول إلى شاشة طباعة دفاتر شيكات الأفراد والشركات',
+    },
+    {
+      permissionName: 'سجلات طباعة الدفاتر',
+      permissionCode: 'SCREEN_PRINT_LOGS',
+      description: 'الوصول إلى سجلات عمليات طباعة الدفاتر',
+    },
+    {
+      permissionName: 'إدارة المخزون (دفاتر)',
+      permissionCode: 'INVENTORY_MANAGEMENT',
+      description: 'إدارة مخزون دفاتر الشيكات الخام',
+    },
+    {
+      permissionName: 'إعادة طباعة الشيكات',
       permissionCode: 'REPRINT',
-      description: 'القدرة على إعادة طباعة الشيكات من شاشة سجلات الطباعة',
+      description: 'القدرة على إعادة طباعة الشيكات من شاشة السجلات',
     },
 
-    // الصكوك المصدقة
+    // طباعة الشيك المصدق (فردي)
     {
-      permissionName: 'شاشة الصكوك المصدقة',
-      permissionCode: 'SCREEN_CERTIFIED_CHECKS',
+      permissionName: 'طباعة شيك مصدق',
+      permissionCode: 'SCREEN_CERTIFIED_PRINT',
+      description: 'الوصول إلى شاشة طباعة الشيكات المصدقة الفردية',
+    },
+    {
+      permissionName: 'تقارير الشيك المصدق',
+      permissionCode: 'SCREEN_CERTIFIED_REPORTS',
+      description: 'الوصول إلى تقارير إصدار الشيكات المصدقة الفردية',
+    },
+    {
+      permissionName: 'إعادة طباعة المصدق',
+      permissionCode: 'REPRINT_CERTIFIED',
+      description: 'القدرة على إعادة طباعة الشيكات المصدقة',
+    },
+
+    // إصدار دفاتر المصدقة
+    {
+      permissionName: 'إصدار دفاتر مصدقة',
+      permissionCode: 'SCREEN_CERTIFIED_BOOKS',
       description: 'الوصول إلى شاشة إصدار دفاتر الصكوك المصدقة',
     },
     {
-      permissionName: 'سجلات الصكوك المصدقة',
+      permissionName: 'سجلات الدفاتر المصدقة',
       permissionCode: 'SCREEN_CERTIFIED_LOGS',
-      description: 'الوصول إلى شاشة سجلات الصكوك المصدقة',
+      description: 'الوصول إلى سجلات إصدار دفاتر الصكوك المصدقة',
     },
     {
-      permissionName: 'إعادة طباعة الصكوك المصدقة',
-      permissionCode: 'REPRINT_CERTIFIED',
-      description: 'القدرة على إعادة طباعة دفاتر الصكوك المصدقة',
-    },
-    {
-      permissionName: 'مخزن الشيكات المصدقة',
+      permissionName: 'مخزن المصدق',
       permissionCode: 'CERTIFIED_INVENTORY_MANAGEMENT',
-      description: 'القدرة على إدارة مخزون الشيكات المصدقة',
+      description: 'إدارة مخزون الصكوك المصدقة (الخام والإصدار)',
     },
   ];
 

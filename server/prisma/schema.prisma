@@ -8,19 +8,20 @@ datasource db {
 }
 
 model Branch {
-  id                   Int                   @id @default(autoincrement())
-  branchName           String                @map("branch_name")
-  branchLocation       String                @map("branch_location")
-  routingNumber        String                @unique @map("routing_number")
-  createdAt            DateTime              @default(now()) @map("created_at")
-  updatedAt            DateTime              @updatedAt @map("updated_at")
-  accountingNumber     String                @default("") @map("accounting_number")
-  branchNumber         String                @default("") @map("branch_number")
-  accounts             Account[]
-  certifiedCheckLogs   CertifiedCheckLog[]
-  certifiedCheckSerial CertifiedCheckSerial?
-  printOperations      PrintOperation[]
-  users                User[]
+  id                         Int                         @id @default(autoincrement())
+  branchName                 String                      @map("branch_name")
+  branchLocation             String                      @map("branch_location")
+  routingNumber              String                      @unique @map("routing_number")
+  createdAt                  DateTime                    @default(now()) @map("created_at")
+  updatedAt                  DateTime                    @updatedAt @map("updated_at")
+  accountingNumber           String                      @default("") @map("accounting_number")
+  branchNumber               String                      @default("") @map("branch_number")
+  accounts                   Account[]
+  certifiedCheckLogs         CertifiedCheckLog[]
+  certifiedCheckSerial       CertifiedCheckSerial?
+  printOperations            PrintOperation[]
+  users                      User[]
+  certifiedCheckPrintRecords CertifiedCheckPrintRecord[]
 
   @@map("branches")
 }
@@ -278,23 +279,38 @@ model CertifiedCheckLog {
 }
 
 model CertifiedCheckPrintRecord {
-  id                Int      @id @default(autoincrement())
-  accountHolderName String   @map("account_holder_name")
-  beneficiaryName   String   @map("beneficiary_name")
-  accountNumber     String   @map("account_number")
-  amountDinars      String   @map("amount_dinars")
-  amountDirhams     String   @map("amount_dirhams")
-  amountInWords     String   @map("amount_in_words")
-  issueDate         String   @map("issue_date")
-  checkType         String   @map("check_type")
-  checkNumber       String   @unique @map("check_number")
-  branchId          Int      @map("branch_id")
-  createdBy         Int      @map("created_by")
-  createdByName     String?  @map("created_by_name")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id                            Int                            @id @default(autoincrement())
+  accountHolderName             String                         @map("account_holder_name")
+  beneficiaryName               String                         @map("beneficiary_name")
+  accountNumber                 String                         @map("account_number")
+  amountDinars                  String                         @map("amount_dinars")
+  amountDirhams                 String                         @map("amount_dirhams")
+  amountInWords                 String                         @map("amount_in_words")
+  issueDate                     String                         @map("issue_date")
+  checkType                     String                         @map("check_type")
+  checkNumber                   String                         @unique @map("check_number")
+  branchId                      Int                            @map("branch_id")
+  createdBy                     Int                            @map("created_by")
+  createdByName                 String?                        @map("created_by_name")
+  branch                        Branch                         @relation(fields: [branchId], references: [id])
+  createdAt                     DateTime                       @default(now()) @map("created_at")
+  updatedAt                     DateTime                       @updatedAt @map("updated_at")
+  certifiedCheckPrintUpdateLogs CertifiedCheckPrintUpdateLog[]
 
   @@index([branchId])
   @@index([createdAt])
   @@map("certified_check_print_records")
+}
+
+model CertifiedCheckPrintUpdateLog {
+  id         Int      @id @default(autoincrement())
+  recordId   Int      @map("record_id")
+  userId     Int      @map("user_id")
+  userName   String   @map("user_name")
+  updateDate DateTime @default(now()) @map("update_date")
+  changes    String?  @map("changes") // JSON format string for changed fields
+
+  record CertifiedCheckPrintRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+
+  @@map("certified_check_print_update_logs")
 }

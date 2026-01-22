@@ -313,42 +313,68 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  الصلاحيات
+                <label className="block text-sm font-medium text-gray-700 mb-2 border-b pb-2">
+                  الصلاحيات حسب المجموعات
                 </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 border rounded">
-                  {permissions
-                    .filter(p => !p.permissionCode.includes('INVENTORY') && !p.permissionCode.includes('TRACK_CHECKS'))
-                    .map((perm) => (
-                      <label key={perm.id} className="flex items-start gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
-                        <input
-                          type="checkbox"
-                          checked={formData.permission_ids.includes(perm.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFormData({
-                                ...formData,
-                                permission_ids: [...formData.permission_ids, perm.id],
-                              });
-                            } else {
-                              setFormData({
-                                ...formData,
-                                permission_ids: formData.permission_ids.filter(
-                                  (id) => id !== perm.id
-                                ),
-                              });
-                            }
-                          }}
-                          className="mt-1 rounded"
-                        />
-                        <div>
-                          <span className="text-sm font-medium block">{perm.permissionName}</span>
-                          {perm.description && (
-                            <span className="text-xs text-gray-500 block">{perm.description}</span>
-                          )}
-                        </div>
-                      </label>
-                    ))}
+                <div className="space-y-6 max-h-[400px] overflow-y-auto p-2 pr-4 border rounded-xl bg-gray-50/30">
+                  {[
+                    {
+                      name: 'طباعة الشيك المصدق (أفراد)',
+                      codes: ['SCREEN_CERTIFIED_PRINT', 'SCREEN_CERTIFIED_REPORTS', 'REPRINT_CERTIFIED']
+                    },
+                    {
+                      name: 'طباعة دفاتر المصدقة',
+                      codes: ['SCREEN_CERTIFIED_BOOKS', 'SCREEN_CERTIFIED_LOGS', 'CERTIFIED_INVENTORY_MANAGEMENT']
+                    },
+                    {
+                      name: 'شيكات الأفراد والشركات',
+                      codes: ['SCREEN_PRINT', 'SCREEN_PRINT_LOGS', 'INVENTORY_MANAGEMENT', 'REPRINT']
+                    },
+                    {
+                      name: 'إدارة النظام والتقارير العامة',
+                      codes: ['MANAGE_USERS', 'MANAGE_BRANCHES', 'SYSTEM_SETTINGS', 'SCREEN_REPORTS']
+                    }
+                  ].map((group) => (
+                    <div key={group.name} className="space-y-2">
+                      <h3 className="text-xs font-bold text-primary-600 bg-primary-50 px-2 py-1 rounded inline-block">
+                        {group.name}
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {permissions
+                          .filter(p => group.codes.includes(p.permissionCode))
+                          .map((perm) => (
+                            <label key={perm.id} className="flex items-start gap-2 cursor-pointer p-2 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 rounded-lg transition-all group">
+                              <input
+                                type="checkbox"
+                                checked={formData.permission_ids.includes(perm.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setFormData({
+                                      ...formData,
+                                      permission_ids: [...formData.permission_ids, perm.id],
+                                    });
+                                  } else {
+                                    setFormData({
+                                      ...formData,
+                                      permission_ids: formData.permission_ids.filter(
+                                        (id) => id !== perm.id
+                                      ),
+                                    });
+                                  }
+                                }}
+                                className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                              />
+                              <div>
+                                <span className="text-sm font-semibold block text-gray-800 group-hover:text-primary-700">{perm.permissionName}</span>
+                                {perm.description && (
+                                  <span className="text-[10px] text-gray-500 block leading-tight">{perm.description}</span>
+                                )}
+                              </div>
+                            </label>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 

@@ -16,6 +16,9 @@ export const printingService = {
     branchId?: number;
     userId?: number;
     accountNumber?: string;
+    accountHolderName?: string;
+    accountType?: number;
+    status?: string;
     dateFrom?: string;
     dateTo?: string;
     limit?: number;
@@ -25,6 +28,9 @@ export const printingService = {
     if (filters?.branchId !== undefined) params.branch_id = filters.branchId;
     if (filters?.userId !== undefined) params.user_id = filters.userId;
     if (filters?.accountNumber) params.account_number = filters.accountNumber;
+    if (filters?.accountHolderName) params.account_holder_name = filters.accountHolderName;
+    if (filters?.accountType !== undefined) params.account_type = filters.accountType;
+    if (filters?.status) params.status = filters.status;
     if (filters?.dateFrom) params.date_from = filters.dateFrom;
     if (filters?.dateTo) params.date_to = filters.dateTo;
     if (filters?.limit) params.limit = filters.limit;

@@ -125,6 +125,37 @@ export interface PrintStatistics {
   last_print_date?: string;
 }
 
+// Certified Check Types
+export interface CertifiedPrintRecord {
+  id: number;
+  accountHolderName: string;
+  beneficiaryName: string;
+  accountNumber: string;
+  amountDinars: string;
+  amountDirhams: string;
+  amountInWords: string;
+  issueDate: string;
+  checkType: string;
+  checkNumber: string;
+  branchId: number;
+  branchName?: string;
+  createdBy: number;
+  createdByName?: string;
+  createdAt: string;
+  updatedAt: string;
+  branch?: Branch;
+}
+
+export interface CertifiedBranch {
+  id: number;
+  branchName: string;
+  branchLocation: string;
+  routingNumber: string;
+  branchNumber: string;
+  accountingNumber: string;
+  lastSerial: number;
+}
+
 // Create User Request
 export interface CreateUserRequest {
   username: string;
