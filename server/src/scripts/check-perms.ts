@@ -8,7 +8,7 @@ async function main() {
 
     const users = await prisma.user.findMany({
         include: {
-            permissions: {
+            userPermissions: {
                 include: {
                     permission: true
                 }
@@ -18,7 +18,7 @@ async function main() {
 
     users.forEach(user => {
         console.log(`User: ${user.username} (Admin: ${user.isAdmin})`);
-        console.log('Permissions:', user.permissions.map(p => p.permission.permissionCode).join(', '));
+        console.log('Permissions:', user.userPermissions.map(p => p.permission.permissionCode).join(', '));
     });
 }
 
