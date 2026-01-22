@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 async function setSoapEndpoint() {
   try {
     // رابط SOAP الصحيح للبنك
-    const soapEndpoint = 'http://localhost:5000:8080/FCUBSAccService';
+    const soapEndpoint = 'http://10.250.100.40:5000:8080/FCUBSAccService';
 
     const result = await prisma.systemSetting.upsert({
       where: { key: 'soap_api_url' },

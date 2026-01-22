@@ -21,7 +21,7 @@ export class SystemSettingService {
     if (stored && stored.trim()) {
       return stored.trim();
     }
-    return process.env.BANK_API_URL || 'http://localhost:8080/FCUBSAccService';
+    return process.env.BANK_API_URL || 'http://10.250.100.40:8080/FCUBSAccService';
   }
 
   static async updateSoapEndpoint(url: string) {
@@ -33,7 +33,7 @@ export class SystemSettingService {
     if (stored && stored.trim()) {
       return stored.trim();
     }
-    return process.env.BANK_IA_API_URL || 'http://localhost:8080/FCUBSIAService';
+    return process.env.BANK_IA_API_URL || 'http://10.250.100.40:8080/FCUBSIAService';
   }
 
   static async updateSoapIAEndpoint(url: string) {

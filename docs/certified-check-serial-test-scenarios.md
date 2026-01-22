@@ -98,7 +98,7 @@
 ### من API مباشرة:
 ```bash
 # طباعة أولى - يجب أن تنجح
-curl -X POST http://localhost:5000/api/certified-checks/print \
+curl -X POST http://10.250.100.40:5000/api/certified-checks/print \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -107,7 +107,7 @@ curl -X POST http://localhost:5000/api/certified-checks/print \
   }'
 
 # طباعة ثانية بنفس النطاق - يجب أن تفشل
-curl -X POST http://localhost:5000/api/certified-checks/print \
+curl -X POST http://10.250.100.40:5000/api/certified-checks/print \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{

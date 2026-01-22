@@ -38,7 +38,7 @@ cd client
 npm run dev
 ```
 
-ثم افتح المتصفح على: `http://localhost:3000`
+ثم افتح المتصفح على: `http://10.250.100.40:3000`
 
 ### الخطوة 2️⃣: تنفيذ Backend (مطلوب)
 
@@ -76,11 +76,11 @@ npx prisma migrate dev --name add_certified_print_fields
 
 ```bash
 # Get settings
-curl -X GET http://localhost:5000/api/certified-checks/settings \
+curl -X GET http://10.250.100.40:5000/api/certified-checks/settings \
   -H "Authorization: Bearer YOUR_TOKEN"
 
 # Update settings
-curl -X PUT http://localhost:5000/api/certified-checks/settings \
+curl -X PUT http://10.250.100.40:5000/api/certified-checks/settings \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d @test-settings.json

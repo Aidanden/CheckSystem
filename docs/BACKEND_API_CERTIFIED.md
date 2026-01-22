@@ -414,13 +414,13 @@ model CertifiedCheckPrintRecord {
 
 ### Test Get Settings:
 ```bash
-curl -X GET http://localhost:5000/api/certified-checks/settings \
+curl -X GET http://10.250.100.40:5000/api/certified-checks/settings \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### Test Update Settings:
 ```bash
-curl -X PUT http://localhost:5000/api/certified-checks/settings \
+curl -X PUT http://10.250.100.40:5000/api/certified-checks/settings \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -436,7 +436,7 @@ curl -X PUT http://localhost:5000/api/certified-checks/settings \
 
 ### Test Save Print Record:
 ```bash
-curl -X POST http://localhost:5000/api/certified-checks/print-record \
+curl -X POST http://10.250.100.40:5000/api/certified-checks/print-record \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
