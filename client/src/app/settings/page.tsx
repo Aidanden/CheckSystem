@@ -54,12 +54,12 @@ const DEFAULT_BANK_STAFF: PrintSettings = {
   accountType: 3,
   checkWidth: 235,
   checkHeight: 86,
-  branchName: { ...DEFAULT_INDIVIDUAL.branchName },
-  serialNumber: { ...DEFAULT_INDIVIDUAL.serialNumber },
-  accountNumber: { ...DEFAULT_INDIVIDUAL.accountNumber },
-  checkSequence: { ...DEFAULT_INDIVIDUAL.checkSequence },
-  accountHolderName: { ...DEFAULT_INDIVIDUAL.accountHolderName },
-  micrLine: { ...DEFAULT_INDIVIDUAL.micrLine },
+  branchName: { ...DEFAULT_INDIVIDUAL.branchName } as PrintPosition,
+  serialNumber: { ...DEFAULT_INDIVIDUAL.serialNumber } as PrintPosition,
+  accountNumber: { ...DEFAULT_INDIVIDUAL.accountNumber } as PrintPosition,
+  checkSequence: { ...DEFAULT_INDIVIDUAL.checkSequence } as PrintPosition,
+  accountHolderName: { ...DEFAULT_INDIVIDUAL.accountHolderName } as PrintPosition,
+  micrLine: { ...DEFAULT_INDIVIDUAL.micrLine } as PrintPosition,
 };
 
 const DEFAULT_CERTIFIED: PrintSettings = {

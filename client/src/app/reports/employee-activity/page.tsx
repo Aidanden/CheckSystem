@@ -33,7 +33,7 @@ interface InventoryTransactionActivity {
   quantity: number;
   serialFrom?: string;
   serialTo?: string;
-  userId: number;
+  userId?: number;
   user?: { username: string };
   notes?: string;
   createdAt: string;
@@ -77,7 +77,7 @@ export default function EmployeeActivityReportPage() {
       
       // إذا كان المستخدم الحالي ليس مديراً، حدد نفسه فقط
       if (!currentUser?.isAdmin && currentUser) {
-        setSelectedUserId(currentUser.userId);
+        setSelectedUserId(currentUser.id);
       }
     } catch (error) {
       console.error('Failed to load users:', error);

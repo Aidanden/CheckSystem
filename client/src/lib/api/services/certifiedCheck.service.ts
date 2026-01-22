@@ -98,7 +98,7 @@ export interface CertifiedPrintRecord {
 
 export interface CertifiedSettings {
     id?: number;
-    accountType: number;
+    accountType?: number;
     checkWidth: number;
     checkHeight: number;
 
@@ -139,6 +139,27 @@ export interface CertifiedSettings {
         fontSize: number;
         align: string;
     };
+
+    // Backward compatibility flat fields for book printing
+    branchNameX?: number;
+    branchNameY?: number;
+    branchNameFontSize?: number;
+    branchNameAlign?: string;
+
+    serialNumberX?: number;
+    serialNumberY?: number;
+    serialNumberFontSize?: number;
+    serialNumberAlign?: string;
+
+    micrLineX?: number;
+    micrLineY?: number;
+    micrLineFontSize?: number;
+    micrLineAlign?: string;
+
+    checkSequenceX?: number;
+    checkSequenceY?: number;
+    checkSequenceFontSize?: number;
+    checkSequenceAlign?: string;
 
     // New fields for individual certified check printing
     beneficiaryNameX?: number;
@@ -303,6 +324,7 @@ export const certifiedCheckService = {
         skip?: number;
         take?: number;
         branchId?: number;
+        userId?: number;
         search?: string;
         startDate?: string;
         endDate?: string;

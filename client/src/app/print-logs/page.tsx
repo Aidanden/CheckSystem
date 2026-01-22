@@ -18,7 +18,8 @@ interface PrintLog {
   lastChequeNumber: number;
   totalCheques: number;
   accountType: number;
-  operationType: string;
+  operationType: 'print' | 'reprint';
+  reprintReason?: 'damaged' | 'not_printed';
   printedBy: number;
   printedByName: string;
   printDate: string;

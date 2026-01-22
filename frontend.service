@@ -1,0 +1,15 @@
+[Unit]
+Description=Next.js Frontend
+After=network.target backend.service
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/home/admin/CeramiSys/client
+ExecStart=/bin/bash -c "source /home/admin/.nvm/nvm.sh && nvm use 24 && npm run start"
+Restart=always
+Environment=NODE_ENV=production
+Environment=PORT=3030
+
+[Install]
+WantedBy=multi-user.target
