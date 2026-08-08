@@ -8,6 +8,7 @@ import { FileText, Printer, Search, Filter, ChevronLeft, ChevronRight, X } from 
 import renderCheckbookHtml, { type CheckbookData } from '@/lib/utils/printRenderer';
 import { buildPreviewFromSoap, type SoapCheckbookResponse } from '@/lib/soap/checkbook';
 import { printSettingsAPI, type PrintSettings } from '@/lib/printSettings.api';
+import { resolveAccountType } from '@/lib/utils/accountType';
 
 interface PrintLog {
   id: number;
@@ -88,13 +89,6 @@ export default function PrintLogsPage() {
     setPage(1);
   };
 
-  const resolveAccountType = (data: SoapCheckbookResponse): 1 | 2 | 3 => {
-    if (data.chequeLeaves === 10) return 3;
-    if (data.chequeLeaves === 25) return 1;
-    if (data.chequeLeaves === 50) return 2;
-    return data.accountNumber.startsWith('2') ? 2 : 1;
-  };
-
   const openReprintModal = (log: PrintLog) => {
     if (!canReprint) {
       alert('ليس لديك صلاحية إعادة الطباعة. يرجى التواصل مع المسؤول.');
@@ -152,7 +146,11 @@ export default function PrintLogsPage() {
         // نترك chequeLeaves كما هو من الاستجابة الأصلية لتحديد نوع الحساب (Corporate = 50, Individual = 25, Employee = 10)
       };
 
-      const accountType = resolveAccountType(soapResponse);
+      const accountType = resolveAccountType({
+        chequeLeaves: soapResponse.chequeLeaves,
+        chequeCount: soapResponse.chequeStatuses?.filter((c) => c.chequeNumber > 0).length,
+        fallbackAccountType: selectedLog.accountType,
+      });
 
       // جلب إعدادات الطباعة
       let resolvedLayout: PrintSettings | null = null;
@@ -186,6 +184,7 @@ export default function PrintLogsPage() {
         layout: resolvedLayout ?? undefined,
         branchName: resolvedBranchName,
         routingNumber: resolvedRouting,
+        accountType,
       });
 
       // طباعة
@@ -213,7 +212,7 @@ export default function PrintLogsPage() {
           firstChequeNumber: Math.min(...chequeNumbers),
           lastChequeNumber: Math.max(...chequeNumbers),
           totalCheques: chequeNumbers.length,
-          accountType: preview.operation.accountType,
+          accountType,
           operationType: 'reprint',
           reprintReason: reprintReason as 'damaged' | 'not_printed',
           chequeNumbers,

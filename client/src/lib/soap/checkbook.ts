@@ -172,6 +172,7 @@ export async function querySoapCheckbook(
 
 import type { CheckbookData } from '@/lib/utils/printRenderer';
 import type { PrintSettings } from '@/lib/printSettings.api';
+import { resolveAccountType } from '@/lib/utils/accountType';
 
 const DEFAULT_LAYOUT = {
   checkWidth: 235,
@@ -189,6 +190,8 @@ interface PreviewOptions {
   branchName?: string;
   routingNumber?: string;
   accountHolderName?: string;
+  /** يتجاوز الاستنتاج التلقائي عند الحاجة (مثلاً إعادة طباعة جزئية) */
+  accountType?: 1 | 2 | 3;
 }
 
 export function buildPreviewFromSoap(
@@ -201,19 +204,14 @@ export function buildPreviewFromSoap(
   );
   const sortedStatuses = [...validStatuses].sort((a, b) => a.chequeNumber - b.chequeNumber);
   
-  // تحديد نوع الحساب بناءً على عدد الأوراق (chequeLeaves)
+  // تحديد نوع الحساب بناءً على عدد الأوراق (chequeLeaves) أو عدد الشيكات
   // 10 = Employee (3), 25 = Individual (1), 50 = Corporate (2)
-  let accountType: 1 | 2 | 3;
-  if (data.chequeLeaves === 10) {
-    accountType = 3; // Employee
-  } else if (data.chequeLeaves === 25) {
-    accountType = 1; // Individual
-  } else if (data.chequeLeaves === 50) {
-    accountType = 2; // Corporate
-  } else {
-    // Fallback: استخدام رقم الحساب إذا لم يكن chequeLeaves متوفراً
-    accountType = data.accountNumber.startsWith('2') ? 2 : 1;
-  }
+  const accountType =
+    options.accountType ??
+    resolveAccountType({
+      chequeLeaves: data.chequeLeaves,
+      chequeCount: sortedStatuses.length,
+    });
   
   const accountHolderName = options.accountHolderName || data.customerName || 'صاحب الحساب';
 
@@ -243,7 +241,7 @@ export function buildPreviewFromSoap(
         serialNumber,
         accountHolderName,
         accountNumber: data.accountNumber,
-        accountType: accountType === 1 ? '01' : accountType === 2 ? '02' : '01',
+        accountType: accountType === 1 ? '01' : accountType === 2 ? '02' : '03',
         branchName: branchLabel,
         routingNumber,
         checkSize: { width: checkWidth, height: checkHeight, unit: 'mm' },

@@ -11,6 +11,7 @@ import {
 } from '@/lib/soap/checkbook';
 import { printSettingsAPI, type PrintSettings } from '@/lib/printSettings.api';
 import { branchService, soapService, printLogService } from '@/lib/api';
+import { resolveAccountType } from '@/lib/utils/accountType';
 
 export default function PrintPage() {
   const [accountNumber, setAccountNumber] = useState('');
@@ -24,14 +25,6 @@ export default function PrintPage() {
   const [branchInfo, setBranchInfo] = useState<{ name: string; routing: string } | null>(null);
   const [layout, setLayout] = useState<PrintSettings | null>(null);
   const [alreadyPrintedCheques, setAlreadyPrintedCheques] = useState<number[]>([]);
-
-  const resolveAccountType = (data: SoapCheckbookResponse): 1 | 2 | 3 => {
-    if (data.chequeLeaves === 10) return 3;
-    if (data.chequeLeaves === 25) return 1;
-    if (data.chequeLeaves === 50) return 2;
-    return data.accountNumber.startsWith('2') ? 2 : 1;
-  };
-
 
   const handleQuery = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +75,10 @@ export default function PrintPage() {
         firstChequeNumber: firstChequeNumber ? parseInt(firstChequeNumber, 10) : undefined,
       }) as SoapCheckbookResponse;
 
-      const accountType = resolveAccountType(soapResponse);
+      const accountType = resolveAccountType({
+        chequeLeaves: soapResponse.chequeLeaves,
+        chequeCount: soapResponse.chequeStatuses?.filter((c) => c.chequeNumber > 0).length,
+      });
 
       let resolvedLayout: PrintSettings | null = null;
       try {
@@ -213,9 +209,15 @@ export default function PrintPage() {
           chequeNumbers,
         });
         console.log('✅ تم تسجيل عملية الطباعة بنجاح');
-      } catch (logError) {
+      } catch (logError: any) {
         console.error('فشل تسجيل عملية الطباعة:', logError);
-        // لا نوقف العملية، فقط نسجل الخطأ
+        const message =
+          logError?.response?.data?.error ||
+          logError?.message ||
+          'فشل تسجيل عملية الطباعة أو خصم المخزون';
+        setError(message);
+        setPrinting(false);
+        return;
       }
 
       // Update local state to show "Printed"

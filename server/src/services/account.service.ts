@@ -51,11 +51,16 @@ export class AccountService {
             branchCode: branchCoreCode,
           });
 
-          // If successful, use checkbook details
+          // Determine account type from cheque leaves / statuses (10=employee, 25=individual, 50=corporate)
+          const leaves = Number(checkbookDetails.chequeLeaves);
+          const statusCount = checkbookDetails.chequeStatuses?.length ?? 0;
+          const size = leaves > 0 ? leaves : statusCount;
+          const resolvedType = size === 10 ? 3 : size === 50 ? 2 : 1;
+
           bankAccountData = {
             account_number: checkbookDetails.accountNumber,
             account_holder_name: checkbookDetails.accountNumber,
-            account_type: 1,
+            account_type: resolvedType,
           };
         } catch (err: any) {
           console.error('FCUBS query failed:', err);
@@ -92,6 +97,13 @@ export class AccountService {
           account = await AccountModel.updateName(
             bankAccountData.account_number,
             bankAccountData.account_holder_name
+          ) as Account;
+        }
+
+        if (account.accountType !== bankAccountData.account_type) {
+          account = await AccountModel.updateAccountType(
+            bankAccountData.account_number,
+            bankAccountData.account_type
           ) as Account;
         }
 

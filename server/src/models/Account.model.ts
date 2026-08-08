@@ -59,6 +59,13 @@ export class AccountModel {
     });
   }
 
+  static async updateAccountType(accountNumber: string, accountType: number): Promise<Account | null> {
+    return prisma.account.update({
+      where: { accountNumber },
+      data: { accountType },
+    });
+  }
+
   static async updateLastPrintedSerial(
     accountNumber: string,
     lastSerial: number

@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_URL = 'http://10.250.100.40:5000/api/print-settings';
+import { request } from '@/lib/api/client';
 
 export interface PrintPosition {
   x: number;
@@ -11,37 +9,32 @@ export interface PrintPosition {
 
 export interface PrintSettings {
   id?: number;
-  accountType: 1 | 2 | 3;
+  accountType: 1 | 2 | 3 | 4;
   checkWidth: number;
   checkHeight: number;
   branchName: PrintPosition;
   serialNumber: PrintPosition;
-  accountNumber: PrintPosition;
+  accountNumber: PrintPosition | null;
   checkSequence: PrintPosition;
   accountHolderName: PrintPosition;
   micrLine: PrintPosition;
 }
 
 class PrintSettingsAPI {
-  private getAuthHeader() {
-    const token = localStorage.getItem('token');
-    return { Authorization: `Bearer ${token}` };
+  async getSettings(accountType: 1 | 2 | 3 | 4): Promise<PrintSettings> {
+    return request<PrintSettings>({
+      url: `/print-settings/${accountType}`,
+      method: 'GET',
+    });
   }
 
-  async getSettings(accountType: 1 | 2 | 3): Promise<PrintSettings> {
-    const response = await axios.get(`${API_URL}/${accountType}`, {
-      headers: this.getAuthHeader(),
+  async saveSettings(settings: PrintSettings): Promise<{ success: boolean; message?: string; settings?: PrintSettings; error?: string }> {
+    return request({
+      url: '/print-settings',
+      method: 'POST',
+      data: settings,
     });
-    return response.data;
-  }
-
-  async saveSettings(settings: PrintSettings): Promise<any> {
-    const response = await axios.post(API_URL, settings, {
-      headers: this.getAuthHeader(),
-    });
-    return response.data;
   }
 }
 
 export const printSettingsAPI = new PrintSettingsAPI();
-

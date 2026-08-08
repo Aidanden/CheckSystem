@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3040",
+    "dev": "next dev -p 3060",
     "build": "next build",
-    "start": "next start -p 3040",
-    "lint": "next lint"
+    "start": "next start -p 3060",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -20,12 +20,12 @@
     "clsx": "^2.1.1",
     "date-fns": "^3.1.0",
     "html2canvas": "^1.4.1",
-    "jspdf": "^3.0.4",
-    "lucide-react": "^0.309.0",
-    "next": "^14.2.0",
-    "postcss": "^8.4.33",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
+    "jspdf": "^4.2.1",
+    "lucide-react": "^0.577.0",
+    "next": "^16.2.12",
+    "postcss": "^8.5.23",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "react-hook-form": "^7.49.3",
     "react-redux": "^9.0.4",
     "recharts": "^2.10.4",
@@ -36,11 +36,17 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.6",
-    "@types/react": "^18.2.47",
-    "@types/react-dom": "^18.2.18",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
     "baseline-browser-mapping": "^2.9.16",
-    "eslint": "^8.56.0",
-    "eslint-config-next": "^14.2.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.2.12",
     "typescript": "^5.3.3"
+  },
+  "overrides": {
+    "postcss": "$postcss",
+    "sharp": "^0.35.3",
+    "brace-expansion": "^5.0.8",
+    "minimatch": "^10.2.5"
   }
 }

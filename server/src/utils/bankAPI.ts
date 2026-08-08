@@ -110,12 +110,21 @@ export class BankAPIClient {
   }
 
   private extractText(value: any): string | undefined {
+    if (value == null) return undefined;
+
     if (Array.isArray(value) && value.length > 0) {
-      return typeof value[0] === 'string' ? value[0] : undefined;
+      return this.extractText(value[0]);
     }
-    if (typeof value === 'string') {
-      return value;
+
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
     }
+
+    // xml2js may return { _: 'text', $: { ...attrs } }
+    if (typeof value === 'object' && value._ != null) {
+      return String(value._);
+    }
+
     return undefined;
   }
 

@@ -13,11 +13,12 @@ export class PrintLogService {
         // تحديد نوع المخزون بناءً على نوع الحساب
         // Individual (1) و Employee (3) يستخدمان Individual stock
         // Corporate (2) يستخدم Corporate stock
-        const stockType: StockType = data.accountType === AccountType.CORPORATE
+        const accountType = Number(data.accountType);
+        const stockType: StockType = accountType === AccountType.CORPORATE
           ? StockType.CORPORATE
           : StockType.INDIVIDUAL;
 
-        console.log(`📊 تحديد نوع المخزون: accountType=${data.accountType} (${data.accountType === AccountType.CORPORATE ? 'شركة' : data.accountType === AccountType.EMPLOYEE ? 'موظف' : 'فردي'}) => stockType=${stockType} (${stockType === StockType.CORPORATE ? 'شركة' : 'فردي'})`);
+        console.log(`📊 تحديد نوع المخزون: accountType=${accountType} (${accountType === AccountType.CORPORATE ? 'شركة' : accountType === AccountType.EMPLOYEE ? 'موظف' : 'فردي'}) => stockType=${stockType} (${stockType === StockType.CORPORATE ? 'شركة' : 'فردي'})`);
 
         // عدد الأوراق المطبوعة (يجب خصمها من المخزون)
         const sheetsToDeduct = data.totalCheques;
@@ -57,11 +58,12 @@ export class PrintLogService {
       if (data.reprintReason === 'damaged') {
         try {
           // تحديد نوع المخزون بناءً على نوع الحساب
-          const stockType: StockType = data.accountType === AccountType.CORPORATE
+          const accountType = Number(data.accountType);
+          const stockType: StockType = accountType === AccountType.CORPORATE
             ? StockType.CORPORATE
             : StockType.INDIVIDUAL;
 
-          console.log(`📊 إعادة طباعة - تحديد نوع المخزون: accountType=${data.accountType} (${data.accountType === AccountType.CORPORATE ? 'شركة' : data.accountType === AccountType.EMPLOYEE ? 'موظف' : 'فردي'}) => stockType=${stockType} (${stockType === StockType.CORPORATE ? 'شركة' : 'فردي'})`);
+          console.log(`📊 إعادة طباعة - تحديد نوع المخزون: accountType=${accountType} (${accountType === AccountType.CORPORATE ? 'شركة' : accountType === AccountType.EMPLOYEE ? 'موظف' : 'فردي'}) => stockType=${stockType} (${stockType === StockType.CORPORATE ? 'شركة' : 'فردي'})`);
 
           // عدد الأوراق المعاد طباعتها (يجب خصمها من المخزون)
           const sheetsToDeduct = data.totalCheques;

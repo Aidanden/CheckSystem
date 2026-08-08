@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Settings as SettingsIcon, Save, RotateCcw, Printer, RefreshCw } from 'lucide-react';
 import { systemSettingsService } from '@/lib/api';
+import { printSettingsAPI } from '@/lib/printSettings.api';
 import renderCheckbookHtml from '@/lib/utils/printRenderer';
 
 interface PrintPosition {
@@ -192,24 +193,14 @@ export default function SettingsPage() {
 
   // Load settings from backend
   useEffect(() => {
-    loadSettings();
-  }, [activeTab]);
+    let cancelled = false;
 
-  const loadSettings = async () => {
-    try {
-      setInitialLoading(true);
-      const token = localStorage.getItem('token');
+    const loadSettings = async () => {
+      try {
+        setInitialLoading(true);
+        const data = await printSettingsAPI.getSettings(activeTab);
+        if (cancelled) return;
 
-      if (!token) return;
-
-      const response = await fetch(`http://10.250.100.40:5000/api/print-settings/${activeTab}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
         if (activeTab === 1) {
           setIndividualSettings(data);
         } else if (activeTab === 2) {
@@ -219,13 +210,23 @@ export default function SettingsPage() {
         } else {
           setCertifiedSettings(data);
         }
+      } catch (err) {
+        console.error('Error loading settings:', err);
+        if (!cancelled) {
+          setError('فشل في تحميل إعدادات الطباعة');
+        }
+      } finally {
+        if (!cancelled) {
+          setInitialLoading(false);
+        }
       }
-    } catch (err) {
-      console.error('Error loading settings:', err);
-    } finally {
-      setInitialLoading(false);
-    }
-  };
+    };
+
+    loadSettings();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab]);
 
   const updatePosition = (field: keyof Omit<PrintSettings, 'id' | 'accountType' | 'checkWidth' | 'checkHeight'>, key: keyof PrintPosition, value: number | string) => {
     setCurrentSettings(prev => ({
@@ -250,31 +251,11 @@ export default function SettingsPage() {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
-
-      if (!token) {
-        setError('الرجاء تسجيل الدخول');
-        return;
-      }
-
-      const response = await fetch('http://10.250.100.40:5000/api/print-settings', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(currentSettings),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess('تم حفظ الإعدادات بنجاح!');
-      } else {
-        setError(data.error || 'فشل في حفظ الإعدادات');
-      }
-    } catch (err) {
-      setError('فشل في حفظ الإعدادات');
+      await printSettingsAPI.saveSettings(currentSettings);
+      setSuccess('تم حفظ الإعدادات بنجاح!');
+    } catch (err: any) {
+      const apiError = err?.response?.data?.error;
+      setError(apiError || 'فشل في حفظ الإعدادات');
       console.error('Error saving settings:', err);
     } finally {
       setLoading(false);
@@ -593,7 +574,7 @@ export default function SettingsPage() {
                 : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
             >
-              دفاتر الشيكات المصدقة (10 ورقة)
+              دفتر موظفين (10 ورقات)
             </button>
             <button
               onClick={() => setActiveTab(4)}
