@@ -25,6 +25,24 @@ export default function PrintPage() {
   const [branchInfo, setBranchInfo] = useState<{ name: string; routing: string } | null>(null);
   const [layout, setLayout] = useState<PrintSettings | null>(null);
   const [alreadyPrintedCheques, setAlreadyPrintedCheques] = useState<number[]>([]);
+  /** true بعد تسجيل الطباعة وخصم المخزون — يسمح بإعادة فتح نافذة الطباعة فقط */
+  const [printLogged, setPrintLogged] = useState(false);
+
+  const openPrintWindow = (preview: CheckbookData) => {
+    const htmlContent = renderCheckbookHtml(preview);
+    const printWindow = window.open('', '_blank', 'width=1024,height=768');
+    if (!printWindow) {
+      throw new Error('تعذّر فتح نافذة الطباعة. يرجى السماح بالنوافذ المنبثقة.');
+    }
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 300);
+  };
 
   const handleQuery = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,10 +52,12 @@ export default function PrintPage() {
     setLoading(true);
     setError(null);
     setSuccess(false);
+    setPrintLogged(false);
     setSoapData(null);
     setCheckbookPreview(null);
     setBranchInfo(null);
     setLayout(null);
+    setAlreadyPrintedCheques([]);
 
     try {
       // الحصول على معلومات المستخدم الحالي
@@ -169,72 +189,56 @@ export default function PrintPage() {
       return;
     }
 
-    // منع الطباعة إذا كانت هناك شيكات مطبوعة مسبقاً
-    if (alreadyPrintedCheques.length > 0) {
+    // دفتر مطبوع مسبقاً من استعلام سابق → إعادة الطباعة من السجلات فقط
+    if (alreadyPrintedCheques.length > 0 && !printLogged) {
       setError('لا يمكن الطباعة! بعض الشيكات تم طباعتها مسبقاً. يمكنك إعادة الطباعة فقط من شاشة السجلات.');
       return;
     }
 
     setPrinting(true);
     setError(null);
-    setSuccess(false);
 
     try {
-      const htmlContent = renderCheckbookHtml(checkbookPreview);
-      const printWindow = window.open('', '_blank', 'width=1024,height=768');
-      if (!printWindow) {
-        throw new Error('تعذّر فتح نافذة الطباعة');
-      }
-
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-
-      setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-      }, 300);
-
-      // تسجيل عملية الطباعة
-      try {
-        const chequeNumbers = soapData.chequeStatuses.map(s => s.chequeNumber);
-        await printLogService.create({
-          accountNumber: soapData.accountNumber,
-          accountBranch: soapData.accountBranch,
-          branchName: branchInfo?.name,
-          firstChequeNumber: Math.min(...chequeNumbers),
-          lastChequeNumber: Math.max(...chequeNumbers),
-          totalCheques: chequeNumbers.length,
-          accountType: checkbookPreview.operation.accountType,
-          operationType: 'print',
-          chequeNumbers,
-        });
-        console.log('✅ تم تسجيل عملية الطباعة بنجاح');
-      } catch (logError: any) {
-        console.error('فشل تسجيل عملية الطباعة:', logError);
-        const message =
-          logError?.response?.data?.error ||
-          logError?.message ||
-          'فشل تسجيل عملية الطباعة أو خصم المخزون';
-        setError(message);
-        setPrinting(false);
+      // بعد التسجيل الأول: إعادة فتح نافذة الطباعة فقط بدون خصم مخزون جديد
+      if (printLogged) {
+        openPrintWindow(checkbookPreview);
+        setSuccess(true);
         return;
       }
 
-      // Update local state to show "Printed"
-      if (soapData) {
-        setSoapData(prev => prev ? ({
-          ...prev,
-          chequeStatuses: prev.chequeStatuses.map(s => ({
-            ...s,
-            status: 'U'
-          }))
-        }) : null);
-      }
+      // تسجيل + خصم مخزون قبل فتح الطباعة لأول مرة
+      const chequeNumbers = soapData.chequeStatuses.map(s => s.chequeNumber);
+      await printLogService.create({
+        accountNumber: soapData.accountNumber,
+        accountBranch: soapData.accountBranch,
+        branchName: branchInfo?.name,
+        firstChequeNumber: Math.min(...chequeNumbers),
+        lastChequeNumber: Math.max(...chequeNumbers),
+        totalCheques: chequeNumbers.length,
+        accountType: checkbookPreview.operation.accountType,
+        operationType: 'print',
+        chequeNumbers,
+      });
 
+      setPrintLogged(true);
+      setSoapData(prev => prev ? ({
+        ...prev,
+        chequeStatuses: prev.chequeStatuses.map(s => ({
+          ...s,
+          status: 'U'
+        }))
+      }) : null);
+
+      openPrintWindow(checkbookPreview);
       setSuccess(true);
     } catch (err: any) {
       console.error('Print failed:', err);
-      setError(err.message || 'فشل إنشاء صفحة الطباعة');
+      const message =
+        err?.response?.data?.details ||
+        err?.response?.data?.error ||
+        err?.message ||
+        'فشل إنشاء صفحة الطباعة أو خصم المخزون';
+      setError(message);
     } finally {
       setPrinting(false);
     }
@@ -312,7 +316,7 @@ export default function PrintPage() {
               <span className="font-semibold">تمت الطباعة بنجاح!</span>
             </div>
             <p className="text-sm text-green-600">
-              تم فتح صفحة الطباعة في نافذة جديدة. سيتم بدء الطباعة تلقائياً.
+              تم فتح صفحة الطباعة في نافذة جديدة. يمكنك الضغط على الزر مرة أخرى لإعادة فتح الطباعة دون خصم جديد من المخزون.
             </p>
           </div>
         )}
@@ -412,7 +416,11 @@ export default function PrintPage() {
                 <div className="border-t border-gray-200 pt-4 mt-6">
                   <button
                     onClick={handlePrint}
-                    disabled={printing || !checkbookPreview}
+                    disabled={
+                      printing ||
+                      !checkbookPreview ||
+                      (alreadyPrintedCheques.length > 0 && !printLogged)
+                    }
                     className="w-full btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 py-3"
                   >
                     {printing ? (
@@ -423,13 +431,17 @@ export default function PrintPage() {
                     ) : (
                       <>
                         <Printer className="w-5 h-5" />
-                        طباعة دفتر الشيكات 
+                        {printLogged ? 'إعادة فتح الطباعة' : 'طباعة دفتر الشيكات'}
                       </>
                     )}
                   </button>
 
                   <p className="text-xs text-gray-500 text-center mt-2">
-                    سيتم استخدام البيانات المستلمة من FLEXCUBE المباشرة للطباعة
+                    {alreadyPrintedCheques.length > 0 && !printLogged
+                      ? 'هذا الدفتر مطبوع مسبقاً — استخدم شاشة سجلات الطباعة لإعادة الطباعة'
+                      : printLogged
+                        ? 'تمت إضافة السجل وخصم المخزون — الضغط مجدداً يعيد فتح نافذة الطباعة فقط'
+                        : 'سيتم استخدام البيانات المستلمة من FLEXCUBE المباشرة للطباعة'}
                   </p>
                   <button
                     onClick={() => {

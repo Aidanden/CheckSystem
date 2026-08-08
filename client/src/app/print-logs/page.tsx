@@ -221,7 +221,12 @@ export default function PrintLogsPage() {
         loadLogs();
       } catch (logError: any) {
         console.error('فشل تسجيل عملية إعادة الطباعة:', logError);
-        alert(logError.response?.data?.error || logError.message || 'فشل تسجيل عملية إعادة الطباعة');
+        alert(
+          logError.response?.data?.details ||
+          logError.response?.data?.error ||
+          logError.message ||
+          'فشل تسجيل عملية إعادة الطباعة'
+        );
         return;
       }
 

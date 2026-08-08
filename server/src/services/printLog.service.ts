@@ -17,6 +17,7 @@ export class PrintLogService {
         const stockType: StockType = accountType === AccountType.CORPORATE
           ? StockType.CORPORATE
           : StockType.INDIVIDUAL;
+        const stockLabel = stockType === StockType.CORPORATE ? 'شركات' : 'أفراد';
 
         console.log(`📊 تحديد نوع المخزون: accountType=${accountType} (${accountType === AccountType.CORPORATE ? 'شركة' : accountType === AccountType.EMPLOYEE ? 'موظف' : 'فردي'}) => stockType=${stockType} (${stockType === StockType.CORPORATE ? 'شركة' : 'فردي'})`);
 
@@ -26,7 +27,9 @@ export class PrintLogService {
         // التحقق من توفر المخزون قبل الخصم
         const availableQuantity = await InventoryService.getAvailableQuantity(stockType);
         if (availableQuantity < sheetsToDeduct) {
-          throw new Error(`لا يوجد مخزون كافٍ. المطلوب: ${sheetsToDeduct} ورقة، المتاح: ${availableQuantity} ورقة`);
+          throw new Error(
+            `لا يمكن الطباعة: لا يوجد مخزون كافٍ من شيكات ${stockLabel}. المطلوب: ${sheetsToDeduct} ورقة، المتاح: ${availableQuantity} ورقة. يرجى إضافة مخزون ${stockLabel} أولاً.`
+          );
         }
 
         // خصم عدد الأوراق الفعلي من المخزون
@@ -40,8 +43,11 @@ export class PrintLogService {
         console.log(`✅ تم خصم ${sheetsToDeduct} ورقة من المخزون (نوع: ${stockType === StockType.INDIVIDUAL ? 'فردي' : 'شركة'})`);
       } catch (error) {
         console.error('❌ خطأ في خصم المخزون:', error);
-        // نرمي الخطأ هنا لأن الطباعة يجب أن تفشل إذا لم يكن هناك مخزون
         if (error instanceof Error) {
+          // رسالة نقص المخزون تُعرض كما هي (أفراد / شركات)
+          if (error.message.includes('مخزون') || error.message.includes('لا يمكن الطباعة')) {
+            throw error;
+          }
           throw new Error(`فشل خصم المخزون: ${error.message}`);
         }
         throw new Error('فشل خصم المخزون');
@@ -62,6 +68,7 @@ export class PrintLogService {
           const stockType: StockType = accountType === AccountType.CORPORATE
             ? StockType.CORPORATE
             : StockType.INDIVIDUAL;
+          const stockLabel = stockType === StockType.CORPORATE ? 'شركات' : 'أفراد';
 
           console.log(`📊 إعادة طباعة - تحديد نوع المخزون: accountType=${accountType} (${accountType === AccountType.CORPORATE ? 'شركة' : accountType === AccountType.EMPLOYEE ? 'موظف' : 'فردي'}) => stockType=${stockType} (${stockType === StockType.CORPORATE ? 'شركة' : 'فردي'})`);
 
@@ -71,7 +78,9 @@ export class PrintLogService {
           // التحقق من توفر المخزون قبل الخصم
           const availableQuantity = await InventoryService.getAvailableQuantity(stockType);
           if (availableQuantity < sheetsToDeduct) {
-            throw new Error(`لا يوجد مخزون كافٍ. المطلوب: ${sheetsToDeduct} ورقة، المتاح: ${availableQuantity} ورقة`);
+            throw new Error(
+              `لا يمكن الطباعة: لا يوجد مخزون كافٍ من شيكات ${stockLabel}. المطلوب: ${sheetsToDeduct} ورقة، المتاح: ${availableQuantity} ورقة. يرجى إضافة مخزون ${stockLabel} أولاً.`
+            );
           }
 
           // خصم عدد الأوراق المعاد طباعتها من المخزون
@@ -86,6 +95,9 @@ export class PrintLogService {
         } catch (error) {
           console.error('❌ خطأ في خصم المخزون عند إعادة الطباعة:', error);
           if (error instanceof Error) {
+            if (error.message.includes('مخزون') || error.message.includes('لا يمكن الطباعة')) {
+              throw error;
+            }
             throw new Error(`فشل خصم المخزون: ${error.message}`);
           }
           throw new Error('فشل خصم المخزون');
