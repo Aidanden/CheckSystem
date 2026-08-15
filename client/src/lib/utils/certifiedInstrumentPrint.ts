@@ -1,6 +1,22 @@
+/** تحويل الأرقام العربية/الفارسية إلى لاتينية مع الإبقاء على الأصفار البادئة */
+function toAsciiDigits(value: string | number | null | undefined): string {
+  const arabic = '٠١٢٣٤٥٦٧٨٩';
+  const persian = '۰۱۲۳۴۵۶۷۸۹';
+  return [...String(value ?? '')]
+    .map((ch) => {
+      const i = arabic.indexOf(ch);
+      if (i >= 0) return String(i);
+      const j = persian.indexOf(ch);
+      if (j >= 0) return String(j);
+      return ch;
+    })
+    .join('')
+    .replace(/\D/g, '');
+}
+
 export function micrDigits(value: string | number | null | undefined, length: number) {
-  const digits = String(value ?? '').replace(/\D/g, '');
-  if (digits.length > length) return digits.slice(-length);
+  const digits = toAsciiDigits(value);
+  // padStart فقط: لا نقصّ من اليمين حتى لا تُحذف الأصفار البادئة في الرقم المحاسبي
   return digits.padStart(length, '0');
 }
 
