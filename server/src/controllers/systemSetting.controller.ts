@@ -64,4 +64,87 @@ export class SystemSettingController {
       res.status(500).json({ error: 'فشل في تحديث رابط SOAP IA' });
     }
   }
+
+  static async getSoapInstrumentEndpoint(_req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const endpoint = await SystemSettingService.getSoapInstrumentEndpoint();
+      res.json({ endpoint });
+    } catch (error) {
+      console.error('Error fetching SOAP Instrument endpoint:', error);
+      res.status(500).json({ error: 'فشل في تحميل رابط خدمة الصكوك المصدقة' });
+    }
+  }
+
+  static async updateSoapInstrumentEndpoint(req: AuthRequest, res: Response): Promise<void> {
+    if (!req.user?.isAdmin) {
+      res.status(403).json({ error: 'صلاحيات المشرف مطلوبة لتعديل رابط الخدمة' });
+      return;
+    }
+
+    try {
+      const { endpoint } = req.body as { endpoint?: string };
+      if (!endpoint || typeof endpoint !== 'string' || !endpoint.trim()) {
+        res.status(400).json({ error: 'رابط خدمة الصكوك المصدقة مطلوب' });
+        return;
+      }
+
+      const saved = await SystemSettingService.updateSoapInstrumentEndpoint(endpoint);
+      res.json({ success: true, endpoint: saved.value });
+    } catch (error) {
+      console.error('Error updating SOAP Instrument endpoint:', error);
+      res.status(500).json({ error: 'فشل في تحديث رابط خدمة الصكوك المصدقة' });
+    }
+  }
+
+  static async getHiddenScreens(_req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const hiddenScreens = await SystemSettingService.getHiddenScreens();
+      res.json({ hiddenScreens });
+    } catch (error) {
+      console.error('Error fetching hidden screens:', error);
+      res.status(500).json({ error: 'فشل في تحميل إعدادات الشاشات' });
+    }
+  }
+
+  static async updateHiddenScreens(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { password, hiddenScreens } = req.body as {
+        password?: string;
+        hiddenScreens?: string[];
+      };
+
+      if (!SystemSettingService.verifyScreenVisibilityPassword(password || '')) {
+        res.status(403).json({ error: 'كلمة المرور غير صحيحة' });
+        return;
+      }
+
+      if (!Array.isArray(hiddenScreens)) {
+        res.status(400).json({ error: 'قائمة الشاشات غير صالحة' });
+        return;
+      }
+
+      await SystemSettingService.updateHiddenScreens(hiddenScreens);
+      const saved = await SystemSettingService.getHiddenScreens();
+      res.json({ success: true, hiddenScreens: saved });
+    } catch (error) {
+      console.error('Error updating hidden screens:', error);
+      res.status(500).json({ error: 'فشل في حفظ إعدادات الشاشات' });
+    }
+  }
+
+  static async unlockHiddenScreens(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { password } = req.body as { password?: string };
+      if (!SystemSettingService.verifyScreenVisibilityPassword(password || '')) {
+        res.status(403).json({ error: 'كلمة المرور غير صحيحة' });
+        return;
+      }
+
+      const hiddenScreens = await SystemSettingService.getHiddenScreens();
+      res.json({ success: true, hiddenScreens });
+    } catch (error) {
+      console.error('Error unlocking hidden screens:', error);
+      res.status(500).json({ error: 'فشل فتح الإعدادات المتقدمة' });
+    }
+  }
 }

@@ -58,6 +58,54 @@ const TEST_ACCOUNTS = [
    { branch: '003', account: '003001000300011', name: 'موظف - عمر عبدالله سالم', startCheck: '45001', accountType: 3 } // Employee
 ];
 
+const TEST_INSTRUMENTS = [
+   {
+      txnRefNo: '2617301647520000',
+      customerNo: '00000002',
+      account: '001001000002114',
+      drName: 'علي حسين علي قارش',
+      benefName: 'شركة سلطان للمطابخ',
+      amount: '5000',
+      currency: 'LYD',
+      instrNo: '000002000',
+      branch: '001',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-05-14',
+   },
+   {
+      txnRefNo: '2617301647520001',
+      customerNo: '00000003',
+      account: '001001000100002',
+      drName: 'محمد علي أحمد',
+      benefName: 'مصطفى سالم التجارة',
+      amount: '1250.500',
+      currency: 'LYD',
+      instrNo: '000002001',
+      branch: '001',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-06-01',
+   },
+   {
+      txnRefNo: '2620010002000999',
+      customerNo: '00000010',
+      account: '002001000200001',
+      drName: 'شركة مصراتة القابضة',
+      benefName: 'مصلحة الضرائب',
+      amount: '37500',
+      currency: 'LYD',
+      instrNo: '000010050',
+      branch: '002',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-07-20',
+   },
+];
+
 // CORS يجب أن يكون أولاً
 app.use((req, res, next) => {
    res.header('Access-Control-Allow-Origin', '*');
@@ -72,7 +120,7 @@ app.use((req, res, next) => {
 // Custom middleware لقراءة raw body - يجب أن يكون قبل أي middleware آخر
 app.use((req, res, next) => {
    // فقط للـ SOAP endpoints
-   if ((req.path === '/FCUBSAccService' || req.path === '/FCUBSIAService') && req.method === 'POST') {
+   if ((req.path === '/FCUBSAccService' || req.path === '/FCUBSIAService' || req.path === '/InstrumentListService') && req.method === 'POST') {
       let data = '';
       req.setEncoding('utf8');
       req.on('data', chunk => {
@@ -165,6 +213,7 @@ const soapHandler = async (req, res) => {
       let operation = '';
       let accountBranch = '';
       let account = '';
+      let responseXml = '';
 
       // تحديد نوع العملية
       if (result.Envelope && result.Envelope.Body) {
@@ -173,6 +222,79 @@ const soapHandler = async (req, res) => {
             const requestBody = result.Envelope.Body.QUERYCHECKBOOK_IOFS_REQ;
             accountBranch = requestBody.FCUBS_BODY['Chq-Bk-Details-IO'].ACCOUNT_BRANCH;
             account = requestBody.FCUBS_BODY['Chq-Bk-Details-IO'].ACCOUNT;
+         } else if (result.Envelope.Body.QUERYFETCHINSTRUMENTLIST_IOFS_REQ) {
+            operation = 'QueryFetchInstrumentList';
+            const requestBody = result.Envelope.Body.QUERYFETCHINSTRUMENTLIST_IOFS_REQ;
+            const masterIo = requestBody.FCUBS_BODY['Fetch-In-Lst-Master-IO'];
+            const txnRefNo = (masterIo && masterIo.TXN_REF_NO) ? String(masterIo.TXN_REF_NO).trim() : '';
+            const headerBranch = requestBody.FCUBS_HEADER && requestBody.FCUBS_HEADER.BRANCH
+               ? String(requestBody.FCUBS_HEADER.BRANCH)
+               : '001';
+
+            console.log(`🔍 QueryFetchInstrumentList - TXN_REF_NO: ${txnRefNo}`);
+
+            const instrument = TEST_INSTRUMENTS.find(item => item.txnRefNo === txnRefNo);
+            if (!instrument) {
+               throw new Error(`لم يتم العثور على صك مصدق للرقم المرجعي: ${txnRefNo}`);
+            }
+
+            const msgId = generateMsgId();
+            const bookDate = instrument.issueDate;
+            responseXml = `<?xml version="1.0" encoding="UTF-8"?>
+<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
+   <S:Body>
+      <QUERYFETCHINSTRUMENTLIST_IOFS_RES xmlns="http://pmts.ofss.com/ws/InstrumentListService">
+         <FCUBS_HEADER>
+            <SOURCE>FLEXCUBE</SOURCE>
+            <UBSCOMP>FCUBS</UBSCOMP>
+            <MSGID>${msgId}</MSGID>
+            <USERID>ABHILASH01</USERID>
+            <BRANCH>${headerBranch}</BRANCH>
+            <ENTITY>ENTITY_ID1</ENTITY>
+            <SERVICE>InstrumentListService</SERVICE>
+            <OPERATION>QueryFetchInstrumentList</OPERATION>
+            <FUNCTIONID>PIDISLST</FUNCTIONID>
+            <ACTION>FETCH_IN_LST</ACTION>
+            <MSGSTAT>SUCCESS</MSGSTAT>
+         </FCUBS_HEADER>
+         <FCUBS_BODY>
+            <Fetch-In-Lst-Master-Full>
+               <TXN_REF_NO>${instrument.txnRefNo}</TXN_REF_NO>
+               <Fetch-In-Lst-Child>
+                  <BOOK_DATE>${bookDate}</BOOK_DATE>
+                  <CUSTOMER_NO>${instrument.customerNo}</CUSTOMER_NO>
+                  <DR_AC_CCY>${instrument.currency}</DR_AC_CCY>
+                  <DR_AC_NO>${instrument.account}</DR_AC_NO>
+                  <DR_AMOUNT>${instrument.amount}</DR_AMOUNT>
+                  <DR_NAME>${instrument.drName}</DR_NAME>
+                  <EXCH_RATE>1</EXCH_RATE>
+                  <HOST_CODE>HOST1</HOST_CODE>
+                  <INSTRUCTION_DATE>${bookDate}</INSTRUCTION_DATE>
+                  <INSTRUMENT_AMOUNT>${instrument.amount}</INSTRUMENT_AMOUNT>
+                  <INSTRUMENT_CCY>${instrument.currency}</INSTRUMENT_CCY>
+                  <INSTRUMENT_CODE>${instrument.instrumentCode}</INSTRUMENT_CODE>
+                  <INSTRUMENT_DESC>${instrument.instrumentDesc}</INSTRUMENT_DESC>
+                  <INSTRUMENT_ISSUE_DATE>${instrument.issueDate}</INSTRUMENT_ISSUE_DATE>
+                  <INSTRUMENT_STATUS>A</INSTRUMENT_STATUS>
+                  <INSTRUMENT_TYPE>${instrument.instrumentType}</INSTRUMENT_TYPE>
+                  <INSTR_NO>${instrument.instrNo}</INSTR_NO>
+                  <SOURCE_CODE>MANL</SOURCE_CODE>
+                  <TXN_BRANCH>${instrument.branch}</TXN_BRANCH>
+                  <TXN_REF_NO>${instrument.txnRefNo}</TXN_REF_NO>
+                  <TXN_STATUS>L</TXN_STATUS>
+                  <BENEF_NAME>${instrument.benefName}</BENEF_NAME>
+               </Fetch-In-Lst-Child>
+            </Fetch-In-Lst-Master-Full>
+            <FCUBS_WARNING_RESP>
+               <WARNING>
+                  <WCODE>ST-SAVE-027</WCODE>
+                  <WDESC>Request Successfully Processed</WDESC>
+               </WARNING>
+            </FCUBS_WARNING_RESP>
+         </FCUBS_BODY>
+      </QUERYFETCHINSTRUMENTLIST_IOFS_RES>
+   </S:Body>
+</S:Envelope>`;
          } else if (result.Envelope.Body.QUERYIACUSTACC_IOFS_REQ) {
             operation = 'QueryCustomerName';
             const requestBody = result.Envelope.Body.QUERYIACUSTACC_IOFS_REQ;
@@ -180,6 +302,13 @@ const soapHandler = async (req, res) => {
             accountBranch = requestBody.FCUBS_BODY['Cust-Account-IO'].BRN;
             account = requestBody.FCUBS_BODY['Cust-Account-IO'].ACC;
          }
+      }
+
+      if (operation === 'QueryFetchInstrumentList') {
+         console.log('✅ تم إنشاء استجابة QueryFetchInstrumentList\n');
+         res.set('Content-Type', 'text/xml; charset=utf-8');
+         res.send(responseXml);
+         return;
       }
 
       // Fallback for simple XML (testing)
@@ -206,8 +335,6 @@ const soapHandler = async (req, res) => {
          accountType: accountData.accountType,
          startCheck: accountData.startCheck
       });
-
-      let responseXml = '';
 
       if (operation === 'QueryCheckBook') {
          const firstChequeNumber = accountData.startCheck;
@@ -359,6 +486,7 @@ const soapHandler = async (req, res) => {
 // تسجيل الـ Endpoints
 app.post('/FCUBSAccService', soapHandler);
 app.post('/FCUBSIAService', soapHandler);
+app.post('/InstrumentListService', soapHandler);
 
 // Endpoint للتحقق من صحة الخادم
 app.get('/health', (req, res) => {
@@ -366,7 +494,9 @@ app.get('/health', (req, res) => {
       status: 'OK',
       service: 'FCUBS SOAP Test Server',
       timestamp: new Date().toISOString(),
-      accounts_count: TEST_ACCOUNTS.length
+      accounts_count: TEST_ACCOUNTS.length,
+      instruments_count: TEST_INSTRUMENTS.length,
+      sample_txn_ref: '2617301647520000',
    });
 });
 
@@ -377,10 +507,16 @@ app.listen(PORT, () => {
    console.log('═══════════════════════════════════════════════════════════════');
    console.log('📍 CheckBook Endpoint: http://10.250.100.40:' + PORT + '/FCUBSAccService');
    console.log('📍 CustomerName Endpoint: http://10.250.100.40:' + PORT + '/FCUBSIAService');
+   console.log('📍 InstrumentList Endpoint: http://10.250.100.40:' + PORT + '/InstrumentListService');
    console.log('🏥 Health Check: http://10.250.100.40:' + PORT + '/health');
    console.log('\n📝 العمليات المدعومة:');
    console.log('1. QueryCheckBook (للحصول على بيانات الشيكات)');
    console.log('2. QueryIACustAcc (للحصول على اسم العميل)');
+   console.log('3. QueryFetchInstrumentList (صكوك مصدقة برقم العملية)');
+   console.log('\n📑 أرقام مرجعية للاختبار:');
+   TEST_INSTRUMENTS.forEach(item => {
+      console.log(`  - ${item.txnRefNo} | ${item.benefName} | ${item.amount} ${item.currency}`);
+   });
    console.log('\n📊 الحسابات المتوفرة:');
    TEST_ACCOUNTS.forEach(acc => {
       const accountTypeName = acc.accountType === 1 ? 'فردي (25 شيك)' : acc.accountType === 2 ? 'شركة (50 شيك)' : 'موظف (10 شيك)';

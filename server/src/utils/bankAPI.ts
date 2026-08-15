@@ -362,6 +362,142 @@ export class BankAPIClient {
       account_type: isCompany ? 2 : 1,
     };
   }
+
+  private buildInstrumentListEnvelope(txnRefNo: string, branchCode: string): string {
+    const userId = process.env.BANK_API_USER || 'ABHILASH01';
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ins="http://pmts.ofss.com/ws/InstrumentListService">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <ins:QUERYFETCHINSTRUMENTLIST_IOFS_REQ>
+         <ins:FCUBS_HEADER>
+            <ins:SOURCE>FLEXCUBE</ins:SOURCE>
+            <ins:UBSCOMP>FCUBS</ins:UBSCOMP>
+            <ins:MSGID></ins:MSGID>
+            <ins:CORRELID></ins:CORRELID>
+            <ins:USERID>${userId}</ins:USERID>
+            <ins:BRANCH>${branchCode}</ins:BRANCH>
+            <ins:ENTITY>ENTITY_ID1</ins:ENTITY>
+            <ins:SERVICE>InstrumentListService</ins:SERVICE>
+            <ins:OPERATION>QueryFetchInstrumentList</ins:OPERATION>
+         </ins:FCUBS_HEADER>
+         <ins:FCUBS_BODY>
+            <ins:Fetch-In-Lst-Master-IO>
+               <ins:CUSTOMER_NO></ins:CUSTOMER_NO>
+               <ins:TXN_REF_NO>${txnRefNo}</ins:TXN_REF_NO>
+            </ins:Fetch-In-Lst-Master-IO>
+         </ins:FCUBS_BODY>
+      </ins:QUERYFETCHINSTRUMENTLIST_IOFS_REQ>
+   </soapenv:Body>
+</soapenv:Envelope>`;
+  }
+
+  private async postInstrumentSoapRequest(envelope: string): Promise<string> {
+    const endpoint = await SystemSettingService.getSoapInstrumentEndpoint();
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/xml;charset=UTF-8',
+        },
+        body: envelope,
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Bank SOAP error: ${response.status} - ${text}`);
+      }
+
+      return response.text();
+    } catch (error: any) {
+      if (error.cause?.code === 'ECONNREFUSED') {
+        throw new Error(`خدمة InstrumentList غير متاحة على ${endpoint}. تحقق من الرابط في الإعدادات.`);
+      }
+      throw error;
+    }
+  }
+
+  async queryInstrumentList(params: { txnRefNo: string; branchCode?: string }): Promise<{
+    txnRefNo: string;
+    customerNo: string;
+    accountNumber: string;
+    accountHolderName: string;
+    beneficiaryName: string;
+    amount: number;
+    currency: string;
+    instrumentNo: string;
+    instrumentType: string;
+    instrumentCode: string;
+    instrumentDesc: string;
+    instrumentStatus: string;
+    issueDate: string;
+    bookDate: string;
+    txnBranch: string;
+    txnStatus: string;
+  }> {
+    const txnRefNo = params.txnRefNo.trim();
+    const branchCode = (params.branchCode || '001').trim();
+    const envelope = this.buildInstrumentListEnvelope(txnRefNo, branchCode);
+    console.log('📤 Sending InstrumentList SOAP Request:', envelope);
+
+    const xmlResponse = await this.postInstrumentSoapRequest(envelope);
+    console.log('📥 Received InstrumentList SOAP Response:', xmlResponse);
+
+    const parsed = await parseStringPromise(xmlResponse, {
+      explicitArray: true,
+      ignoreAttrs: false,
+      tagNameProcessors: [require('xml2js').processors.stripPrefix],
+    });
+
+    const envelopeNode = parsed['Envelope'];
+    const body = envelopeNode?.['Body']?.[0];
+    if (!body) throw new Error('Invalid SOAP response: missing body');
+
+    if (body['Fault']) {
+      const fault = body['Fault'][0];
+      const faultString = this.extractText(fault['faultstring']) || 'Unknown SOAP Fault';
+      throw new Error(`SOAP Fault: ${faultString}`);
+    }
+
+    const response = body['QUERYFETCHINSTRUMENTLIST_IOFS_RES'];
+    if (!response) {
+      throw new Error('استجابة غير صالحة: QUERYFETCHINSTRUMENTLIST_IOFS_RES غير موجود');
+    }
+
+    const header = response[0]?.FCUBS_HEADER?.[0];
+    const msgStat = this.extractText(header?.MSGSTAT);
+    if (msgStat && msgStat !== 'SUCCESS') {
+      throw new Error(`فشل الاستعلام عن الصك المصدق (MSGSTAT=${msgStat})`);
+    }
+
+    const fcubsBody = response[0]?.FCUBS_BODY?.[0];
+    const master = fcubsBody?.['Fetch-In-Lst-Master-Full']?.[0];
+    const child = master?.['Fetch-In-Lst-Child']?.[0];
+    if (!child) {
+      throw new Error('لم يتم العثور على بيانات الصك المصدق لهذا الرقم المرجعي');
+    }
+
+    const amountText = this.extractText(child.INSTRUMENT_AMOUNT) || this.extractText(child.DR_AMOUNT) || '0';
+
+    return {
+      txnRefNo: this.extractText(child.TXN_REF_NO) || this.extractText(master.TXN_REF_NO) || txnRefNo,
+      customerNo: this.extractText(child.CUSTOMER_NO) || '',
+      accountNumber: this.extractText(child.DR_AC_NO) || '',
+      accountHolderName: this.extractText(child.DR_NAME) || '',
+      beneficiaryName: this.extractText(child.BENEF_NAME) || '',
+      amount: parseFloat(amountText) || 0,
+      currency: this.extractText(child.INSTRUMENT_CCY) || this.extractText(child.DR_AC_CCY) || 'LYD',
+      instrumentNo: this.extractText(child.INSTR_NO) || '',
+      instrumentType: this.extractText(child.INSTRUMENT_TYPE) || '',
+      instrumentCode: this.extractText(child.INSTRUMENT_CODE) || '',
+      instrumentDesc: this.extractText(child.INSTRUMENT_DESC) || '',
+      instrumentStatus: this.extractText(child.INSTRUMENT_STATUS) || '',
+      issueDate: this.extractText(child.INSTRUMENT_ISSUE_DATE) || this.extractText(child.BOOK_DATE) || '',
+      bookDate: this.extractText(child.BOOK_DATE) || '',
+      txnBranch: this.extractText(child.TXN_BRANCH) || branchCode,
+      txnStatus: this.extractText(child.TXN_STATUS) || '',
+    };
+  }
 }
 
 export const bankAPI = new BankAPIClient();

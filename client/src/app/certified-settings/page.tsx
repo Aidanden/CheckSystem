@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Settings as SettingsIcon, Save, RotateCcw, Printer, Eye } from 'lucide-react';
-import { certifiedCheckService } from '@/lib/api';
+import { certifiedCheckService, systemSettingsService } from '@/lib/api';
+import { Save, RotateCcw, Eye, Settings as SettingsIcon, RefreshCw } from 'lucide-react';
 
 interface PrintPosition {
     x: number;
@@ -24,19 +24,23 @@ interface CertifiedPrintSettings {
     checkType: PrintPosition;
     checkNumber: PrintPosition;
     accountHolderName: PrintPosition;
+    branchName: PrintPosition;
+    micrLine: PrintPosition;
 }
 
 const DEFAULT_SETTINGS: CertifiedPrintSettings = {
     checkWidth: 235,
     checkHeight: 86,
-    beneficiaryName: { x: 30, y: 30, fontSize: 12, align: 'right' },
-    accountNumber: { x: 30, y: 40, fontSize: 11, align: 'right' },
-    amountNumbers: { x: 180, y: 50, fontSize: 14, align: 'left' },
-    amountWords: { x: 30, y: 55, fontSize: 11, align: 'right' },
-    issueDate: { x: 30, y: 20, fontSize: 10, align: 'right' },
-    checkType: { x: 120, y: 10, fontSize: 12, align: 'center' },
-    checkNumber: { x: 200, y: 20, fontSize: 11, align: 'left' },
-    accountHolderName: { x: 30, y: 25, fontSize: 11, align: 'right' },
+    checkNumber: { x: 185, y: 18, fontSize: 8, align: 'left' },
+    branchName: { x: 110, y: 4, fontSize: 8, align: 'center' },
+    issueDate: { x: 185, y: 12, fontSize: 8, align: 'left' },
+    accountNumber: { x: 30, y: 12, fontSize: 8, align: 'right' },
+    accountHolderName: { x: 30, y: 18, fontSize: 8, align: 'right' },
+    beneficiaryName: { x: 155, y: 41, fontSize: 8, align: 'right' },
+    amountNumbers: { x: 200, y: 42, fontSize: 8, align: 'right' },
+    amountWords: { x: 117.5, y: 48, fontSize: 8, align: 'center' },
+    checkType: { x: 120, y: 10, fontSize: 8, align: 'center' },
+    micrLine: { x: 117.5, y: 70, fontSize: 14, align: 'center' },
 };
 
 export default function CertifiedSettingsPage() {
@@ -45,10 +49,49 @@ export default function CertifiedSettingsPage() {
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
     const [initialLoading, setInitialLoading] = useState(true);
+    const [instrumentEndpoint, setInstrumentEndpoint] = useState('');
+    const [instrumentEndpointLoading, setInstrumentEndpointLoading] = useState(true);
+    const [instrumentEndpointSaving, setInstrumentEndpointSaving] = useState(false);
+    const [instrumentEndpointMessage, setInstrumentEndpointMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     useEffect(() => {
         loadSettings();
+        loadInstrumentEndpoint();
     }, []);
+
+    const loadInstrumentEndpoint = async () => {
+        try {
+            setInstrumentEndpointLoading(true);
+            const { endpoint } = await systemSettingsService.getSoapInstrumentEndpoint();
+            setInstrumentEndpoint(endpoint);
+        } catch {
+            setInstrumentEndpointMessage({ type: 'error', text: 'تعذر تحميل رابط خدمة الصكوك المصدقة' });
+        } finally {
+            setInstrumentEndpointLoading(false);
+        }
+    };
+
+    const saveInstrumentEndpoint = async () => {
+        const value = instrumentEndpoint.trim();
+        if (!value) {
+            setInstrumentEndpointMessage({ type: 'error', text: 'الرجاء إدخال رابط صالح' });
+            return;
+        }
+        setInstrumentEndpointSaving(true);
+        setInstrumentEndpointMessage(null);
+        try {
+            const { endpoint } = await systemSettingsService.updateSoapInstrumentEndpoint(value);
+            setInstrumentEndpoint(endpoint);
+            setInstrumentEndpointMessage({ type: 'success', text: 'تم حفظ رابط الخدمة بنجاح' });
+        } catch (err: any) {
+            setInstrumentEndpointMessage({
+                type: 'error',
+                text: err?.response?.data?.error || 'فشل حفظ رابط الخدمة',
+            });
+        } finally {
+            setInstrumentEndpointSaving(false);
+        }
+    };
 
     const loadSettings = async () => {
         try {
@@ -57,58 +100,19 @@ export default function CertifiedSettingsPage() {
 
             if (data) {
                 setSettings({
+                    ...DEFAULT_SETTINGS,
                     id: data.id,
                     checkWidth: data.checkWidth ?? DEFAULT_SETTINGS.checkWidth,
                     checkHeight: data.checkHeight ?? DEFAULT_SETTINGS.checkHeight,
-                    beneficiaryName: {
-                        x: data.beneficiaryNameX ?? DEFAULT_SETTINGS.beneficiaryName.x,
-                        y: data.beneficiaryNameY ?? DEFAULT_SETTINGS.beneficiaryName.y,
-                        fontSize: data.beneficiaryNameFontSize ?? DEFAULT_SETTINGS.beneficiaryName.fontSize,
-                        align: (data.beneficiaryNameAlign as any) ?? DEFAULT_SETTINGS.beneficiaryName.align,
-                    },
-                    accountNumber: {
-                        x: data.accountNumberX ?? DEFAULT_SETTINGS.accountNumber.x,
-                        y: data.accountNumberY ?? DEFAULT_SETTINGS.accountNumber.y,
-                        fontSize: data.accountNumberFontSize ?? DEFAULT_SETTINGS.accountNumber.fontSize,
-                        align: (data.accountNumberAlign as any) ?? DEFAULT_SETTINGS.accountNumber.align,
-                    },
-                    amountNumbers: {
-                        x: data.amountNumbersX ?? DEFAULT_SETTINGS.amountNumbers.x,
-                        y: data.amountNumbersY ?? DEFAULT_SETTINGS.amountNumbers.y,
-                        fontSize: data.amountNumbersFontSize ?? DEFAULT_SETTINGS.amountNumbers.fontSize,
-                        align: (data.amountNumbersAlign as any) ?? DEFAULT_SETTINGS.amountNumbers.align,
-                    },
-                    amountWords: {
-                        x: data.amountWordsX ?? DEFAULT_SETTINGS.amountWords.x,
-                        y: data.amountWordsY ?? DEFAULT_SETTINGS.amountWords.y,
-                        fontSize: data.amountWordsFontSize ?? DEFAULT_SETTINGS.amountWords.fontSize,
-                        align: (data.amountWordsAlign as any) ?? DEFAULT_SETTINGS.amountWords.align,
-                    },
-                    issueDate: {
-                        x: data.issueDateX ?? DEFAULT_SETTINGS.issueDate.x,
-                        y: data.issueDateY ?? DEFAULT_SETTINGS.issueDate.y,
-                        fontSize: data.issueDateFontSize ?? DEFAULT_SETTINGS.issueDate.fontSize,
-                        align: (data.issueDateAlign as any) ?? DEFAULT_SETTINGS.issueDate.align,
-                    },
-                    checkType: {
-                        x: data.checkTypeX ?? DEFAULT_SETTINGS.checkType.x,
-                        y: data.checkTypeY ?? DEFAULT_SETTINGS.checkType.y,
-                        fontSize: data.checkTypeFontSize ?? DEFAULT_SETTINGS.checkType.fontSize,
-                        align: (data.checkTypeAlign as any) ?? DEFAULT_SETTINGS.checkType.align,
-                    },
-                    checkNumber: {
-                        x: data.checkNumberX ?? DEFAULT_SETTINGS.checkNumber.x,
-                        y: data.checkNumberY ?? DEFAULT_SETTINGS.checkNumber.y,
-                        fontSize: data.checkNumberFontSize ?? DEFAULT_SETTINGS.checkNumber.fontSize,
-                        align: (data.checkNumberAlign as any) ?? DEFAULT_SETTINGS.checkNumber.align,
-                    },
-                    accountHolderName: {
-                        x: data.accountHolderNameX ?? DEFAULT_SETTINGS.accountHolderName.x,
-                        y: data.accountHolderNameY ?? DEFAULT_SETTINGS.accountHolderName.y,
-                        fontSize: data.accountHolderNameFontSize ?? DEFAULT_SETTINGS.accountHolderName.fontSize,
-                        align: (data.accountHolderNameAlign as any) ?? DEFAULT_SETTINGS.accountHolderName.align,
+                    micrLine: {
+                        x: (data as any).micrLine?.x ?? data.micrLineX ?? DEFAULT_SETTINGS.micrLine.x,
+                        y: (data as any).micrLine?.y ?? data.micrLineY ?? DEFAULT_SETTINGS.micrLine.y,
+                        fontSize: 14,
+                        align: ((data as any).micrLine?.align ?? data.micrLineAlign ?? DEFAULT_SETTINGS.micrLine.align) as any,
                     },
                 });
+            } else {
+                setSettings(DEFAULT_SETTINGS);
             }
         } catch (err) {
             console.error('Error loading settings:', err);
@@ -187,6 +191,16 @@ export default function CertifiedSettingsPage() {
                 accountHolderNameY: settings.accountHolderName.y,
                 accountHolderNameFontSize: settings.accountHolderName.fontSize,
                 accountHolderNameAlign: settings.accountHolderName.align,
+                branchName: settings.branchName,
+                branchNameX: settings.branchName.x,
+                branchNameY: settings.branchName.y,
+                branchNameFontSize: settings.branchName.fontSize,
+                branchNameAlign: settings.branchName.align,
+                micrLine: settings.micrLine,
+                micrLineX: settings.micrLine.x,
+                micrLineY: settings.micrLine.y,
+                micrLineFontSize: settings.micrLine.fontSize,
+                micrLineAlign: settings.micrLine.align,
             };
 
             await certifiedCheckService.updateSettings(payload);
@@ -230,6 +244,7 @@ export default function CertifiedSettingsPage() {
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     @page { size: ${settings.checkWidth}mm ${settings.checkHeight}mm; margin: 0; }
+    @font-face { font-family: 'MICR'; src: url('/font/micrenc.ttf') format('truetype'); }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     html, body { margin: 0; padding: 0; background: #fff; font-family: 'Cairo', sans-serif; }
     .check-wrapper { margin: 0; padding: 0; width: ${settings.checkWidth}mm; height: ${settings.checkHeight}mm; page-break-inside: avoid; overflow: hidden; }
@@ -237,11 +252,13 @@ export default function CertifiedSettingsPage() {
     .field { position: absolute; }
     .beneficiary-name { left: ${settings.beneficiaryName.x}mm; top: ${settings.beneficiaryName.y}mm; font-size: ${settings.beneficiaryName.fontSize}pt; text-align: ${settings.beneficiaryName.align}; font-weight: 600; }
     .account-number { left: ${settings.accountNumber.x}mm; top: ${settings.accountNumber.y}mm; font-size: ${settings.accountNumber.fontSize}pt; text-align: ${settings.accountNumber.align}; font-family: 'Courier New', monospace; }
-    .amount-numbers { left: ${settings.amountNumbers.x}mm; top: ${settings.amountNumbers.y}mm; font-size: ${settings.amountNumbers.fontSize}pt; text-align: ${settings.amountNumbers.align}; font-weight: bold; font-family: 'Courier New', monospace; direction: ltr; }
+    .amount-numbers { left: ${settings.amountNumbers.x}mm; top: ${settings.amountNumbers.y}mm; font-size: ${settings.amountNumbers.fontSize}pt; text-align: ${settings.amountNumbers.align}; font-weight: bold; font-family: 'Courier New', monospace; direction: ltr; transform: ${settings.amountNumbers.align === 'right' ? 'translateX(-100%)' : settings.amountNumbers.align === 'center' ? 'translateX(-50%)' : 'none'}; }
     .amount-words { left: ${settings.amountWords.x}mm; top: ${settings.amountWords.y}mm; font-size: ${settings.amountWords.fontSize}pt; text-align: ${settings.amountWords.align}; max-width: 180mm; }
+    .micr-line { position: absolute; left: ${settings.micrLine.x}mm; top: ${settings.micrLine.y}mm; font-size: ${settings.micrLine.fontSize}pt; text-align: ${settings.micrLine.align}; font-family: 'MICR', monospace; letter-spacing: 0.15em; direction: ltr; white-space: nowrap; font-weight: bold; transform: ${settings.micrLine.align === 'center' ? 'translateX(-50%)' : 'none'}; }
     .issue-date { left: ${settings.issueDate.x}mm; top: ${settings.issueDate.y}mm; font-size: ${settings.issueDate.fontSize}pt; text-align: ${settings.issueDate.align}; }
     .check-type { left: ${settings.checkType.x}mm; top: ${settings.checkType.y}mm; font-size: ${settings.checkType.fontSize}pt; text-align: ${settings.checkType.align}; font-weight: bold; color: #000; }
     .check-number { left: ${settings.checkNumber.x}mm; top: ${settings.checkNumber.y}mm; font-size: ${settings.checkNumber.fontSize}pt; text-align: ${settings.checkNumber.align}; font-family: 'Courier New', monospace; font-weight: bold; direction: ltr; }
+    .branch-name { left: ${settings.branchName.x}mm; top: ${settings.branchName.y}mm; font-size: ${settings.branchName.fontSize}pt; text-align: ${settings.branchName.align}; font-weight: 600; transform: ${settings.branchName.align === 'center' ? 'translateX(-50%)' : 'none'}; }
     .account-holder-name { left: ${settings.accountHolderName.x}mm; top: ${settings.accountHolderName.y}mm; font-size: ${settings.accountHolderName.fontSize}pt; text-align: ${settings.accountHolderName.align}; }
     @media print { .check { border: none; } }
     @media screen { body { display: flex; align-items: center; justify-content: center; padding: 20px; background: #f3f4f6; } .check-wrapper { box-shadow: 0 4px 6px rgba(0,0,0,0.1); } }
@@ -251,12 +268,15 @@ export default function CertifiedSettingsPage() {
   <div class="check-wrapper">
     <section class="check">
 
+      <div class="field check-number">${testData.checkNumber}</div>
+      <div class="field branch-name">فرع طرابلس</div>
       <div class="field issue-date">${new Date(testData.issueDate).toLocaleDateString('ar-LY')}</div>
       <div class="field account-holder-name">أحمد محمد علي السيد</div>
       <div class="field beneficiary-name">${testData.beneficiaryName}</div>
       <div class="field account-number">${testData.accountNumber}</div>
       <div class="field amount-numbers">${amountFormatted}</div>
       <div class="field amount-words">${testData.amountInWords}</div>
+      <div class="micr-line">C001123456C A02800116A 0000000001C 03</div>
     </section>
   </div>
 </body>
@@ -292,8 +312,44 @@ export default function CertifiedSettingsPage() {
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-800">إعدادات طباعة الشيك المصدق</h1>
-                            <p className="text-gray-600">ضبط مواضع الحقول وأحجام الخطوط للشيكات المصدقة</p>
+                            <p className="text-gray-600">رابط خدمة المصرف ومواضع القيمة والمستفيد والتفقيط والترميز</p>
                         </div>
+                    </div>
+                </div>
+
+                <div className="card space-y-3">
+                    <h2 className="text-lg font-semibold text-gray-800">رابط خدمة الصكوك المصدقة (InstrumentListService)</h2>
+                    <p className="text-sm text-gray-600">QueryFetchInstrumentList — استخدم خادم الاختبار: http://10.250.100.40:8080/InstrumentListService</p>
+                    {instrumentEndpointMessage && (
+                        <div className={`${instrumentEndpointMessage.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'} border px-3 py-2 rounded`}>
+                            {instrumentEndpointMessage.text}
+                        </div>
+                    )}
+                    <input
+                        type="text"
+                        className="input w-full"
+                        dir="ltr"
+                        value={instrumentEndpoint}
+                        onChange={(e) => setInstrumentEndpoint(e.target.value)}
+                        disabled={instrumentEndpointLoading || instrumentEndpointSaving}
+                    />
+                    <div className="flex gap-2">
+                        <button
+                            onClick={saveInstrumentEndpoint}
+                            disabled={instrumentEndpointSaving || instrumentEndpointLoading}
+                            className="btn btn-primary flex items-center gap-2"
+                        >
+                            <Save className="w-4 h-4" />
+                            حفظ الرابط
+                        </button>
+                        <button
+                            onClick={loadInstrumentEndpoint}
+                            disabled={instrumentEndpointLoading}
+                            className="btn btn-secondary flex items-center gap-2"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${instrumentEndpointLoading ? 'animate-spin' : ''}`} />
+                            إعادة تحميل
+                        </button>
                     </div>
                 </div>
 
@@ -350,7 +406,57 @@ export default function CertifiedSettingsPage() {
                             </div>
                         </div>
 
+                        <div className="space-y-4 border-t pt-4">
+                            <h3 className="font-medium text-gray-700">رقم الشيك (أعلى الشيك)</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">X</label>
+                                    <input type="number" value={settings.checkNumber.x} onChange={(e) => updatePosition('checkNumber', 'x', parseFloat(e.target.value))} className="input w-full" step="0.1" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">Y</label>
+                                    <input type="number" value={settings.checkNumber.y} onChange={(e) => updatePosition('checkNumber', 'y', parseFloat(e.target.value))} className="input w-full" step="0.1" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                                    <input type="number" value={settings.checkNumber.fontSize} onChange={(e) => updatePosition('checkNumber', 'fontSize', parseInt(e.target.value))} className="input w-full" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                                    <select value={settings.checkNumber.align} onChange={(e) => updatePosition('checkNumber', 'align', e.target.value)} className="input w-full">
+                                        <option value="left">يسار</option>
+                                        <option value="center">وسط</option>
+                                        <option value="right">يمين</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
 
+                        <div className="space-y-4 border-t pt-4">
+                            <h3 className="font-medium text-gray-700">اسم الفرع (أعلى الشيك)</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">X</label>
+                                    <input type="number" value={settings.branchName.x} onChange={(e) => updatePosition('branchName', 'x', parseFloat(e.target.value))} className="input w-full" step="0.1" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">Y</label>
+                                    <input type="number" value={settings.branchName.y} onChange={(e) => updatePosition('branchName', 'y', parseFloat(e.target.value))} className="input w-full" step="0.1" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                                    <input type="number" value={settings.branchName.fontSize} onChange={(e) => updatePosition('branchName', 'fontSize', parseInt(e.target.value))} className="input w-full" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                                    <select value={settings.branchName.align} onChange={(e) => updatePosition('branchName', 'align', e.target.value)} className="input w-full">
+                                        <option value="left">يسار</option>
+                                        <option value="center">وسط</option>
+                                        <option value="right">يمين</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
 
                         {/* Issue Date Position */}
                         <div className="space-y-4 border-t pt-4">
@@ -664,6 +770,33 @@ export default function CertifiedSettingsPage() {
                             </div>
                         </div>
 
+                        {/* MICR encoding */}
+                        <div className="space-y-4 border-t pt-4">
+                            <h3 className="font-medium text-gray-700">ترميز MICR أسفل الشيك</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">X</label>
+                                    <input type="number" value={settings.micrLine.x} onChange={(e) => updatePosition('micrLine', 'x', parseFloat(e.target.value))} className="input w-full" step="0.1" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">Y</label>
+                                    <input type="number" value={settings.micrLine.y} onChange={(e) => updatePosition('micrLine', 'y', parseFloat(e.target.value))} className="input w-full" step="0.1" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                                    <input type="number" value={settings.micrLine.fontSize} onChange={(e) => updatePosition('micrLine', 'fontSize', parseInt(e.target.value))} className="input w-full" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                                    <select value={settings.micrLine.align} onChange={(e) => updatePosition('micrLine', 'align', e.target.value)} className="input w-full">
+                                        <option value="left">يسار</option>
+                                        <option value="center">وسط</option>
+                                        <option value="right">يمين</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Action Buttons */}
                         <div className="flex gap-3 pt-4 border-t">
                             <button
@@ -781,6 +914,7 @@ export default function CertifiedSettingsPage() {
                                         fontSize: `${settings.amountNumbers.fontSize * 1.5}px`,
                                         textAlign: settings.amountNumbers.align as any,
                                         direction: 'ltr',
+                                        transform: settings.amountNumbers.align === 'right' ? 'translateX(-100%)' : settings.amountNumbers.align === 'center' ? 'translateX(-50%)' : 'none',
                                     }}
                                 >
                                     37,500.000
@@ -798,6 +932,21 @@ export default function CertifiedSettingsPage() {
                                     }}
                                 >
                                     سبعة وثلاثون ألفاً وخمسمائة دينار ليبي لا غير
+                                </div>
+
+                                <div
+                                    className="absolute font-mono font-bold"
+                                    style={{
+                                        left: `${settings.micrLine.x * 2}px`,
+                                        top: `${settings.micrLine.y * 2}px`,
+                                        fontSize: `${Math.max(10, settings.micrLine.fontSize)}px`,
+                                        textAlign: settings.micrLine.align as any,
+                                        transform: settings.micrLine.align === 'center' ? 'translateX(-50%)' : 'none',
+                                        direction: 'ltr',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    C001123456C A02800116A ... 03
                                 </div>
                             </div>
                         </div>

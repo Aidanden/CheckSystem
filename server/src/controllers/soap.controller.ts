@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { bankAPI } from '../utils/bankAPI';
 import { BranchModel } from '../models/Branch.model';
+import { CertifiedInstrumentLogService } from '../services/certifiedInstrumentLog.service';
 
 export class SoapController {
   static async queryCheckbook(req: AuthRequest, res: Response): Promise<void> {
@@ -97,6 +98,97 @@ export class SoapController {
       res.status(500).json({
         error: 'فشل الاستعلام عن دفتر الشيكات',
         details: error.message
+      });
+    }
+  }
+
+  static async queryInstrumentList(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { txnRefNo, branchCode } = req.body;
+
+      if (!txnRefNo || typeof txnRefNo !== 'string' || !txnRefNo.trim()) {
+        res.status(400).json({ error: 'الرقم المرجعي للعملية مطلوب' });
+        return;
+      }
+
+      const trimmedRef = txnRefNo.trim();
+      const result = await bankAPI.queryInstrumentList({
+        txnRefNo: trimmedRef,
+        branchCode: typeof branchCode === 'string' && branchCode.trim() ? branchCode.trim() : undefined,
+      });
+
+      const branchLookupCode = String(result.txnBranch || '').trim();
+      if (!branchLookupCode) {
+        res.status(400).json({
+          error: 'رقم الفرع غير موجود في استجابة المصرف',
+          details: 'حقل TXN_BRANCH فارغ، لا يمكن جلب الرقم التوجيهي والمحاسبي',
+        });
+        return;
+      }
+
+      try {
+        const branch = await BranchModel.findByBranchCode(branchLookupCode);
+        if (!branch) {
+          res.status(400).json({
+            error: `لم يتم العثور على الفرع رقم ${branchLookupCode} في النظام`,
+            details: 'أضف الفرع في شاشة إدارة الفروع مع الرقم التوجيهي والرقم المحاسبي',
+          });
+          return;
+        }
+
+        if (!branch.routingNumber || !String(branch.accountingNumber || '').trim()) {
+          res.status(400).json({
+            error: `بيانات الفرع ${branch.branchName} غير مكتملة`,
+            details: 'يجب تعبئة الرقم التوجيهي والرقم المحاسبي للفرع قبل طباعة الترميز',
+          });
+          return;
+        }
+
+        (result as any).branchName = branch.branchName;
+        (result as any).routingNumber = branch.routingNumber;
+        (result as any).accountingNumber = branch.accountingNumber;
+        (result as any).branchId = branch.id;
+        (result as any).branchNumber = branch.branchNumber || branchLookupCode;
+      } catch (branchError) {
+        console.error('تعذر جلب بيانات الفرع للصك المصدق:', branchError);
+        res.status(500).json({
+          error: 'فشل جلب بيانات الفرع من النظام',
+          details: branchError instanceof Error ? branchError.message : 'خطأ غير معروف',
+        });
+        return;
+      }
+
+      if (req.user) {
+        try {
+          await CertifiedInstrumentLogService.create({
+            operationType: 'query',
+            txnRefNo: trimmedRef,
+            instrumentNo: result.instrumentNo,
+            accountNumber: result.accountNumber,
+            accountHolderName: result.accountHolderName,
+            beneficiaryName: result.beneficiaryName,
+            amount: result.amount,
+            currency: result.currency,
+            issueDate: result.issueDate || result.bookDate,
+            txnBranch: result.txnBranch,
+            branchId: (result as any).branchId ?? null,
+            branchName: (result as any).branchName ?? null,
+            routingNumber: (result as any).routingNumber ?? null,
+            accountingNumber: (result as any).accountingNumber ?? null,
+            performedBy: req.user.userId,
+            performedByName: req.user.username,
+          });
+        } catch (logError) {
+          console.error('فشل تسجيل استعلام الصك المصدق:', logError);
+        }
+      }
+
+      res.json(result);
+    } catch (error: any) {
+      console.error('InstrumentList SOAP query error:', error);
+      res.status(500).json({
+        error: 'فشل الاستعلام عن الصك المصدق',
+        details: error.message,
       });
     }
   }

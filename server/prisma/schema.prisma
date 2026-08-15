@@ -22,6 +22,7 @@ model Branch {
   printOperations            PrintOperation[]
   users                      User[]
   certifiedCheckPrintRecords CertifiedCheckPrintRecord[]
+  certifiedInstrumentLogs    CertifiedInstrumentLog[]
 
   @@map("branches")
 }
@@ -51,6 +52,7 @@ model User {
   printLogs             PrintLog[]
   printOperations       PrintOperation[]
   userPermissions       UserPermission[]
+  certifiedInstrumentLogs CertifiedInstrumentLog[]
   branch                Branch?                @relation(fields: [branchId], references: [id])
 
   @@map("users")
@@ -313,4 +315,37 @@ model CertifiedCheckPrintUpdateLog {
   record CertifiedCheckPrintRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
 
   @@map("certified_check_print_update_logs")
+}
+
+model CertifiedInstrumentLog {
+  id                 Int      @id @default(autoincrement())
+  operationType      String   @map("operation_type")
+  txnRefNo           String   @map("txn_ref_no")
+  instrumentNo       String?  @map("instrument_no")
+  accountNumber      String?  @map("account_number")
+  accountHolderName  String?  @map("account_holder_name")
+  beneficiaryName    String?  @map("beneficiary_name")
+  amount             Float?   @map("amount")
+  currency           String?  @map("currency")
+  issueDate          String?  @map("issue_date")
+  txnBranch          String?  @map("txn_branch")
+  branchId           Int?     @map("branch_id")
+  branchName         String?  @map("branch_name")
+  routingNumber      String?  @map("routing_number")
+  accountingNumber   String?  @map("accounting_number")
+  amountWords        String?  @map("amount_words")
+  performedBy        Int      @map("performed_by")
+  performedByName    String   @map("performed_by_name")
+  createdAt          DateTime @default(now()) @map("created_at")
+  notes              String?
+  user               User     @relation(fields: [performedBy], references: [id])
+  branch             Branch?  @relation(fields: [branchId], references: [id])
+
+  @@index([txnRefNo])
+  @@index([accountNumber])
+  @@index([createdAt])
+  @@index([operationType])
+  @@index([performedBy])
+  @@index([branchId])
+  @@map("certified_instrument_logs")
 }

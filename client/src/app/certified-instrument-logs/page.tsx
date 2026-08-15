@@ -1,0 +1,265 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { certifiedInstrumentLogService, userService, branchService } from '@/lib/api';
+import type { CertifiedInstrumentLog } from '@/lib/api/services/certifiedInstrumentLog.service';
+import { ClipboardList, Filter, FileText, Download } from 'lucide-react';
+import { formatDateMedium, formatNumber } from '@/utils/locale';
+import { User } from '@/types';
+import { Branch } from '@/types';
+
+export default function CertifiedInstrumentLogsPage() {
+  const [logs, setLogs] = useState<CertifiedInstrumentLog[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(true);
+  const [stats, setStats] = useState({ total: 0, queries: 0, prints: 0, lastOperationDate: null as string | null });
+  const [page, setPage] = useState(0);
+  const [filters, setFilters] = useState({
+    operationType: '' as '' | 'query' | 'print',
+    accountNumber: '',
+    txnRefNo: '',
+    startDate: '',
+    endDate: '',
+    userId: undefined as number | undefined,
+    branchId: undefined as number | undefined,
+    limit: 20,
+  });
+
+  useEffect(() => {
+    Promise.all([userService.getAll(), branchService.getAll()])
+      .then(([usersData, branchesData]) => {
+        setUsers(usersData);
+        setBranches(branchesData);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [page, filters]);
+
+  const queryParams = () => ({
+    page,
+    limit: filters.limit,
+    operationType: filters.operationType || undefined,
+    accountNumber: filters.accountNumber.trim() || undefined,
+    txnRefNo: filters.txnRefNo.trim() || undefined,
+    startDate: filters.startDate || undefined,
+    endDate: filters.endDate || undefined,
+    userId: filters.userId,
+    branchId: filters.branchId,
+  });
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const params = queryParams();
+      const [logsRes, statsRes] = await Promise.all([
+        certifiedInstrumentLogService.getAll(params),
+        certifiedInstrumentLogService.getStatistics(params),
+      ]);
+      setLogs(logsRes.logs);
+      setTotal(logsRes.total);
+      setStats(statsRes);
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'فشل تحميل السجلات');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalPages = Math.max(1, Math.ceil(total / filters.limit));
+
+  const operationLabel = (type: string) => (type === 'print' ? 'طباعة' : 'استعلام');
+
+  const exportCsv = () => {
+    const header = [
+      'التاريخ',
+      'النوع',
+      'الرقم المرجعي',
+      'رقم الصك',
+      'رقم الحساب',
+      'صاحب الحساب',
+      'المستفيد',
+      'المبلغ',
+      'الفرع',
+      'المستخدم',
+    ];
+    const rows = logs.map((log) => [
+      formatDateMedium(log.createdAt),
+      operationLabel(log.operationType),
+      log.txnRefNo,
+      log.instrumentNo || '',
+      log.accountNumber || '',
+      log.accountHolderName || '',
+      log.beneficiaryName || '',
+      log.amount != null ? String(log.amount) : '',
+      log.branchName || log.txnBranch || '',
+      log.performedByName,
+    ]);
+    const csv = [header, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `certified-instrument-logs-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const printReport = () => {
+    const html = `<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير صكوك المنظومة</title>
+<style>
+  body { font-family: Cairo, Tahoma, sans-serif; padding: 20px; }
+  h1 { font-size: 18px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { border: 1px solid #ccc; padding: 6px; text-align: right; }
+  th { background: #f3f4f6; }
+</style></head><body>
+<h1>سجل طباعة الصك المصدق من المنظومة</h1>
+<p>الإجمالي: ${stats.total} | استعلام: ${stats.queries} | طباعة: ${stats.prints}</p>
+<table>
+<thead><tr>
+<th>التاريخ</th><th>النوع</th><th>الرقم المرجعي</th><th>رقم الصك</th><th>رقم الحساب</th><th>المستفيد</th><th>المبلغ</th><th>الفرع</th><th>المستخدم</th>
+</tr></thead>
+<tbody>
+${logs.map((log) => `<tr>
+<td>${formatDateMedium(log.createdAt)}</td>
+<td>${operationLabel(log.operationType)}</td>
+<td>${log.txnRefNo}</td>
+<td>${log.instrumentNo || ''}</td>
+<td>${log.accountNumber || ''}</td>
+<td>${log.beneficiaryName || ''}</td>
+<td>${log.amount != null ? log.amount : ''}</td>
+<td>${log.branchName || log.txnBranch || ''}</td>
+<td>${log.performedByName}</td>
+</tr>`).join('')}
+</tbody></table>
+<script>window.onload=()=>window.print()</script>
+</body></html>`;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-amber-100 rounded-lg">
+              <ClipboardList className="w-6 h-6 text-amber-700" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">سجل طباعة الصك المصدق من المنظومة</h1>
+              <p className="text-sm text-gray-600">كل استعلام وكل طباعة تُسجَّل، بما فيها التكرار</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={exportCsv} className="btn bg-gray-100 text-gray-800 flex items-center gap-2">
+              <Download className="w-4 h-4" /> تصدير
+            </button>
+            <button onClick={printReport} className="btn btn-primary flex items-center gap-2">
+              <FileText className="w-4 h-4" /> طباعة التقرير
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="card"><p className="text-sm text-gray-500">كل العمليات</p><p className="text-2xl font-bold">{formatNumber(stats.total)}</p></div>
+          <div className="card"><p className="text-sm text-gray-500">استعلام بدون/مع طباعة</p><p className="text-2xl font-bold">{formatNumber(stats.queries)}</p></div>
+          <div className="card"><p className="text-sm text-gray-500">عمليات الطباعة</p><p className="text-2xl font-bold">{formatNumber(stats.prints)}</p></div>
+          <div className="card"><p className="text-sm text-gray-500">آخر عملية</p><p className="text-lg font-semibold">{stats.lastOperationDate ? formatDateMedium(stats.lastOperationDate) : '—'}</p></div>
+        </div>
+
+        <div className="card space-y-4">
+          <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2 font-semibold text-gray-800">
+            <Filter className="w-4 h-4" /> فلترة حسب المستخدم والتاريخ ورقم الحساب والفرع
+          </button>
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input className="input" placeholder="رقم الحساب" value={filters.accountNumber} onChange={(e) => { setPage(0); setFilters({ ...filters, accountNumber: e.target.value }); }} />
+              <input className="input" placeholder="الرقم المرجعي" value={filters.txnRefNo} onChange={(e) => { setPage(0); setFilters({ ...filters, txnRefNo: e.target.value }); }} />
+              <select className="input" value={filters.operationType} onChange={(e) => { setPage(0); setFilters({ ...filters, operationType: e.target.value as any }); }}>
+                <option value="">كل الأنواع</option>
+                <option value="query">استعلام</option>
+                <option value="print">طباعة</option>
+              </select>
+              <select className="input" value={filters.userId ?? ''} onChange={(e) => { setPage(0); setFilters({ ...filters, userId: e.target.value ? Number(e.target.value) : undefined }); }}>
+                <option value="">كل المستخدمين</option>
+                {users.map((u) => <option key={u.id} value={u.id}>{u.username}</option>)}
+              </select>
+              <select className="input" value={filters.branchId ?? ''} onChange={(e) => { setPage(0); setFilters({ ...filters, branchId: e.target.value ? Number(e.target.value) : undefined }); }}>
+                <option value="">كل الفروع</option>
+                {branches.map((b) => <option key={b.id} value={b.id}>{b.branchName}</option>)}
+              </select>
+              <input type="date" className="input" value={filters.startDate} onChange={(e) => { setPage(0); setFilters({ ...filters, startDate: e.target.value }); }} />
+              <input type="date" className="input" value={filters.endDate} onChange={(e) => { setPage(0); setFilters({ ...filters, endDate: e.target.value }); }} />
+              <button onClick={() => { setPage(0); setFilters({ operationType: '', accountNumber: '', txnRefNo: '', startDate: '', endDate: '', userId: undefined, branchId: undefined, limit: 20 }); }} className="btn bg-gray-100">إعادة تعيين</button>
+            </div>
+          )}
+        </div>
+
+        {error && <div className="p-4 bg-red-50 text-red-700 rounded-xl">{error}</div>}
+
+        <div className="card overflow-x-auto">
+          {loading ? (
+            <p className="p-6 text-center text-gray-500">جاري التحميل...</p>
+          ) : logs.length === 0 ? (
+            <p className="p-6 text-center text-gray-500">لا توجد عمليات</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-right border-b">
+                  <th className="p-3">التاريخ</th>
+                  <th className="p-3">النوع</th>
+                  <th className="p-3">الرقم المرجعي</th>
+                  <th className="p-3">رقم الصك</th>
+                  <th className="p-3">رقم الحساب</th>
+                  <th className="p-3">المستفيد</th>
+                  <th className="p-3">المبلغ</th>
+                  <th className="p-3">الفرع</th>
+                  <th className="p-3">المستخدم</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((log) => (
+                  <tr key={log.id} className="border-b hover:bg-gray-50">
+                    <td className="p-3 whitespace-nowrap">{formatDateMedium(log.createdAt)}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${log.operationType === 'print' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {operationLabel(log.operationType)}
+                      </span>
+                    </td>
+                    <td className="p-3 font-mono" dir="ltr">{log.txnRefNo}</td>
+                    <td className="p-3 font-mono" dir="ltr">{log.instrumentNo || '—'}</td>
+                    <td className="p-3 font-mono" dir="ltr">{log.accountNumber || '—'}</td>
+                    <td className="p-3">{log.beneficiaryName || '—'}</td>
+                    <td className="p-3" dir="ltr">{log.amount != null ? log.amount : '—'}</td>
+                    <td className="p-3">{log.branchName || log.txnBranch || '—'}</td>
+                    <td className="p-3">{log.performedByName}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          <div className="flex items-center justify-between p-3 text-sm text-gray-600">
+            <span>صفحة {page + 1} من {totalPages} — {total} عملية</span>
+            <div className="flex gap-2">
+              <button disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))} className="btn bg-gray-100 disabled:opacity-50">السابق</button>
+              <button disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)} className="btn bg-gray-100 disabled:opacity-50">التالي</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}

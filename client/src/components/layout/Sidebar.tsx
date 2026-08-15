@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
 import Image from 'next/image';
+import { useHiddenScreens } from '@/lib/hooks/useHiddenScreens';
 import {
   Home,
   Printer,
@@ -27,6 +28,8 @@ const navigation = [
 
   // الشيكات المصدقة
   { name: 'طباعة شيك مصدق', href: '/certified-print', icon: Printer, permission: 'SCREEN_CERTIFIED_PRINT' },
+  { name: 'طباعة صك مصدق (منظومة)', href: '/certified-instrument', icon: Stamp, permission: 'SCREEN_CERTIFIED_PRINT' },
+  { name: 'سجل طباعة الصك المصدق (منظومة)', href: '/certified-instrument-logs', icon: ClipboardList, permission: 'SCREEN_CERTIFIED_PRINT' },
   { name: 'تقارير الشيك المصدقة', href: '/certified-reports', icon: FileText, permission: 'SCREEN_CERTIFIED_REPORTS' },
   { name: 'إصدار دفاتر مصدقة', href: '/certified-checks', icon: Stamp, permission: 'SCREEN_CERTIFIED_BOOKS' },
   { name: 'سجل و تقارير دفاتر المصدقة', href: '/certified-logs', icon: ClipboardList, permission: 'SCREEN_CERTIFIED_LOGS' },
@@ -43,12 +46,15 @@ const navigation = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useAppSelector((state) => state.auth);
+  const { hiddenScreens } = useHiddenScreens();
 
   const filteredNavigation = useMemo(() => {
     if (!user) return [];
 
     return navigation.filter((item) => {
-      // Dashboard is always visible
+      if (hiddenScreens.includes(item.href)) return false;
+
+      // Dashboard is always visible unless hidden from system settings
       if (item.href === '/dashboard') return true;
 
       // Admin sees everything
@@ -64,7 +70,7 @@ export default function Sidebar() {
       // If no permission requirement, show it
       return true;
     });
-  }, [user]);
+  }, [user, hiddenScreens]);
 
   return (
     <div className="fixed right-0 top-0 bottom-0 w-72 bg-gradient-to-b from-white to-secondary-50 border-l border-gray-200 shadow-xl">

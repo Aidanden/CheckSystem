@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { fetchCurrentUser } from '@/store/slices/authSlice';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import { useHiddenScreens } from '@/lib/hooks/useHiddenScreens';
+import { SYSTEM_SCREENS, isScreenHidden } from '@/config/screens';
 
 export default function DashboardLayout({
   children,
@@ -15,6 +17,8 @@ export default function DashboardLayout({
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { isAuthenticated, loading, token, user } = useAppSelector((state) => state.auth);
+  const pathname = usePathname();
+  const { hiddenScreens } = useHiddenScreens();
 
   useEffect(() => {
     if (!token) {
@@ -23,6 +27,14 @@ export default function DashboardLayout({
       dispatch(fetchCurrentUser());
     }
   }, [token, user, router, dispatch]);
+
+  useEffect(() => {
+    if (!isAuthenticated || loading) return;
+    if (!isScreenHidden(pathname, hiddenScreens)) return;
+
+    const fallback = SYSTEM_SCREENS.find((screen) => !hiddenScreens.includes(screen.href));
+    router.replace(fallback?.href || '/login');
+  }, [isAuthenticated, loading, pathname, hiddenScreens, router]);
 
   if (!isAuthenticated || loading) {
     return (

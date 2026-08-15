@@ -1,0 +1,63 @@
+<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
+   <S:Body>
+      <QUERYFETCHINSTRUMENTLIST_IOFS_RES xmlns="http://pmts.ofss.com/ws/InstrumentListService">
+         <FCUBS_HEADER>
+            <SOURCE>FLEXCUBE</SOURCE>
+            <UBSCOMP>FCUBS</UBSCOMP>
+            <MSGID>2622101947345000</MSGID>
+            <USERID>ABHILASH01</USERID>
+            <BRANCH>001</BRANCH>
+            <ENTITY>ENTITY_ID1</ENTITY>
+            <SERVICE>InstrumentListService</SERVICE>
+            <OPERATION>QueryFetchInstrumentList</OPERATION>
+            <SOURCE_USERID/>
+            <MULTITRIPID/>
+            <FUNCTIONID>PIDISLST</FUNCTIONID>
+            <ACTION>FETCH_IN_LST</ACTION>
+            <MSGSTAT>SUCCESS</MSGSTAT>
+         </FCUBS_HEADER>
+         <FCUBS_BODY>
+            <Fetch-In-Lst-Master-Full>
+               <CUSTOMER_NO/>
+               <DR_AC_NO/>
+               <INSTRUMENT_CCY/>
+               <INSTRUMENT_CODE/>
+               <INSTRUMENT_TYPE/>
+               <INSTR_NO/>
+               <TXN_REF_NO>2617301647520000</TXN_REF_NO>
+               <SOURCE_CODE/>
+               <Fetch-In-Lst-Child>
+                  <BOOK_DATE>2026-05-14</BOOK_DATE>
+                  <CUSTOMER_NO>00000002</CUSTOMER_NO>
+                  <DR_AC_CCY>LYD</DR_AC_CCY>
+                  <DR_AC_NO>001001000002114</DR_AC_NO>
+                  <DR_AMOUNT>5000</DR_AMOUNT>
+                  <DR_NAME>علي حسين علي قارش</DR_NAME>
+                  <EXCH_RATE>1</EXCH_RATE>
+                  <HOST_CODE>HOST1</HOST_CODE>
+                  <INSTRUCTION_DATE>2026-05-14</INSTRUCTION_DATE>
+                  <INSTRUMENT_AMOUNT>5000</INSTRUMENT_AMOUNT>
+                  <INSTRUMENT_CCY>LYD</INSTRUMENT_CCY>
+                  <INSTRUMENT_CODE>ECC_BC</INSTRUMENT_CODE>
+                  <INSTRUMENT_DESC>Cheque Clearing Network Libya</INSTRUMENT_DESC>
+                  <INSTRUMENT_ISSUE_DATE>2026-05-14</INSTRUMENT_ISSUE_DATE>
+                  <INSTRUMENT_STATUS>A</INSTRUMENT_STATUS>
+                  <INSTRUMENT_TYPE>MC</INSTRUMENT_TYPE>
+                  <INSTR_NO>000002000</INSTR_NO>
+                  <SOURCE_CODE>MANL</SOURCE_CODE>
+                  <TXN_BRANCH>001</TXN_BRANCH>
+                  <TXN_REF_NO>2617301647520000</TXN_REF_NO>
+                  <TXN_STATUS>L</TXN_STATUS>
+                  <BENEF_NAME>شركة سلطان للمطابخ</BENEF_NAME>
+               </Fetch-In-Lst-Child>
+            </Fetch-In-Lst-Master-Full>
+            <FCUBS_WARNING_RESP>
+               <WARNING>
+                  <WCODE>ST-SAVE-027</WCODE>
+                  <WDESC>Request Successfully Processed</WDESC>
+               </WARNING>
+            </FCUBS_WARNING_RESP>
+         </FCUBS_BODY>
+      </QUERYFETCHINSTRUMENTLIST_IOFS_RES>
+   </S:Body>
+</S:Envelope>

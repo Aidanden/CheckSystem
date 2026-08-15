@@ -31,10 +31,42 @@ interface QueryCheckbookParams {
   firstChequeNumber?: number;
 }
 
+export interface SoapInstrumentResponse {
+  txnRefNo: string;
+  customerNo: string;
+  accountNumber: string;
+  accountHolderName: string;
+  beneficiaryName: string;
+  amount: number;
+  currency: string;
+  instrumentNo: string;
+  instrumentType: string;
+  instrumentCode: string;
+  instrumentDesc: string;
+  instrumentStatus: string;
+  issueDate: string;
+  bookDate: string;
+  txnBranch: string;
+  txnStatus: string;
+  branchName?: string;
+  routingNumber?: string;
+  accountingNumber?: string;
+  branchNumber?: string;
+  branchId?: number;
+}
+
 export const soapService = {
   queryCheckbook: async (params: QueryCheckbookParams): Promise<SoapCheckbookResponse> => {
     return request<SoapCheckbookResponse>({
       url: '/soap/query-checkbook',
+      method: 'POST',
+      data: params,
+    });
+  },
+
+  queryInstrument: async (params: { txnRefNo: string; branchCode?: string }): Promise<SoapInstrumentResponse> => {
+    return request<SoapInstrumentResponse>({
+      url: '/soap/query-instrument',
       method: 'POST',
       data: params,
     });

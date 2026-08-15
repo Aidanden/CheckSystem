@@ -6,6 +6,23 @@ import { validate } from '../middleware/validation.middleware';
 
 const router = Router();
 
+router.get('/hidden-screens', SystemSettingController.getHiddenScreens);
+
+router.post(
+  '/hidden-screens/unlock',
+  validate([body('password').isString().withMessage('كلمة المرور مطلوبة')]),
+  SystemSettingController.unlockHiddenScreens
+);
+
+router.post(
+  '/hidden-screens',
+  validate([
+    body('password').isString().withMessage('كلمة المرور مطلوبة'),
+    body('hiddenScreens').isArray().withMessage('قائمة الشاشات مطلوبة'),
+  ]),
+  SystemSettingController.updateHiddenScreens
+);
+
 router.use(authenticate);
 
 router.get('/soap-endpoint', SystemSettingController.getSoapEndpoint);
@@ -39,6 +56,22 @@ router.post(
       .withMessage('رابط SOAP IA غير صالح'),
   ]),
   SystemSettingController.updateSoapIAEndpoint
+);
+
+router.get('/soap-instrument-endpoint', SystemSettingController.getSoapInstrumentEndpoint);
+
+router.post(
+  '/soap-instrument-endpoint',
+  requireAdmin,
+  validate([
+    body('endpoint')
+      .isString()
+      .withMessage('رابط خدمة الصكوك المصدقة يجب أن يكون نصاً')
+      .trim()
+      .isLength({ min: 5 })
+      .withMessage('رابط خدمة الصكوك المصدقة غير صالح'),
+  ]),
+  SystemSettingController.updateSoapInstrumentEndpoint
 );
 
 export default router;

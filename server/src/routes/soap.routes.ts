@@ -31,4 +31,21 @@ router.post(
   SoapController.queryCheckbook
 );
 
+router.post(
+  '/query-instrument',
+  validate([
+    body('txnRefNo')
+      .isString()
+      .withMessage('الرقم المرجعي يجب أن يكون نصاً')
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage('الرقم المرجعي مطلوب'),
+    body('branchCode')
+      .optional()
+      .isString()
+      .withMessage('رمز الفرع يجب أن يكون نصاً'),
+  ]),
+  SoapController.queryInstrumentList
+);
+
 export default router;

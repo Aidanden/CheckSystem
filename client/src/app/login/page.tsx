@@ -5,14 +5,25 @@ import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { login, clearError } from '@/store/slices/authSlice';
 import Image from 'next/image';
+import { SYSTEM_SCREENS } from '@/config/screens';
+import { systemSettingsService } from '@/lib/api';
+import { useHiddenScreens } from '@/lib/hooks/useHiddenScreens';
 
 export default function LoginPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { isAuthenticated, loading, error } = useAppSelector((state) => state.auth);
+  const { refresh } = useHiddenScreens();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showUnlock, setShowUnlock] = useState(false);
+  const [showScreens, setShowScreens] = useState(false);
+  const [unlockPassword, setUnlockPassword] = useState('');
+  const [unlockError, setUnlockError] = useState('');
+  const [selectedHidden, setSelectedHidden] = useState<string[]>([]);
+  const [savingScreens, setSavingScreens] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -21,7 +32,6 @@ export default function LoginPage() {
   }, [isAuthenticated, router]);
 
   useEffect(() => {
-    // Clear error when component mounts
     return () => {
       dispatch(clearError());
     };
@@ -41,10 +51,44 @@ export default function LoginPage() {
     }
   };
 
+  const handleUnlock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUnlockError('');
+    setSaveMessage('');
+    try {
+      const current = await systemSettingsService.unlockHiddenScreens(unlockPassword);
+      setSelectedHidden(current.hiddenScreens);
+      setShowUnlock(false);
+      setShowScreens(true);
+    } catch (err: any) {
+      setUnlockError(err?.response?.data?.error || 'كلمة المرور غير صحيحة');
+    }
+  };
+
+  const toggleScreen = (href: string) => {
+    setSelectedHidden((prev) =>
+      prev.includes(href) ? prev.filter((item) => item !== href) : [...prev, href]
+    );
+  };
+
+  const handleSaveScreens = async () => {
+    setSavingScreens(true);
+    setSaveMessage('');
+    setUnlockError('');
+    try {
+      await systemSettingsService.updateHiddenScreens(unlockPassword, selectedHidden);
+      await refresh();
+      setSaveMessage('تم حفظ إعدادات الشاشات على النظام');
+    } catch (err: any) {
+      setUnlockError(err?.response?.data?.error || 'فشل حفظ الإعدادات');
+    } finally {
+      setSavingScreens(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary-50 via-white to-primary-50">
       <div className="w-full max-w-md">
-        {/* Header with Logo */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
             <div className="bg-white p-4 rounded-2xl shadow-lg">
@@ -66,7 +110,6 @@ export default function LoginPage() {
           <div className="w-24 h-1 bg-gradient-to-r from-primary-500 to-secondary-400 mx-auto rounded-full"></div>
         </div>
 
-        {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
@@ -124,12 +167,21 @@ export default function LoginPage() {
                 'تسجيل الدخول'
               )}
             </button>
-
-            {/* Demo credentials removed for production/testing */}
           </form>
+
+          <button
+            type="button"
+            onClick={() => {
+              setUnlockPassword('');
+              setUnlockError('');
+              setShowUnlock(true);
+            }}
+            className="mt-4 w-full text-sm text-gray-500 hover:text-primary-600"
+          >
+            إعدادات متقدمة
+          </button>
         </div>
 
-        {/* Footer */}
         <div className="text-center mt-8 text-sm text-gray-600">
           <p className="mb-1">جميع الحقوق محفوظة © 2025</p>
           <p className="font-semibold text-primary-600">
@@ -137,7 +189,89 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+
+      {showUnlock && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6">
+            <h2 className="text-lg font-bold text-gray-800 mb-4">إعدادات متقدمة</h2>
+            <form onSubmit={handleUnlock} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">كلمة المرور</label>
+                <input
+                  type="password"
+                  value={unlockPassword}
+                  onChange={(e) => setUnlockPassword(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="أدخل كلمة مرور الإعدادات"
+                  autoFocus
+                />
+              </div>
+              {unlockError && <p className="text-sm text-red-600">{unlockError}</p>}
+              <div className="flex gap-2">
+                <button type="submit" className="flex-1 bg-primary-600 text-white py-2 rounded-xl font-semibold">
+                  فتح
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowUnlock(false)}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-xl font-semibold"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showScreens && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-bold text-gray-800 mb-1">التحكم في الشاشات</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              الشاشة المحددة تُخفى من النظام بالكامل (القائمة والوصول المباشر)، وليس من هذا المتصفح فقط.
+            </p>
+            <div className="space-y-2">
+              {SYSTEM_SCREENS.map((screen) => (
+                <label
+                  key={screen.href}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedHidden.includes(screen.href)}
+                    onChange={() => toggleScreen(screen.href)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm font-medium text-gray-800">{screen.name}</span>
+                </label>
+              ))}
+            </div>
+            {saveMessage && <p className="text-sm text-green-600 mt-3">{saveMessage}</p>}
+            {unlockError && <p className="text-sm text-red-600 mt-3">{unlockError}</p>}
+            <div className="flex gap-2 mt-4">
+              <button
+                type="button"
+                onClick={handleSaveScreens}
+                disabled={savingScreens}
+                className="flex-1 bg-primary-600 text-white py-2 rounded-xl font-semibold disabled:opacity-50"
+              >
+                {savingScreens ? 'جاري الحفظ...' : 'حفظ'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowScreens(false);
+                  setUnlockPassword('');
+                }}
+                className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-xl font-semibold"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
