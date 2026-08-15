@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { CertifiedInstrumentLogService } from '../services/certifiedInstrumentLog.service';
+import { UserModel } from '../models/User.model';
 
 export class CertifiedInstrumentLogController {
   static async create(req: AuthRequest, res: Response): Promise<void> {
@@ -34,9 +35,37 @@ export class CertifiedInstrumentLogController {
         return;
       }
 
-      if (!['query', 'print'].includes(operationType)) {
+      if (!['query', 'print', 'reprint'].includes(operationType)) {
         res.status(400).json({ error: 'نوع العملية غير صالح' });
         return;
+      }
+
+      if (!req.user.isAdmin) {
+        const needed =
+          operationType === 'reprint'
+            ? 'REPRINT_CERTIFIED_INSTRUMENT'
+            : 'SCREEN_CERTIFIED_INSTRUMENT';
+        const allowed = await UserModel.hasPermission(req.user.userId, needed);
+        if (!allowed) {
+          res.status(403).json({
+            error: operationType === 'reprint'
+              ? 'لا تملك صلاحية إعادة طباعة الصك المصدق من المنظومة'
+              : 'لا تملك صلاحية طباعة الصك المصدق من المنظومة',
+            required_permission: needed,
+          });
+          return;
+        }
+      }
+
+      if (operationType === 'print') {
+        const alreadyPrinted = await CertifiedInstrumentLogService.isPrinted(txnRefNo.trim());
+        if (alreadyPrinted) {
+          res.status(400).json({
+            error: 'هذا الصك مطبوع مسبقاً. يمكن إعادة طباعته من سجل طباعة الصك المصدق فقط.',
+            alreadyPrinted: true,
+          });
+          return;
+        }
       }
 
       const log = await CertifiedInstrumentLogService.create({
@@ -74,7 +103,7 @@ export class CertifiedInstrumentLogController {
       const result = await CertifiedInstrumentLogService.findAll({
         page,
         limit,
-        operationType: req.query.operationType as 'query' | 'print' | undefined,
+        operationType: req.query.operationType as 'query' | 'print' | 'reprint' | undefined,
         accountNumber: req.query.accountNumber as string | undefined,
         txnRefNo: req.query.txnRefNo as string | undefined,
         startDate: req.query.startDate as string | undefined,
@@ -92,7 +121,7 @@ export class CertifiedInstrumentLogController {
   static async getStatistics(req: AuthRequest, res: Response): Promise<void> {
     try {
       const stats = await CertifiedInstrumentLogService.getStatistics({
-        operationType: req.query.operationType as 'query' | 'print' | undefined,
+        operationType: req.query.operationType as 'query' | 'print' | 'reprint' | undefined,
         accountNumber: req.query.accountNumber as string | undefined,
         txnRefNo: req.query.txnRefNo as string | undefined,
         startDate: req.query.startDate as string | undefined,

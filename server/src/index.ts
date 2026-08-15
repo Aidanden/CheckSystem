@@ -40,6 +40,31 @@ const startServer = async () => {
     await prisma.$connect();
     console.log('✅ Database connected successfully');
 
+    const instrumentPerms = [
+      {
+        permissionName: 'طباعة صك مصدق من المنظومة',
+        permissionCode: 'SCREEN_CERTIFIED_INSTRUMENT',
+        description: 'الاستعلام وطباعة الصك المصدق من منظومة المصرف مرة واحدة',
+      },
+      {
+        permissionName: 'سجل طباعة الصك المصدق من المنظومة',
+        permissionCode: 'SCREEN_CERTIFIED_INSTRUMENT_LOGS',
+        description: 'عرض سجل استعلام وطباعة الصكوك المصدقة من المنظومة',
+      },
+      {
+        permissionName: 'إعادة طباعة صك مصدق من المنظومة',
+        permissionCode: 'REPRINT_CERTIFIED_INSTRUMENT',
+        description: 'إعادة طباعة الصك المصدق من سجل المنظومة فقط',
+      },
+    ];
+    for (const perm of instrumentPerms) {
+      await prisma.permission.upsert({
+        where: { permissionCode: perm.permissionCode },
+        create: perm,
+        update: { permissionName: perm.permissionName, description: perm.description },
+      });
+    }
+
     app.listen(PORT, () => {
       console.log(`🚀 Server is running on port ${PORT}`);
       console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);

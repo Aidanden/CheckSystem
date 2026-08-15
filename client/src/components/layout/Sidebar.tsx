@@ -28,8 +28,8 @@ const navigation = [
 
   // الشيكات المصدقة
   { name: 'طباعة شيك مصدق', href: '/certified-print', icon: Printer, permission: 'SCREEN_CERTIFIED_PRINT' },
-  { name: 'طباعة صك مصدق (منظومة)', href: '/certified-instrument', icon: Stamp, permission: 'SCREEN_CERTIFIED_PRINT' },
-  { name: 'سجل طباعة الصك المصدق (منظومة)', href: '/certified-instrument-logs', icon: ClipboardList, permission: 'SCREEN_CERTIFIED_PRINT' },
+  { name: 'طباعة صك مصدق (منظومة)', href: '/certified-instrument', icon: Stamp, permission: 'SCREEN_CERTIFIED_INSTRUMENT' },
+  { name: 'سجل طباعة الصك المصدق (منظومة)', href: '/certified-instrument-logs', icon: ClipboardList, permission: 'SCREEN_CERTIFIED_INSTRUMENT_LOGS' },
   { name: 'تقارير الشيك المصدقة', href: '/certified-reports', icon: FileText, permission: 'SCREEN_CERTIFIED_REPORTS' },
   { name: 'إصدار دفاتر مصدقة', href: '/certified-checks', icon: Stamp, permission: 'SCREEN_CERTIFIED_BOOKS' },
   { name: 'سجل و تقارير دفاتر المصدقة', href: '/certified-logs', icon: ClipboardList, permission: 'SCREEN_CERTIFIED_LOGS' },

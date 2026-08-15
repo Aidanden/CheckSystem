@@ -5,6 +5,10 @@ import {
 } from '../models/CertifiedInstrumentLog.model';
 
 export class CertifiedInstrumentLogService {
+  static isPrinted(txnRefNo: string) {
+    return CertifiedInstrumentLogModel.isPrinted(txnRefNo);
+  }
+
   static create(data: CreateInstrumentLogData) {
     return CertifiedInstrumentLogModel.create(data);
   }

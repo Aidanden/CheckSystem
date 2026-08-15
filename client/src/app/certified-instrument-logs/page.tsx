@@ -2,25 +2,32 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { certifiedInstrumentLogService, userService, branchService } from '@/lib/api';
+import { certifiedInstrumentLogService, userService, branchService, certifiedCheckService } from '@/lib/api';
 import type { CertifiedInstrumentLog } from '@/lib/api/services/certifiedInstrumentLog.service';
-import { ClipboardList, Filter, FileText, Download } from 'lucide-react';
+import { ClipboardList, Filter, FileText, Download, Printer } from 'lucide-react';
 import { formatDateMedium, formatNumber } from '@/utils/locale';
 import { User } from '@/types';
 import { Branch } from '@/types';
+import { useAppSelector } from '@/store/hooks';
+import { openCertifiedInstrumentPrint } from '@/lib/utils/certifiedInstrumentPrint';
+import { amountToArabicTafqeet } from '@/lib/utils/arabicAmountWords';
 
 export default function CertifiedInstrumentLogsPage() {
+  const { user: currentUser } = useAppSelector((state) => state.auth);
+  const canReprint = currentUser?.isAdmin || currentUser?.permissions?.some((p) => p.permissionCode === 'REPRINT_CERTIFIED_INSTRUMENT');
   const [logs, setLogs] = useState<CertifiedInstrumentLog[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
+  const [settings, setSettings] = useState<any>(null);
+  const [reprintingId, setReprintingId] = useState<number | null>(null);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(true);
-  const [stats, setStats] = useState({ total: 0, queries: 0, prints: 0, lastOperationDate: null as string | null });
+  const [stats, setStats] = useState({ total: 0, queries: 0, prints: 0, reprints: 0, lastOperationDate: null as string | null });
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState({
-    operationType: '' as '' | 'query' | 'print',
+    operationType: '' as '' | 'query' | 'print' | 'reprint',
     accountNumber: '',
     txnRefNo: '',
     startDate: '',
@@ -31,10 +38,11 @@ export default function CertifiedInstrumentLogsPage() {
   });
 
   useEffect(() => {
-    Promise.all([userService.getAll(), branchService.getAll()])
-      .then(([usersData, branchesData]) => {
+    Promise.all([userService.getAll(), branchService.getAll(), certifiedCheckService.getSettings()])
+      .then(([usersData, branchesData, settingsData]) => {
         setUsers(usersData);
         setBranches(branchesData);
+        setSettings(settingsData);
       })
       .catch((err) => console.error(err));
   }, []);
@@ -66,7 +74,7 @@ export default function CertifiedInstrumentLogsPage() {
       ]);
       setLogs(logsRes.logs);
       setTotal(logsRes.total);
-      setStats(statsRes);
+      setStats({ ...statsRes, reprints: statsRes.reprints ?? 0 });
     } catch (err: any) {
       setError(err?.response?.data?.error || 'فشل تحميل السجلات');
     } finally {
@@ -76,7 +84,57 @@ export default function CertifiedInstrumentLogsPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
 
-  const operationLabel = (type: string) => (type === 'print' ? 'طباعة' : 'استعلام');
+  const operationLabel = (type: string) =>
+    type === 'reprint' ? 'إعادة طباعة' : type === 'print' ? 'طباعة' : 'استعلام';
+
+  const handleReprint = async (log: CertifiedInstrumentLog) => {
+    if (!canReprint) return;
+    setReprintingId(log.id);
+    setError(null);
+    try {
+      const words = log.amountWords || amountToArabicTafqeet(Number(log.amount) || 0);
+      await certifiedInstrumentLogService.create({
+        operationType: 'reprint',
+        txnRefNo: log.txnRefNo,
+        instrumentNo: log.instrumentNo,
+        accountNumber: log.accountNumber,
+        accountHolderName: log.accountHolderName,
+        beneficiaryName: log.beneficiaryName,
+        amount: log.amount,
+        currency: log.currency,
+        issueDate: log.issueDate,
+        txnBranch: log.txnBranch,
+        branchId: log.branchId,
+        branchName: log.branchName,
+        routingNumber: log.routingNumber,
+        accountingNumber: log.accountingNumber,
+        amountWords: words,
+      });
+      const opened = openCertifiedInstrumentPrint(
+        {
+          instrumentNo: log.instrumentNo,
+          accountNumber: log.accountNumber,
+          accountHolderName: log.accountHolderName,
+          beneficiaryName: log.beneficiaryName,
+          amount: log.amount,
+          issueDate: log.issueDate,
+          branchName: log.branchName,
+          routingNumber: log.routingNumber,
+          accountingNumber: log.accountingNumber,
+        },
+        words,
+        settings
+      );
+      if (!opened) {
+        setError('تم تسجيل إعادة الطباعة وتعذر فتح نافذة الطباعة. اسمح بالنوافذ المنبثقة.');
+      }
+      await loadData();
+    } catch (err: any) {
+      setError(err?.response?.data?.error || err.message || 'فشل إعادة الطباعة');
+    } finally {
+      setReprintingId(null);
+    }
+  };
 
   const exportCsv = () => {
     const header = [
@@ -177,6 +235,7 @@ ${logs.map((log) => `<tr>
           <div className="card"><p className="text-sm text-gray-500">كل العمليات</p><p className="text-2xl font-bold">{formatNumber(stats.total)}</p></div>
           <div className="card"><p className="text-sm text-gray-500">استعلام بدون/مع طباعة</p><p className="text-2xl font-bold">{formatNumber(stats.queries)}</p></div>
           <div className="card"><p className="text-sm text-gray-500">عمليات الطباعة</p><p className="text-2xl font-bold">{formatNumber(stats.prints)}</p></div>
+          <div className="card"><p className="text-sm text-gray-500">إعادة الطباعة</p><p className="text-2xl font-bold">{formatNumber(stats.reprints)}</p></div>
           <div className="card"><p className="text-sm text-gray-500">آخر عملية</p><p className="text-lg font-semibold">{stats.lastOperationDate ? formatDateMedium(stats.lastOperationDate) : '—'}</p></div>
         </div>
 
@@ -192,6 +251,7 @@ ${logs.map((log) => `<tr>
                 <option value="">كل الأنواع</option>
                 <option value="query">استعلام</option>
                 <option value="print">طباعة</option>
+                <option value="reprint">إعادة طباعة</option>
               </select>
               <select className="input" value={filters.userId ?? ''} onChange={(e) => { setPage(0); setFilters({ ...filters, userId: e.target.value ? Number(e.target.value) : undefined }); }}>
                 <option value="">كل المستخدمين</option>
@@ -228,6 +288,7 @@ ${logs.map((log) => `<tr>
                   <th className="p-3">المبلغ</th>
                   <th className="p-3">الفرع</th>
                   <th className="p-3">المستخدم</th>
+                  {canReprint && <th className="p-3">إجراء</th>}
                 </tr>
               </thead>
               <tbody>
@@ -235,7 +296,13 @@ ${logs.map((log) => `<tr>
                   <tr key={log.id} className="border-b hover:bg-gray-50">
                     <td className="p-3 whitespace-nowrap">{formatDateMedium(log.createdAt)}</td>
                     <td className="p-3">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${log.operationType === 'print' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${
+                        log.operationType === 'print'
+                          ? 'bg-green-100 text-green-700'
+                          : log.operationType === 'reprint'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-blue-100 text-blue-700'
+                      }`}>
                         {operationLabel(log.operationType)}
                       </span>
                     </td>
@@ -246,6 +313,20 @@ ${logs.map((log) => `<tr>
                     <td className="p-3" dir="ltr">{log.amount != null ? log.amount : '—'}</td>
                     <td className="p-3">{log.branchName || log.txnBranch || '—'}</td>
                     <td className="p-3">{log.performedByName}</td>
+                    {canReprint && (
+                      <td className="p-3">
+                        {(log.operationType === 'print' || log.operationType === 'reprint') ? (
+                          <button
+                            onClick={() => handleReprint(log)}
+                            disabled={reprintingId === log.id || !log.routingNumber || !log.accountingNumber}
+                            className="btn bg-amber-50 text-amber-800 text-xs flex items-center gap-1 disabled:opacity-50"
+                          >
+                            <Printer className="w-3 h-3" />
+                            {reprintingId === log.id ? 'جاري...' : 'إعادة طباعة'}
+                          </button>
+                        ) : '—'}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

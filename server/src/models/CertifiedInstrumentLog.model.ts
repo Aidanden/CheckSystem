@@ -2,7 +2,7 @@ import prisma from '../lib/prisma';
 
 /** Prisma model: CertifiedInstrumentLog */
 export interface CreateInstrumentLogData {
-  operationType: 'query' | 'print';
+  operationType: 'query' | 'print' | 'reprint';
   txnRefNo: string;
   instrumentNo?: string | null;
   accountNumber?: string | null;
@@ -25,7 +25,7 @@ export interface CreateInstrumentLogData {
 export interface InstrumentLogFilters {
   page?: number;
   limit?: number;
-  operationType?: 'query' | 'print';
+  operationType?: 'query' | 'print' | 'reprint';
   accountNumber?: string;
   txnRefNo?: string;
   startDate?: string;
@@ -97,6 +97,17 @@ export class CertifiedInstrumentLogModel {
     return { logs, total };
   }
 
+  static async isPrinted(txnRefNo: string): Promise<boolean> {
+    const found = await prisma.certifiedInstrumentLog.findFirst({
+      where: {
+        txnRefNo,
+        operationType: { in: ['print', 'reprint'] },
+      },
+      select: { id: true },
+    });
+    return !!found;
+  }
+
   static async getStatistics(filters: Omit<InstrumentLogFilters, 'page' | 'limit'> = {}) {
     const where: any = {};
     if (filters.operationType) where.operationType = filters.operationType;
@@ -114,10 +125,11 @@ export class CertifiedInstrumentLogModel {
       }
     }
 
-    const [total, queries, prints, last] = await Promise.all([
+    const [total, queries, prints, reprints, last] = await Promise.all([
       prisma.certifiedInstrumentLog.count({ where }),
       prisma.certifiedInstrumentLog.count({ where: { ...where, operationType: 'query' } }),
       prisma.certifiedInstrumentLog.count({ where: { ...where, operationType: 'print' } }),
+      prisma.certifiedInstrumentLog.count({ where: { ...where, operationType: 'reprint' } }),
       prisma.certifiedInstrumentLog.findFirst({
         where,
         orderBy: { createdAt: 'desc' },
@@ -129,6 +141,7 @@ export class CertifiedInstrumentLogModel {
       total,
       queries,
       prints,
+      reprints,
       lastOperationDate: last?.createdAt ?? null,
     };
   }

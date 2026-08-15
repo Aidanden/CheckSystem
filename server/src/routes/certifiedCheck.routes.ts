@@ -39,7 +39,7 @@ router.get('/logs', requirePermission('SCREEN_CERTIFIED_LOGS'), getLogs);
 router.get('/statistics', requirePermission(['SCREEN_CERTIFIED_BOOKS', 'SCREEN_CERTIFIED_CHECKS']), getStatistics);
 
 // Get print settings
-router.get('/settings', requirePermission(['SYSTEM_SETTINGS', 'SCREEN_CERTIFIED_PRINT', 'SCREEN_CERTIFIED_BOOKS', 'SCREEN_CERTIFIED_CHECKS']), getSettings);
+router.get('/settings', requirePermission(['SYSTEM_SETTINGS', 'SCREEN_CERTIFIED_PRINT', 'SCREEN_CERTIFIED_INSTRUMENT', 'SCREEN_CERTIFIED_INSTRUMENT_LOGS', 'SCREEN_CERTIFIED_BOOKS', 'SCREEN_CERTIFIED_CHECKS']), getSettings);
 
 // Update print settings
 router.put('/settings', requirePermission('SYSTEM_SETTINGS'), updateSettings);

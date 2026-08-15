@@ -2,7 +2,7 @@ import { request } from '../client';
 
 export interface CertifiedInstrumentLog {
   id: number;
-  operationType: 'query' | 'print';
+  operationType: 'query' | 'print' | 'reprint';
   txnRefNo: string;
   instrumentNo?: string | null;
   accountNumber?: string | null;
@@ -24,7 +24,7 @@ export interface CertifiedInstrumentLog {
 }
 
 export interface CertifiedInstrumentLogPayload {
-  operationType: 'query' | 'print';
+  operationType: 'query' | 'print' | 'reprint';
   txnRefNo: string;
   instrumentNo?: string | null;
   accountNumber?: string | null;
@@ -54,7 +54,7 @@ export const certifiedInstrumentLogService = {
   getAll: async (params?: {
     page?: number;
     limit?: number;
-    operationType?: 'query' | 'print';
+    operationType?: 'query' | 'print' | 'reprint';
     accountNumber?: string;
     txnRefNo?: string;
     startDate?: string;
@@ -70,7 +70,7 @@ export const certifiedInstrumentLogService = {
   },
 
   getStatistics: async (params?: {
-    operationType?: 'query' | 'print';
+    operationType?: 'query' | 'print' | 'reprint';
     accountNumber?: string;
     txnRefNo?: string;
     startDate?: string;
@@ -82,6 +82,7 @@ export const certifiedInstrumentLogService = {
       total: number;
       queries: number;
       prints: number;
+      reprints?: number;
       lastOperationDate: string | null;
     }>({
       url: '/certified-instrument-logs/statistics',

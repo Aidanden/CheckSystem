@@ -183,7 +183,8 @@ export class SoapController {
         }
       }
 
-      res.json(result);
+      const alreadyPrinted = await CertifiedInstrumentLogService.isPrinted(trimmedRef);
+      res.json({ ...result, alreadyPrinted });
     } catch (error: any) {
       console.error('InstrumentList SOAP query error:', error);
       res.status(500).json({

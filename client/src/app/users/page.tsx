@@ -323,6 +323,10 @@ export default function UsersPage() {
                       codes: ['SCREEN_CERTIFIED_PRINT', 'SCREEN_CERTIFIED_REPORTS', 'REPRINT_CERTIFIED']
                     },
                     {
+                      name: 'صك مصدق من المنظومة',
+                      codes: ['SCREEN_CERTIFIED_INSTRUMENT', 'SCREEN_CERTIFIED_INSTRUMENT_LOGS', 'REPRINT_CERTIFIED_INSTRUMENT']
+                    },
+                    {
                       name: 'طباعة دفاتر المصدقة',
                       codes: ['SCREEN_CERTIFIED_BOOKS', 'SCREEN_CERTIFIED_LOGS', 'CERTIFIED_INVENTORY_MANAGEMENT']
                     },

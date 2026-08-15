@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
 import { SoapController } from '../controllers/soap.controller';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, requirePermission } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
 
 const router = Router();
@@ -33,6 +33,7 @@ router.post(
 
 router.post(
   '/query-instrument',
+  requirePermission('SCREEN_CERTIFIED_INSTRUMENT'),
   validate([
     body('txnRefNo')
       .isString()

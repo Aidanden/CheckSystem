@@ -91,6 +91,22 @@ async function main() {
       permissionCode: 'CERTIFIED_INVENTORY_MANAGEMENT',
       description: 'إدارة مخزون الصكوك المصدقة (الخام والإصدار)',
     },
+
+    {
+      permissionName: 'طباعة صك مصدق من المنظومة',
+      permissionCode: 'SCREEN_CERTIFIED_INSTRUMENT',
+      description: 'الاستعلام وطباعة الصك المصدق من منظومة المصرف مرة واحدة',
+    },
+    {
+      permissionName: 'سجل طباعة الصك المصدق من المنظومة',
+      permissionCode: 'SCREEN_CERTIFIED_INSTRUMENT_LOGS',
+      description: 'عرض سجل استعلام وطباعة الصكوك المصدقة من المنظومة',
+    },
+    {
+      permissionName: 'إعادة طباعة صك مصدق من المنظومة',
+      permissionCode: 'REPRINT_CERTIFIED_INSTRUMENT',
+      description: 'إعادة طباعة الصك المصدق من سجل المنظومة فقط',
+    },
   ];
 
   console.log('Creating permissions...');

@@ -53,6 +53,7 @@ export interface SoapInstrumentResponse {
   accountingNumber?: string;
   branchNumber?: string;
   branchId?: number;
+  alreadyPrinted?: boolean;
 }
 
 export const soapService = {

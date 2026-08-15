@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { body, query } from 'express-validator';
 import { CertifiedInstrumentLogController } from '../controllers/certifiedInstrumentLog.controller';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, requirePermission } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
 
 const router = Router();
@@ -11,7 +11,7 @@ router.use(authenticate);
 router.post(
   '/',
   validate([
-    body('operationType').isIn(['query', 'print']),
+    body('operationType').isIn(['query', 'print', 'reprint']),
     body('txnRefNo').isString().notEmpty(),
     body('instrumentNo').optional({ nullable: true }).isString(),
     body('accountNumber').optional({ nullable: true }).isString(),
@@ -21,14 +21,18 @@ router.post(
   CertifiedInstrumentLogController.create
 );
 
-router.get('/statistics', CertifiedInstrumentLogController.getStatistics);
+router.get(
+  '/statistics',
+  requirePermission('SCREEN_CERTIFIED_INSTRUMENT_LOGS'),
+  CertifiedInstrumentLogController.getStatistics
+);
 
 router.get(
   '/',
   validate([
     query('page').optional().isInt(),
     query('limit').optional().isInt(),
-    query('operationType').optional().isIn(['query', 'print']),
+    query('operationType').optional().isIn(['query', 'print', 'reprint']),
     query('accountNumber').optional().isString(),
     query('txnRefNo').optional().isString(),
     query('startDate').optional().isISO8601(),
@@ -36,6 +40,7 @@ router.get(
     query('userId').optional().isInt(),
     query('branchId').optional().isInt(),
   ]),
+  requirePermission('SCREEN_CERTIFIED_INSTRUMENT_LOGS'),
   CertifiedInstrumentLogController.getAll
 );
 
