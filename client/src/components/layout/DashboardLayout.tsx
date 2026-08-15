@@ -7,7 +7,7 @@ import { fetchCurrentUser } from '@/store/slices/authSlice';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { useHiddenScreens } from '@/lib/hooks/useHiddenScreens';
-import { SYSTEM_SCREENS, isScreenHidden } from '@/config/screens';
+import { SYSTEM_SCREENS, isScreenHidden, requiredPermissionForPath } from '@/config/screens';
 
 export default function DashboardLayout({
   children,
@@ -29,12 +29,21 @@ export default function DashboardLayout({
   }, [token, user, router, dispatch]);
 
   useEffect(() => {
-    if (!isAuthenticated || loading) return;
-    if (!isScreenHidden(pathname, hiddenScreens)) return;
+    if (!isAuthenticated || loading || !user) return;
+    if (isScreenHidden(pathname, hiddenScreens)) {
+      const fallback = SYSTEM_SCREENS.find((screen) => !hiddenScreens.includes(screen.href));
+      router.replace(fallback?.href || '/login');
+      return;
+    }
 
-    const fallback = SYSTEM_SCREENS.find((screen) => !hiddenScreens.includes(screen.href));
-    router.replace(fallback?.href || '/login');
-  }, [isAuthenticated, loading, pathname, hiddenScreens, router]);
+    if (user.isAdmin) return;
+    const required = requiredPermissionForPath(pathname);
+    if (!required) return;
+    const allowed = (user.permissions || []).some((p) => p.permissionCode === required);
+    if (!allowed) {
+      router.replace('/dashboard');
+    }
+  }, [isAuthenticated, loading, pathname, hiddenScreens, router, user]);
 
   if (!isAuthenticated || loading) {
     return (

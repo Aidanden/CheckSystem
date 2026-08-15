@@ -178,7 +178,7 @@ export default function CertifiedInstrumentLogsPage() {
   body { font-family: Cairo, Tahoma, sans-serif; padding: 20px; }
   h1 { font-size: 18px; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th, td { border: 1px solid #ccc; padding: 6px; text-align: right; }
+  th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
   th { background: #f3f4f6; }
 </style></head><body>
 <h1>سجل طباعة الصك المصدق من المنظومة</h1>
@@ -276,27 +276,27 @@ ${logs.map((log) => `<tr>
           ) : logs.length === 0 ? (
             <p className="p-6 text-center text-gray-500">لا توجد عمليات</p>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm text-center">
               <thead>
-                <tr className="text-right border-b">
-                  <th className="p-3">التاريخ</th>
-                  <th className="p-3">النوع</th>
-                  <th className="p-3">الرقم المرجعي</th>
-                  <th className="p-3">رقم الصك</th>
-                  <th className="p-3">رقم الحساب</th>
-                  <th className="p-3">المستفيد</th>
-                  <th className="p-3">المبلغ</th>
-                  <th className="p-3">الفرع</th>
-                  <th className="p-3">المستخدم</th>
-                  {canReprint && <th className="p-3">إجراء</th>}
+                <tr className="border-b">
+                  <th className="p-3 text-center font-semibold">التاريخ</th>
+                  <th className="p-3 text-center font-semibold">النوع</th>
+                  <th className="p-3 text-center font-semibold">الرقم المرجعي</th>
+                  <th className="p-3 text-center font-semibold">رقم الصك</th>
+                  <th className="p-3 text-center font-semibold">رقم الحساب</th>
+                  <th className="p-3 text-center font-semibold">المستفيد</th>
+                  <th className="p-3 text-center font-semibold">المبلغ</th>
+                  <th className="p-3 text-center font-semibold">الفرع</th>
+                  <th className="p-3 text-center font-semibold">المستخدم</th>
+                  {canReprint && <th className="p-3 text-center font-semibold">إجراء</th>}
                 </tr>
               </thead>
               <tbody>
                 {logs.map((log) => (
                   <tr key={log.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3 whitespace-nowrap">{formatDateMedium(log.createdAt)}</td>
-                    <td className="p-3">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${
+                    <td className="p-3 text-center whitespace-nowrap">{formatDateMedium(log.createdAt)}</td>
+                    <td className="p-3 text-center">
+                      <span className={`inline-block px-2 py-1 rounded text-xs font-bold ${
                         log.operationType === 'print'
                           ? 'bg-green-100 text-green-700'
                           : log.operationType === 'reprint'
@@ -306,20 +306,20 @@ ${logs.map((log) => `<tr>
                         {operationLabel(log.operationType)}
                       </span>
                     </td>
-                    <td className="p-3 font-mono" dir="ltr">{log.txnRefNo}</td>
-                    <td className="p-3 font-mono" dir="ltr">{log.instrumentNo || '—'}</td>
-                    <td className="p-3 font-mono" dir="ltr">{log.accountNumber || '—'}</td>
-                    <td className="p-3">{log.beneficiaryName || '—'}</td>
-                    <td className="p-3" dir="ltr">{log.amount != null ? log.amount : '—'}</td>
-                    <td className="p-3">{log.branchName || log.txnBranch || '—'}</td>
-                    <td className="p-3">{log.performedByName}</td>
+                    <td className="p-3 text-center font-mono break-all" dir="ltr">{log.txnRefNo}</td>
+                    <td className="p-3 text-center font-mono break-all" dir="ltr">{log.instrumentNo || '—'}</td>
+                    <td className="p-3 text-center font-mono break-all" dir="ltr">{log.accountNumber || '—'}</td>
+                    <td className="p-3 text-center whitespace-normal break-words">{log.beneficiaryName || '—'}</td>
+                    <td className="p-3 text-center" dir="ltr">{log.amount != null ? log.amount : '—'}</td>
+                    <td className="p-3 text-center whitespace-normal break-words">{log.branchName || log.txnBranch || '—'}</td>
+                    <td className="p-3 text-center">{log.performedByName}</td>
                     {canReprint && (
-                      <td className="p-3">
+                      <td className="p-3 text-center">
                         {(log.operationType === 'print' || log.operationType === 'reprint') ? (
                           <button
                             onClick={() => handleReprint(log)}
                             disabled={reprintingId === log.id || !log.routingNumber || !log.accountingNumber}
-                            className="btn bg-amber-50 text-amber-800 text-xs flex items-center gap-1 disabled:opacity-50"
+                            className="btn bg-amber-50 text-amber-800 text-xs inline-flex items-center justify-center gap-1 disabled:opacity-50 mx-auto"
                           >
                             <Printer className="w-3 h-3" />
                             {reprintingId === log.id ? 'جاري...' : 'إعادة طباعة'}

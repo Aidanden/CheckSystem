@@ -1,4 +1,4 @@
-export function micrDigits(value: string | number | undefined, length: number) {
+export function micrDigits(value: string | number | null | undefined, length: number) {
   const digits = String(value ?? '').replace(/\D/g, '');
   if (digits.length > length) return digits.slice(-length);
   return digits.padStart(length, '0');
