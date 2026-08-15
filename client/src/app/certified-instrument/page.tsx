@@ -122,6 +122,10 @@ export default function CertifiedInstrumentPage() {
     const amountNumbers = { x: 200, y: 42, fontSize: 8, align: 'right' as const };
     const amountWordsPos = { x: 117.5, y: 48, fontSize: 8, align: 'center' as const };
     const issueDate = { x: 185, y: 12, fontSize: 8, align: 'left' as const };
+    const stubDate = settings?.stubDate ?? { x: 4, y: 10, fontSize: 8, align: 'left' };
+    const stubCheckNumber = settings?.stubCheckNumber ?? { x: 4, y: 18, fontSize: 8, align: 'left' };
+    const stubBeneficiary = settings?.stubBeneficiary ?? { x: 4, y: 26, fontSize: 8, align: 'left' };
+    const stubAmount = settings?.stubAmount ?? { x: 4, y: 34, fontSize: 8, align: 'left' };
     const micr = settings?.micrLine ?? {
       x: settings?.micrLineX ?? 117.5,
       y: settings?.micrLineY ?? 70,
@@ -156,11 +160,19 @@ export default function CertifiedInstrumentPage() {
     .amount-n { left:${amountNumbers.x}mm; top:${amountNumbers.y}mm; font-size:${amountNumbers.fontSize}pt; text-align:right; font-weight:bold; font-family:'Courier New',monospace; direction:ltr; transform:translateX(-100%); }
     .amount-w { left:${amountWordsPos.x}mm; top:${amountWordsPos.y}mm; font-size:${amountWordsPos.fontSize}pt; text-align:center; max-width:150mm; white-space:normal; transform:translateX(-50%); }
     .issue { left:${issueDate.x}mm; top:${issueDate.y}mm; font-size:${issueDate.fontSize}pt; text-align:${issueDate.align}; }
+    .stub-date { left:${stubDate.x}mm; top:${stubDate.y}mm; font-size:${stubDate.fontSize}pt; text-align:${stubDate.align}; }
+    .stub-check { left:${stubCheckNumber.x}mm; top:${stubCheckNumber.y}mm; font-size:${stubCheckNumber.fontSize}pt; text-align:${stubCheckNumber.align}; }
+    .stub-benef { left:${stubBeneficiary.x}mm; top:${stubBeneficiary.y}mm; font-size:${stubBeneficiary.fontSize}pt; text-align:${stubBeneficiary.align}; max-width:28mm; overflow:hidden; }
+    .stub-amount { left:${stubAmount.x}mm; top:${stubAmount.y}mm; font-size:${stubAmount.fontSize}pt; text-align:${stubAmount.align}; direction:ltr; }
     .micr-line { position:absolute; left:${micr.x}mm; top:${micr.y}mm; font-size:${micr.fontSize}pt; text-align:${micr.align}; font-family:'MICR',monospace; letter-spacing:0.15em; direction:ltr; white-space:nowrap; font-weight:bold; transform:${micr.align === 'center' ? 'translateX(-50%)' : 'none'}; }
   </style>
 </head>
 <body>
   <section class="check">
+    <div class="field stub-date">${issue}</div>
+    <div class="field stub-check">${instrument.instrumentNo || ''}</div>
+    <div class="field stub-benef">${instrument.beneficiaryName || ''}</div>
+    <div class="field stub-amount">${amountFormatted}</div>
     <div class="field check-number">${instrument.instrumentNo || ''}</div>
     <div class="field branch-name">${instrument.branchName || ''}</div>
     <div class="field issue">${issue}</div>

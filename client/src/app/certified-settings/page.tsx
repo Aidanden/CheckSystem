@@ -26,6 +26,10 @@ interface CertifiedPrintSettings {
     accountHolderName: PrintPosition;
     branchName: PrintPosition;
     micrLine: PrintPosition;
+    stubDate: PrintPosition;
+    stubCheckNumber: PrintPosition;
+    stubBeneficiary: PrintPosition;
+    stubAmount: PrintPosition;
 }
 
 const DEFAULT_SETTINGS: CertifiedPrintSettings = {
@@ -41,6 +45,10 @@ const DEFAULT_SETTINGS: CertifiedPrintSettings = {
     amountWords: { x: 117.5, y: 48, fontSize: 8, align: 'center' },
     checkType: { x: 120, y: 10, fontSize: 8, align: 'center' },
     micrLine: { x: 117.5, y: 70, fontSize: 14, align: 'center' },
+    stubDate: { x: 4, y: 10, fontSize: 8, align: 'left' },
+    stubCheckNumber: { x: 4, y: 18, fontSize: 8, align: 'left' },
+    stubBeneficiary: { x: 4, y: 26, fontSize: 8, align: 'left' },
+    stubAmount: { x: 4, y: 34, fontSize: 8, align: 'left' },
 };
 
 export default function CertifiedSettingsPage() {
@@ -110,6 +118,10 @@ export default function CertifiedSettingsPage() {
                         fontSize: 14,
                         align: ((data as any).micrLine?.align ?? data.micrLineAlign ?? DEFAULT_SETTINGS.micrLine.align) as any,
                     },
+                    stubDate: (data as any).stubDate ?? DEFAULT_SETTINGS.stubDate,
+                    stubCheckNumber: (data as any).stubCheckNumber ?? DEFAULT_SETTINGS.stubCheckNumber,
+                    stubBeneficiary: (data as any).stubBeneficiary ?? DEFAULT_SETTINGS.stubBeneficiary,
+                    stubAmount: (data as any).stubAmount ?? DEFAULT_SETTINGS.stubAmount,
                 });
             } else {
                 setSettings(DEFAULT_SETTINGS);
@@ -201,6 +213,10 @@ export default function CertifiedSettingsPage() {
                 micrLineY: settings.micrLine.y,
                 micrLineFontSize: settings.micrLine.fontSize,
                 micrLineAlign: settings.micrLine.align,
+                stubDate: settings.stubDate,
+                stubCheckNumber: settings.stubCheckNumber,
+                stubBeneficiary: settings.stubBeneficiary,
+                stubAmount: settings.stubAmount,
             };
 
             await certifiedCheckService.updateSettings(payload);
@@ -260,6 +276,10 @@ export default function CertifiedSettingsPage() {
     .check-number { left: ${settings.checkNumber.x}mm; top: ${settings.checkNumber.y}mm; font-size: ${settings.checkNumber.fontSize}pt; text-align: ${settings.checkNumber.align}; font-family: 'Courier New', monospace; font-weight: bold; direction: ltr; }
     .branch-name { left: ${settings.branchName.x}mm; top: ${settings.branchName.y}mm; font-size: ${settings.branchName.fontSize}pt; text-align: ${settings.branchName.align}; font-weight: 600; transform: ${settings.branchName.align === 'center' ? 'translateX(-50%)' : 'none'}; }
     .account-holder-name { left: ${settings.accountHolderName.x}mm; top: ${settings.accountHolderName.y}mm; font-size: ${settings.accountHolderName.fontSize}pt; text-align: ${settings.accountHolderName.align}; }
+    .stub-date { left: ${settings.stubDate.x}mm; top: ${settings.stubDate.y}mm; font-size: ${settings.stubDate.fontSize}pt; text-align: ${settings.stubDate.align}; }
+    .stub-check { left: ${settings.stubCheckNumber.x}mm; top: ${settings.stubCheckNumber.y}mm; font-size: ${settings.stubCheckNumber.fontSize}pt; text-align: ${settings.stubCheckNumber.align}; }
+    .stub-benef { left: ${settings.stubBeneficiary.x}mm; top: ${settings.stubBeneficiary.y}mm; font-size: ${settings.stubBeneficiary.fontSize}pt; text-align: ${settings.stubBeneficiary.align}; max-width: 28mm; white-space: nowrap; overflow: hidden; }
+    .stub-amount { left: ${settings.stubAmount.x}mm; top: ${settings.stubAmount.y}mm; font-size: ${settings.stubAmount.fontSize}pt; text-align: ${settings.stubAmount.align}; direction: ltr; }
     @media print { .check { border: none; } }
     @media screen { body { display: flex; align-items: center; justify-content: center; padding: 20px; background: #f3f4f6; } .check-wrapper { box-shadow: 0 4px 6px rgba(0,0,0,0.1); } }
   </style>
@@ -268,6 +288,10 @@ export default function CertifiedSettingsPage() {
   <div class="check-wrapper">
     <section class="check">
 
+      <div class="field stub-date">${new Date(testData.issueDate).toLocaleDateString('ar-LY')}</div>
+      <div class="field stub-check">${testData.checkNumber}</div>
+      <div class="field stub-benef">${testData.beneficiaryName}</div>
+      <div class="field stub-amount">${amountFormatted}</div>
       <div class="field check-number">${testData.checkNumber}</div>
       <div class="field branch-name">فرع طرابلس</div>
       <div class="field issue-date">${new Date(testData.issueDate).toLocaleDateString('ar-LY')}</div>
@@ -797,6 +821,40 @@ export default function CertifiedSettingsPage() {
                             </div>
                         </div>
 
+                        <div className="space-y-4 border-t pt-4">
+                            <h3 className="font-medium text-gray-700">كعب الشيك (أقصى اليسار — من أعلى لأسفل)</h3>
+                            {([
+                                ['stubDate', 'التاريخ'],
+                                ['stubCheckNumber', 'رقم الصك'],
+                                ['stubBeneficiary', 'المستفيد'],
+                                ['stubAmount', 'قيمة الصك'],
+                            ] as const).map(([field, label]) => (
+                                <div key={field} className="grid grid-cols-2 gap-4 border rounded-lg p-3 bg-gray-50">
+                                    <p className="col-span-2 text-sm font-semibold text-gray-700">{label}</p>
+                                    <div>
+                                        <label className="block text-sm text-gray-600 mb-1">X</label>
+                                        <input type="number" value={settings[field].x} onChange={(e) => updatePosition(field, 'x', parseFloat(e.target.value))} className="input w-full" step="0.1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-gray-600 mb-1">Y</label>
+                                        <input type="number" value={settings[field].y} onChange={(e) => updatePosition(field, 'y', parseFloat(e.target.value))} className="input w-full" step="0.1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-gray-600 mb-1">حجم الخط</label>
+                                        <input type="number" value={settings[field].fontSize} onChange={(e) => updatePosition(field, 'fontSize', parseInt(e.target.value))} className="input w-full" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-gray-600 mb-1">المحاذاة</label>
+                                        <select value={settings[field].align} onChange={(e) => updatePosition(field, 'align', e.target.value)} className="input w-full">
+                                            <option value="left">يسار</option>
+                                            <option value="center">وسط</option>
+                                            <option value="right">يمين</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
                         {/* Action Buttons */}
                         <div className="flex gap-3 pt-4 border-t">
                             <button
@@ -852,6 +910,12 @@ export default function CertifiedSettingsPage() {
                                 }}
                             >
 
+
+                                {/* Stub */}
+                                <div className="absolute text-gray-800" style={{ left: `${settings.stubDate.x * 2}px`, top: `${settings.stubDate.y * 2}px`, fontSize: `${settings.stubDate.fontSize * 1.5}px` }}>2026/05/14</div>
+                                <div className="absolute text-gray-800" style={{ left: `${settings.stubCheckNumber.x * 2}px`, top: `${settings.stubCheckNumber.y * 2}px`, fontSize: `${settings.stubCheckNumber.fontSize * 1.5}px` }}>000002000</div>
+                                <div className="absolute text-gray-800" style={{ left: `${settings.stubBeneficiary.x * 2}px`, top: `${settings.stubBeneficiary.y * 2}px`, fontSize: `${settings.stubBeneficiary.fontSize * 1.5}px`, maxWidth: 80, overflow: 'hidden', whiteSpace: 'nowrap' }}>شركة سلطان</div>
+                                <div className="absolute text-gray-800 font-mono" style={{ left: `${settings.stubAmount.x * 2}px`, top: `${settings.stubAmount.y * 2}px`, fontSize: `${settings.stubAmount.fontSize * 1.5}px`, direction: 'ltr' }}>5000.000</div>
 
                                 {/* Issue Date */}
                                 <div

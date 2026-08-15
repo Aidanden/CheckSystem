@@ -4,6 +4,9 @@ import { BranchModel } from '../models/Branch.model';
 import { PrintSettingsModel } from '../models/PrintSettings.model';
 import { InventoryService } from '../services/inventory.service';
 import { StockType } from '../types';
+import { SystemSettingService } from '../services/systemSetting.service';
+
+const CERTIFIED_STUB_KEY = 'certified_check_stub_positions';
 
 // Get branches available for certified check printing
 export const getBranches = async (req: Request, res: Response) => {
@@ -326,7 +329,14 @@ export const getStatistics = async (req: Request, res: Response) => {
 export const getSettings = async (req: Request, res: Response) => {
     try {
         const settings = await PrintSettingsModel.getOrDefault(4);
-        res.json(settings);
+        let stub: any = null;
+        try {
+            const raw = await SystemSettingService.getValue(CERTIFIED_STUB_KEY);
+            if (raw) stub = JSON.parse(raw);
+        } catch {
+            stub = null;
+        }
+        res.json({ ...settings, ...(stub || {}) });
     } catch (error) {
         console.error('Error fetching certified check settings:', error);
         res.status(500).json({ error: 'فشل في جلب إعدادات الطباعة' });
@@ -394,6 +404,18 @@ export const updateSettings = async (req: Request, res: Response) => {
             checkNumberFontSize: data.checkNumberFontSize,
             checkNumberAlign: data.checkNumberAlign,
         });
+
+        if (data.stubDate || data.stubCheckNumber || data.stubBeneficiary || data.stubAmount) {
+            await SystemSettingService.setValue(
+                CERTIFIED_STUB_KEY,
+                JSON.stringify({
+                    stubDate: data.stubDate,
+                    stubCheckNumber: data.stubCheckNumber,
+                    stubBeneficiary: data.stubBeneficiary,
+                    stubAmount: data.stubAmount,
+                })
+            );
+        }
 
         res.json({ success: true, settings });
     } catch (error) {
