@@ -586,61 +586,83 @@ async function main() {
     },
   });
 
-  // Certified checks settings (accountType: 4) - similar to corporate but without account holder name and account number
+  // Certified checks settings (accountType: 4)
+  const certifiedLayout = {
+    checkWidth: 235,
+    checkHeight: 86,
+    branchNameX: 110,
+    branchNameY: 4,
+    branchNameFontSize: 8,
+    branchNameAlign: 'center',
+    accountNumberX: 30,
+    accountNumberY: 12,
+    accountNumberFontSize: 8,
+    accountNumberAlign: 'right',
+    serialNumberX: 185,
+    serialNumberY: 18,
+    serialNumberFontSize: 8,
+    serialNumberAlign: 'left',
+    checkSequenceX: 20,
+    checkSequenceY: 18,
+    checkSequenceFontSize: 8,
+    checkSequenceAlign: 'left',
+    accountHolderNameX: 30,
+    accountHolderNameY: 18,
+    accountHolderNameFontSize: 8,
+    accountHolderNameAlign: 'right',
+    micrLineX: 138.5,
+    micrLineY: 75,
+    micrLineFontSize: 14,
+    micrLineAlign: 'center',
+    beneficiaryNameX: 155,
+    beneficiaryNameY: 41,
+    beneficiaryNameFontSize: 8,
+    beneficiaryNameAlign: 'right',
+    amountNumbersX: 200,
+    amountNumbersY: 42,
+    amountNumbersFontSize: 8,
+    amountNumbersAlign: 'right',
+    amountWordsX: 117.5,
+    amountWordsY: 48,
+    amountWordsFontSize: 8,
+    amountWordsAlign: 'center',
+    issueDateX: 185,
+    issueDateY: 12,
+    issueDateFontSize: 8,
+    issueDateAlign: 'left',
+    checkNumberX: 185,
+    checkNumberY: 18,
+    checkNumberFontSize: 8,
+    checkNumberAlign: 'left',
+  };
+
   await prisma.printSettings.upsert({
     where: { accountType: 4 },
-    update: {
-      checkWidth: 240,
-      checkHeight: 86,
-      branchNameX: 145,
-      branchNameY: 5,
-      branchNameFontSize: 8,
-      branchNameAlign: 'center',
-      accountNumberX: undefined,
-      accountNumberY: undefined,
-      accountNumberFontSize: undefined,
-      accountNumberAlign: undefined,
-      serialNumberX: 215,
-      serialNumberY: 18,
-      serialNumberFontSize: 8,
-      serialNumberAlign: 'right',
-      checkSequenceX: 20,
-      checkSequenceY: 18,
-      checkSequenceFontSize: 8,
-      checkSequenceAlign: 'left',
-      accountHolderNameX: -1000, // خارج الشيك - لا يظهر
-      accountHolderNameY: -1000, // خارج الشيك - لا يظهر
-      accountHolderNameFontSize: 0,
-      accountHolderNameAlign: 'left',
-      micrLineX: 138,
-      micrLineY: 70,
-      micrLineFontSize: 14,
-      micrLineAlign: 'center',
-    },
+    update: certifiedLayout,
     create: {
       accountType: 4,
-      checkWidth: 240,
-      checkHeight: 86,
-      branchNameX: 145,
-      branchNameY: 5,
-      branchNameFontSize: 8,
-      branchNameAlign: 'center',
-      serialNumberX: 215,
-      serialNumberY: 18,
-      serialNumberFontSize: 8,
-      serialNumberAlign: 'right',
-      checkSequenceX: 20,
-      checkSequenceY: 18,
-      checkSequenceFontSize: 8,
-      checkSequenceAlign: 'left',
-      accountHolderNameX: -1000, // خارج الشيك - لا يظهر
-      accountHolderNameY: -1000, // خارج الشيك - لا يظهر
-      accountHolderNameFontSize: 0,
-      accountHolderNameAlign: 'left',
-      micrLineX: 138,
-      micrLineY: 70,
-      micrLineFontSize: 14,
-      micrLineAlign: 'center',
+      ...certifiedLayout,
+    },
+  });
+
+  await prisma.systemSetting.upsert({
+    where: { key: 'certified_check_stub_positions' },
+    update: {
+      value: JSON.stringify({
+        stubDate: { x: 25, y: 6, fontSize: 8, align: 'left' },
+        stubCheckNumber: { x: 25, y: 16.5, fontSize: 8, align: 'left' },
+        stubBeneficiary: { x: 15, y: 22, fontSize: 8, align: 'left' },
+        stubAmount: { x: 24, y: 29.5, fontSize: 8, align: 'left' },
+      }),
+    },
+    create: {
+      key: 'certified_check_stub_positions',
+      value: JSON.stringify({
+        stubDate: { x: 25, y: 6, fontSize: 8, align: 'left' },
+        stubCheckNumber: { x: 25, y: 16.5, fontSize: 8, align: 'left' },
+        stubBeneficiary: { x: 15, y: 22, fontSize: 8, align: 'left' },
+        stubAmount: { x: 24, y: 29.5, fontSize: 8, align: 'left' },
+      }),
     },
   });
 
@@ -648,7 +670,7 @@ async function main() {
   console.log('  - Individual settings (235 x 86 mm)');
   console.log('  - Corporate settings (240 x 86 mm)');
   console.log('  - Bank staff settings (235 x 86 mm)');
-  console.log('  - Certified checks settings (240 x 86 mm, without account holder name and account number)');
+  console.log('  - Certified checks settings (235 x 86 mm)');
 
   console.log('\n✅ Database seeding completed successfully!');
 }

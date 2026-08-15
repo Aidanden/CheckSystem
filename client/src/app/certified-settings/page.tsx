@@ -44,11 +44,11 @@ const DEFAULT_SETTINGS: CertifiedPrintSettings = {
     amountNumbers: { x: 200, y: 42, fontSize: 8, align: 'right' },
     amountWords: { x: 117.5, y: 48, fontSize: 8, align: 'center' },
     checkType: { x: 120, y: 10, fontSize: 8, align: 'center' },
-    micrLine: { x: 117.5, y: 70, fontSize: 14, align: 'center' },
-    stubDate: { x: 4, y: 10, fontSize: 8, align: 'left' },
-    stubCheckNumber: { x: 4, y: 18, fontSize: 8, align: 'left' },
-    stubBeneficiary: { x: 4, y: 26, fontSize: 8, align: 'left' },
-    stubAmount: { x: 4, y: 34, fontSize: 8, align: 'left' },
+    micrLine: { x: 138.5, y: 75, fontSize: 14, align: 'center' },
+    stubDate: { x: 25, y: 6, fontSize: 8, align: 'left' },
+    stubCheckNumber: { x: 25, y: 16.5, fontSize: 8, align: 'left' },
+    stubBeneficiary: { x: 15, y: 22, fontSize: 8, align: 'left' },
+    stubAmount: { x: 24, y: 29.5, fontSize: 8, align: 'left' },
 };
 
 export default function CertifiedSettingsPage() {
@@ -107,17 +107,35 @@ export default function CertifiedSettingsPage() {
             const data = await certifiedCheckService.getSettings();
 
             if (data) {
+                const pos = (
+                    nested: any,
+                    x: number | undefined,
+                    y: number | undefined,
+                    fontSize: number | undefined,
+                    align: string | undefined,
+                    fallback: PrintPosition
+                ): PrintPosition => ({
+                    x: nested?.x ?? x ?? fallback.x,
+                    y: nested?.y ?? y ?? fallback.y,
+                    fontSize: nested?.fontSize ?? fontSize ?? fallback.fontSize,
+                    align: (nested?.align ?? align ?? fallback.align) as PrintPosition['align'],
+                });
+
                 setSettings({
                     ...DEFAULT_SETTINGS,
                     id: data.id,
                     checkWidth: data.checkWidth ?? DEFAULT_SETTINGS.checkWidth,
                     checkHeight: data.checkHeight ?? DEFAULT_SETTINGS.checkHeight,
-                    micrLine: {
-                        x: (data as any).micrLine?.x ?? data.micrLineX ?? DEFAULT_SETTINGS.micrLine.x,
-                        y: (data as any).micrLine?.y ?? data.micrLineY ?? DEFAULT_SETTINGS.micrLine.y,
-                        fontSize: 14,
-                        align: ((data as any).micrLine?.align ?? data.micrLineAlign ?? DEFAULT_SETTINGS.micrLine.align) as any,
-                    },
+                    beneficiaryName: pos((data as any).beneficiaryName, data.beneficiaryNameX, data.beneficiaryNameY, data.beneficiaryNameFontSize, data.beneficiaryNameAlign, DEFAULT_SETTINGS.beneficiaryName),
+                    accountNumber: pos((data as any).accountNumber, data.accountNumberX, data.accountNumberY, data.accountNumberFontSize, data.accountNumberAlign, DEFAULT_SETTINGS.accountNumber),
+                    amountNumbers: pos((data as any).amountNumbers, data.amountNumbersX, data.amountNumbersY, data.amountNumbersFontSize, data.amountNumbersAlign, DEFAULT_SETTINGS.amountNumbers),
+                    amountWords: pos((data as any).amountWords, data.amountWordsX, data.amountWordsY, data.amountWordsFontSize, data.amountWordsAlign, DEFAULT_SETTINGS.amountWords),
+                    issueDate: pos((data as any).issueDate, data.issueDateX, data.issueDateY, data.issueDateFontSize, data.issueDateAlign, DEFAULT_SETTINGS.issueDate),
+                    checkType: pos((data as any).checkType, data.checkTypeX, data.checkTypeY, data.checkTypeFontSize, data.checkTypeAlign, DEFAULT_SETTINGS.checkType),
+                    checkNumber: pos((data as any).checkNumber, data.checkNumberX, data.checkNumberY, data.checkNumberFontSize, data.checkNumberAlign, DEFAULT_SETTINGS.checkNumber),
+                    accountHolderName: pos((data as any).accountHolderName, data.accountHolderNameX, data.accountHolderNameY, data.accountHolderNameFontSize, data.accountHolderNameAlign, DEFAULT_SETTINGS.accountHolderName),
+                    branchName: pos((data as any).branchName, data.branchNameX, data.branchNameY, data.branchNameFontSize, data.branchNameAlign, DEFAULT_SETTINGS.branchName),
+                    micrLine: pos((data as any).micrLine, data.micrLineX, data.micrLineY, data.micrLineFontSize, data.micrLineAlign, DEFAULT_SETTINGS.micrLine),
                     stubDate: (data as any).stubDate ?? DEFAULT_SETTINGS.stubDate,
                     stubCheckNumber: (data as any).stubCheckNumber ?? DEFAULT_SETTINGS.stubCheckNumber,
                     stubBeneficiary: (data as any).stubBeneficiary ?? DEFAULT_SETTINGS.stubBeneficiary,

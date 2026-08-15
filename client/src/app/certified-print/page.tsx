@@ -37,14 +37,14 @@ interface PrintSettings {
 const DEFAULT_SETTINGS: PrintSettings = {
     checkWidth: 235,
     checkHeight: 86,
-    beneficiaryName: { x: 30, y: 30, fontSize: 12, align: 'right' },
-    accountHolderName: { x: 30, y: 25, fontSize: 11, align: 'right' },
-    accountNumber: { x: 30, y: 40, fontSize: 11, align: 'right' },
-    amountNumbers: { x: 180, y: 50, fontSize: 14, align: 'left' },
-    amountWords: { x: 30, y: 55, fontSize: 11, align: 'right' },
-    issueDate: { x: 30, y: 20, fontSize: 10, align: 'right' },
-    checkType: { x: 120, y: 10, fontSize: 12, align: 'center' },
-    checkNumber: { x: 200, y: 20, fontSize: 11, align: 'left' },
+    beneficiaryName: { x: 155, y: 41, fontSize: 8, align: 'right' },
+    accountHolderName: { x: 30, y: 18, fontSize: 8, align: 'right' },
+    accountNumber: { x: 30, y: 12, fontSize: 8, align: 'right' },
+    amountNumbers: { x: 200, y: 42, fontSize: 8, align: 'right' },
+    amountWords: { x: 117.5, y: 48, fontSize: 8, align: 'center' },
+    issueDate: { x: 185, y: 12, fontSize: 8, align: 'left' },
+    checkType: { x: 120, y: 10, fontSize: 8, align: 'center' },
+    checkNumber: { x: 185, y: 18, fontSize: 8, align: 'left' },
 };
 
 // دالة تحويل الأرقام إلى كلمات بالعربية

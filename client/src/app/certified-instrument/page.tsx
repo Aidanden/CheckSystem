@@ -68,6 +68,9 @@ export default function CertifiedInstrumentPage() {
     setPrinting(true);
     setError(null);
     try {
+      const layout = await certifiedCheckService.getSettings().catch(() => settings);
+      setSettings(layout);
+
       await certifiedInstrumentLogService.create({
         operationType: 'print',
         txnRefNo: instrument.txnRefNo,
@@ -92,7 +95,7 @@ export default function CertifiedInstrumentPage() {
           issueDate: instrument.issueDate || instrument.bookDate,
         },
         amountWords,
-        settings
+        layout
       );
       if (!opened) {
         setError('تم تسجيل الطباعة وتعذر فتح نافذة الطباعة. اسمح بالنوافذ المنبثقة ثم أعد الطباعة من السجل.');

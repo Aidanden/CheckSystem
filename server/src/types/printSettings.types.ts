@@ -187,28 +187,28 @@ export const DEFAULT_BANK_STAFF_SETTINGS: Omit<CheckPrintSettings, 'id' | 'creat
 
 export const DEFAULT_CERTIFIED_SETTINGS: Omit<CheckPrintSettings, 'id' | 'createdAt' | 'updatedAt'> = {
   accountType: 4,
-  checkWidth: 240, // mm - نفس حجم شيك الشركات
-  checkHeight: 86, // mm
+  checkWidth: 235,
+  checkHeight: 86,
   branchName: {
-    x: 145,
-    y: 5,
+    x: 110,
+    y: 4,
     fontSize: 8,
     fontWeight: 'bold',
     align: 'center',
   },
   serialNumber: {
-    x: 215, // للتاريخ
+    x: 185,
     y: 18,
     fontSize: 8,
     fontWeight: 'normal',
-    align: 'right',
+    align: 'left',
   },
   accountNumber: {
-    x: 0, // لا يظهر
-    y: 0,
-    fontSize: 0,
+    x: 30,
+    y: 12,
+    fontSize: 8,
     fontWeight: 'normal',
-    align: 'center',
+    align: 'right',
   },
   checkSequence: {
     x: 20,
@@ -218,15 +218,15 @@ export const DEFAULT_CERTIFIED_SETTINGS: Omit<CheckPrintSettings, 'id' | 'create
     align: 'left',
   },
   accountHolderName: {
-    x: -1000, // خارج الشيك - لا يظهر
-    y: -1000,
-    fontSize: 0,
+    x: 30,
+    y: 18,
+    fontSize: 8,
     fontWeight: 'normal',
-    align: 'left',
+    align: 'right',
   },
   micrLine: {
-    x: 138, // رقم الترميز
-    y: 70,
+    x: 138.5,
+    y: 75,
     fontSize: 14,
     fontWeight: 'normal',
     align: 'center',

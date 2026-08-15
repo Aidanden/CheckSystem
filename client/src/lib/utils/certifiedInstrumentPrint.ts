@@ -37,35 +37,61 @@ export interface InstrumentPrintData {
   accountingNumber?: string | null;
 }
 
-function pos(settings: any, key: string, fallback: { x: number; y: number; fontSize: number; align: string }) {
+function isUsablePos(p: Partial<{ x: number; y: number; fontSize: number; align: string }> | null | undefined): p is { x: number; y: number; fontSize: number; align: string } {
+  if (!p || typeof p.x !== 'number' || typeof p.y !== 'number') return false;
+  if (Number.isNaN(p.x) || Number.isNaN(p.y)) return false;
+  if (p.x < 0 || p.y < 0) return false;
+  if ((p.fontSize ?? 0) <= 0) return false;
+  return true;
+}
+
+function resolvePos(
+  settings: any,
+  key: string,
+  fallback: { x: number; y: number; fontSize: number; align: string }
+) {
   const nested = settings?.[key];
-  if (nested && typeof nested.x === 'number' && nested.x >= 0 && (nested.fontSize ?? 0) > 0) {
-    return nested;
+  if (isUsablePos(nested)) {
+    return {
+      x: nested.x,
+      y: nested.y,
+      fontSize: nested.fontSize ?? fallback.fontSize,
+      align: (nested.align as string) || fallback.align,
+    };
   }
+
+  const fromFlat = {
+    x: Number(settings?.[`${key}X`]),
+    y: Number(settings?.[`${key}Y`]),
+    fontSize: Number(settings?.[`${key}FontSize`]),
+    align: (settings?.[`${key}Align`] as string) || fallback.align,
+  };
+  if (isUsablePos(fromFlat)) return fromFlat;
   return fallback;
+}
+
+function alignTransform(align: string, asAmount = false) {
+  if (align === 'center') return 'translateX(-50%)';
+  if (asAmount && align === 'right') return 'translateX(-100%)';
+  return 'none';
 }
 
 export function buildCertifiedInstrumentPrintHtml(instrument: InstrumentPrintData, amountWords: string, settings: any) {
   const checkWidth = settings?.checkWidth ?? 235;
   const checkHeight = settings?.checkHeight ?? 86;
-  const beneficiary = { x: 155, y: 41, fontSize: 8, align: 'right' };
-  const accountHolder = { x: 30, y: 18, fontSize: 8, align: 'right' };
-  const accountNumber = { x: 30, y: 12, fontSize: 8, align: 'right' };
-  const checkNumber = { x: 185, y: 18, fontSize: 8, align: 'left' };
-  const branchNamePos = pos(settings, 'branchName', { x: 110, y: 4, fontSize: 8, align: 'center' });
-  const amountNumbers = { x: 200, y: 42, fontSize: 8, align: 'right' };
-  const amountWordsPos = { x: 117.5, y: 48, fontSize: 8, align: 'center' };
-  const issueDate = { x: 185, y: 12, fontSize: 8, align: 'left' };
-  const stubDate = settings?.stubDate ?? { x: 4, y: 10, fontSize: 8, align: 'left' };
-  const stubCheckNumber = settings?.stubCheckNumber ?? { x: 4, y: 18, fontSize: 8, align: 'left' };
-  const stubBeneficiary = settings?.stubBeneficiary ?? { x: 4, y: 26, fontSize: 8, align: 'left' };
-  const stubAmount = settings?.stubAmount ?? { x: 4, y: 34, fontSize: 8, align: 'left' };
-  const micr = settings?.micrLine ?? {
-    x: settings?.micrLineX ?? 117.5,
-    y: settings?.micrLineY ?? 70,
-    fontSize: settings?.micrLineFontSize ?? 14,
-    align: settings?.micrLineAlign ?? 'center',
-  };
+  const beneficiary = resolvePos(settings, 'beneficiaryName', { x: 155, y: 41, fontSize: 8, align: 'right' });
+  const accountHolder = resolvePos(settings, 'accountHolderName', { x: 30, y: 18, fontSize: 8, align: 'right' });
+  const accountNumber = resolvePos(settings, 'accountNumber', { x: 30, y: 12, fontSize: 8, align: 'right' });
+  const checkNumber = resolvePos(settings, 'checkNumber', { x: 185, y: 18, fontSize: 8, align: 'left' });
+  const branchNamePos = resolvePos(settings, 'branchName', { x: 110, y: 4, fontSize: 8, align: 'center' });
+  const amountNumbers = resolvePos(settings, 'amountNumbers', { x: 200, y: 42, fontSize: 8, align: 'right' });
+  const amountWordsPos = resolvePos(settings, 'amountWords', { x: 117.5, y: 48, fontSize: 8, align: 'center' });
+  const issueDate = resolvePos(settings, 'issueDate', { x: 185, y: 12, fontSize: 8, align: 'left' });
+  const stubDate = resolvePos(settings, 'stubDate', { x: 25, y: 6, fontSize: 8, align: 'left' });
+  const stubCheckNumber = resolvePos(settings, 'stubCheckNumber', { x: 25, y: 16.5, fontSize: 8, align: 'left' });
+  const stubBeneficiary = resolvePos(settings, 'stubBeneficiary', { x: 15, y: 22, fontSize: 8, align: 'left' });
+  const stubAmount = resolvePos(settings, 'stubAmount', { x: 24, y: 29.5, fontSize: 8, align: 'left' });
+  const micr = resolvePos(settings, 'micrLine', { x: 138.5, y: 75, fontSize: 14, align: 'center' });
 
   const amount = Number(instrument.amount) || 0;
   const dinars = Math.floor(amount);
@@ -73,6 +99,8 @@ export function buildCertifiedInstrumentPrintHtml(instrument: InstrumentPrintDat
   const amountFormatted = `${dinars}.${String(dirhams).padStart(3, '0')}`;
   const micrLine = buildMicrLine(instrument.instrumentNo, instrument.routingNumber, instrument.accountingNumber);
   const issue = instrument.issueDate || '';
+  const micrFontUrl =
+    typeof window !== 'undefined' ? new URL('/font/micrenc.ttf', window.location.origin).toString() : '/font/micrenc.ttf';
 
   return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -82,24 +110,24 @@ export function buildCertifiedInstrumentPrintHtml(instrument: InstrumentPrintDat
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     @page { size: ${checkWidth}mm ${checkHeight}mm; margin: 0; }
-    @font-face { font-family: 'MICR'; src: url('/font/micrenc.ttf') format('truetype'); }
+    @font-face { font-family: 'MICR'; src: url('${micrFontUrl}') format('truetype'); }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     html, body { margin: 0; padding: 0; background: #fff; font-family: 'Cairo', sans-serif; }
     .check { position: relative; width: ${checkWidth}mm; height: ${checkHeight}mm; overflow: hidden; }
     .field { position: absolute; white-space: nowrap; color: #000; }
-    .account-holder { left:${accountHolder.x}mm; top:${accountHolder.y}mm; font-size:${accountHolder.fontSize}pt; text-align:${accountHolder.align}; font-weight:600; }
-    .account-number { left:${accountNumber.x}mm; top:${accountNumber.y}mm; font-size:${accountNumber.fontSize}pt; text-align:${accountNumber.align}; font-family:'Courier New',monospace; direction:ltr; }
-    .beneficiary { left:${beneficiary.x}mm; top:${beneficiary.y}mm; font-size:${beneficiary.fontSize}pt; text-align:${beneficiary.align}; font-weight:600; }
-    .check-number { left:${checkNumber.x}mm; top:${checkNumber.y}mm; font-size:${checkNumber.fontSize}pt; text-align:${checkNumber.align}; font-family:'Courier New',monospace; font-weight:bold; direction:ltr; }
-    .branch-name { left:${branchNamePos.x}mm; top:${branchNamePos.y}mm; font-size:${branchNamePos.fontSize}pt; text-align:${branchNamePos.align}; font-weight:600; transform:${branchNamePos.align === 'center' ? 'translateX(-50%)' : 'none'}; }
-    .amount-n { left:${amountNumbers.x}mm; top:${amountNumbers.y}mm; font-size:${amountNumbers.fontSize}pt; text-align:right; font-weight:bold; font-family:'Courier New',monospace; direction:ltr; transform:translateX(-100%); }
-    .amount-w { left:${amountWordsPos.x}mm; top:${amountWordsPos.y}mm; font-size:${amountWordsPos.fontSize}pt; text-align:center; max-width:150mm; white-space:normal; transform:translateX(-50%); }
-    .issue { left:${issueDate.x}mm; top:${issueDate.y}mm; font-size:${issueDate.fontSize}pt; text-align:${issueDate.align}; }
+    .account-holder { left:${accountHolder.x}mm; top:${accountHolder.y}mm; font-size:${accountHolder.fontSize}pt; text-align:${accountHolder.align}; font-weight:600; transform:${alignTransform(accountHolder.align)}; }
+    .account-number { left:${accountNumber.x}mm; top:${accountNumber.y}mm; font-size:${accountNumber.fontSize}pt; text-align:${accountNumber.align}; font-family:'Courier New',monospace; direction:ltr; transform:${alignTransform(accountNumber.align)}; }
+    .beneficiary { left:${beneficiary.x}mm; top:${beneficiary.y}mm; font-size:${beneficiary.fontSize}pt; text-align:${beneficiary.align}; font-weight:600; transform:${alignTransform(beneficiary.align)}; }
+    .check-number { left:${checkNumber.x}mm; top:${checkNumber.y}mm; font-size:${checkNumber.fontSize}pt; text-align:${checkNumber.align}; font-family:'Courier New',monospace; font-weight:bold; direction:ltr; transform:${alignTransform(checkNumber.align)}; }
+    .branch-name { left:${branchNamePos.x}mm; top:${branchNamePos.y}mm; font-size:${branchNamePos.fontSize}pt; text-align:${branchNamePos.align}; font-weight:600; transform:${alignTransform(branchNamePos.align)}; }
+    .amount-n { left:${amountNumbers.x}mm; top:${amountNumbers.y}mm; font-size:${amountNumbers.fontSize}pt; text-align:${amountNumbers.align}; font-weight:bold; font-family:'Courier New',monospace; direction:ltr; transform:${alignTransform(amountNumbers.align, true)}; }
+    .amount-w { left:${amountWordsPos.x}mm; top:${amountWordsPos.y}mm; font-size:${amountWordsPos.fontSize}pt; text-align:${amountWordsPos.align}; max-width:150mm; white-space:normal; transform:${alignTransform(amountWordsPos.align)}; }
+    .issue { left:${issueDate.x}mm; top:${issueDate.y}mm; font-size:${issueDate.fontSize}pt; text-align:${issueDate.align}; transform:${alignTransform(issueDate.align)}; }
     .stub-date { left:${stubDate.x}mm; top:${stubDate.y}mm; font-size:${stubDate.fontSize}pt; text-align:${stubDate.align}; }
     .stub-check { left:${stubCheckNumber.x}mm; top:${stubCheckNumber.y}mm; font-size:${stubCheckNumber.fontSize}pt; text-align:${stubCheckNumber.align}; }
     .stub-benef { left:${stubBeneficiary.x}mm; top:${stubBeneficiary.y}mm; font-size:${stubBeneficiary.fontSize}pt; text-align:${stubBeneficiary.align}; max-width:28mm; overflow:hidden; }
     .stub-amount { left:${stubAmount.x}mm; top:${stubAmount.y}mm; font-size:${stubAmount.fontSize}pt; text-align:${stubAmount.align}; direction:ltr; }
-    .micr-line { position:absolute; left:${micr.x}mm; top:${micr.y}mm; font-size:${micr.fontSize}pt; text-align:${micr.align}; font-family:'MICR',monospace; letter-spacing:0.15em; direction:ltr; white-space:nowrap; font-weight:bold; transform:${micr.align === 'center' ? 'translateX(-50%)' : 'none'}; }
+    .micr-line { position:absolute; left:${micr.x}mm; top:${micr.y}mm; font-size:${micr.fontSize}pt; text-align:${micr.align}; font-family:'MICR',monospace; letter-spacing:0.15em; direction:ltr; white-space:nowrap; font-weight:bold; transform:${alignTransform(micr.align)}; }
   </style>
 </head>
 <body>

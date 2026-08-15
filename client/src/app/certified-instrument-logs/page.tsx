@@ -110,6 +110,8 @@ export default function CertifiedInstrumentLogsPage() {
         accountingNumber: log.accountingNumber,
         amountWords: words,
       });
+      const latestSettings = await certifiedCheckService.getSettings().catch(() => settings);
+      setSettings(latestSettings);
       const opened = openCertifiedInstrumentPrint(
         {
           instrumentNo: log.instrumentNo,
@@ -123,7 +125,7 @@ export default function CertifiedInstrumentLogsPage() {
           accountingNumber: log.accountingNumber,
         },
         words,
-        settings
+        latestSettings
       );
       if (!opened) {
         setError('تم تسجيل إعادة الطباعة وتعذر فتح نافذة الطباعة. اسمح بالنوافذ المنبثقة.');

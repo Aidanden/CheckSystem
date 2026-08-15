@@ -133,9 +133,6 @@ export class PrintSettingsModel {
     const settings = await this.findByAccountType(accountType);
 
     if (settings) {
-      // للشيكات المصدقة (accountType: 4)، لا نعرض رقم الحساب
-      const isCertified = settings.accountType === 4;
-
       return {
         id: settings.id,
         accountType: settings.accountType,
@@ -152,12 +149,6 @@ export class PrintSettingsModel {
           y: settings.serialNumberY,
           fontSize: settings.serialNumberFontSize,
           align: settings.serialNumberAlign,
-        },
-        accountNumber: isCertified ? null : {
-          x: settings.accountNumberX ?? 117.5,
-          y: settings.accountNumberY ?? 10,
-          fontSize: settings.accountNumberFontSize ?? 14,
-          align: settings.accountNumberAlign ?? 'center',
         },
         checkSequence: {
           x: settings.checkSequenceX ?? 20,
@@ -176,6 +167,48 @@ export class PrintSettingsModel {
           y: settings.micrLineY,
           fontSize: settings.micrLineFontSize,
           align: settings.micrLineAlign,
+        },
+        beneficiaryName: {
+          x: settings.beneficiaryNameX,
+          y: settings.beneficiaryNameY,
+          fontSize: settings.beneficiaryNameFontSize,
+          align: settings.beneficiaryNameAlign,
+        },
+        amountNumbers: {
+          x: settings.amountNumbersX,
+          y: settings.amountNumbersY,
+          fontSize: settings.amountNumbersFontSize,
+          align: settings.amountNumbersAlign,
+        },
+        amountWords: {
+          x: settings.amountWordsX,
+          y: settings.amountWordsY,
+          fontSize: settings.amountWordsFontSize,
+          align: settings.amountWordsAlign,
+        },
+        issueDate: {
+          x: settings.issueDateX,
+          y: settings.issueDateY,
+          fontSize: settings.issueDateFontSize,
+          align: settings.issueDateAlign,
+        },
+        checkType: {
+          x: settings.checkTypeX,
+          y: settings.checkTypeY,
+          fontSize: settings.checkTypeFontSize,
+          align: settings.checkTypeAlign,
+        },
+        checkNumber: {
+          x: settings.checkNumberX,
+          y: settings.checkNumberY,
+          fontSize: settings.checkNumberFontSize,
+          align: settings.checkNumberAlign,
+        },
+        accountNumber: {
+          x: settings.accountNumberX,
+          y: settings.accountNumberY,
+          fontSize: settings.accountNumberFontSize,
+          align: settings.accountNumberAlign,
         },
 
         // Specialized fields
@@ -228,10 +261,7 @@ export class PrintSettingsModel {
     }
 
     if (accountType === 4) {
-      const certifiedSettings = { ...DEFAULT_CERTIFIED_SETTINGS };
-      // للشيكات المصدقة، لا نعرض رقم الحساب
-      (certifiedSettings as any).accountNumber = null;
-      return certifiedSettings;
+      return { ...DEFAULT_CERTIFIED_SETTINGS };
     }
 
     return { ...DEFAULT_BANK_STAFF_SETTINGS };
