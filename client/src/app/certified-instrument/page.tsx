@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Search, Printer, Stamp, AlertCircle } from 'lucide-react';
+import { Search, Printer, Layers, AlertCircle } from 'lucide-react';
 import { soapService, certifiedCheckService, certifiedInstrumentLogService, type SoapInstrumentResponse } from '@/lib/api';
 import { amountToArabicTafqeet } from '@/lib/utils/arabicAmountWords';
 import { buildMicrLine, openCertifiedInstrumentPrint } from '@/lib/utils/certifiedInstrumentPrint';
+import { useAppSelector } from '@/store/hooks';
+import { assertClientSameBranch } from '@/lib/utils/branchAccess';
 
 export default function CertifiedInstrumentPage() {
+  const { user: currentUser } = useAppSelector((state) => state.auth);
   const [txnRefNo, setTxnRefNo] = useState('');
   const [loading, setLoading] = useState(false);
   const [printing, setPrinting] = useState(false);
@@ -30,6 +33,12 @@ export default function CertifiedInstrumentPage() {
 
     try {
       const result = await soapService.queryInstrument({ txnRefNo: txnRefNo.trim() });
+      const branchError = assertClientSameBranch(currentUser, result.txnBranch || result.branchNumber);
+      if (branchError) {
+        setError(branchError);
+        setInstrument(null);
+        return;
+      }
       setInstrument(result);
       setAmountWords(amountToArabicTafqeet(result.amount));
       if (result.alreadyPrinted) {
@@ -44,6 +53,12 @@ export default function CertifiedInstrumentPage() {
 
   const handlePrint = async () => {
     if (!instrument) return;
+
+    const branchError = assertClientSameBranch(currentUser, instrument.txnBranch || instrument.branchNumber);
+    if (branchError) {
+      setError(branchError);
+      return;
+    }
 
     if (instrument.alreadyPrinted) {
       setError('هذا الصك مطبوع مسبقاً. يمكن إعادة طباعته من سجل طباعة الصك المصدق فقط.');
@@ -116,7 +131,7 @@ export default function CertifiedInstrumentPage() {
       <div className="space-y-6 max-w-4xl mx-auto">
         <div className="flex items-center gap-3">
           <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-3 rounded-xl shadow-lg">
-            <Stamp className="w-8 h-8 text-white" />
+            <Layers className="w-8 h-8 text-white" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-800">طباعة صك مصدق من المنظومة</h1>

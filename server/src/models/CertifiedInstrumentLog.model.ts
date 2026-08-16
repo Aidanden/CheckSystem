@@ -32,6 +32,28 @@ export interface InstrumentLogFilters {
   endDate?: string;
   userId?: number;
   branchId?: number;
+  branchCode?: string;
+}
+
+function applyBranchScope(where: any, filters: InstrumentLogFilters) {
+  if (filters.branchCode) {
+    const code = String(filters.branchCode).replace(/\D/g, '').slice(-3).padStart(3, '0');
+    const unpadded = code.replace(/^0+/, '') || '0';
+    where.AND = [
+      ...(where.AND || []),
+      {
+        OR: [
+          { txnBranch: code },
+          { txnBranch: unpadded },
+          { accountNumber: { startsWith: code } },
+        ],
+      },
+    ];
+    return;
+  }
+  if (filters.branchId) {
+    where.branchId = filters.branchId;
+  }
 }
 
 export class CertifiedInstrumentLogModel {
@@ -73,7 +95,7 @@ export class CertifiedInstrumentLogModel {
       where.txnRefNo = { contains: filters.txnRefNo.trim() };
     }
     if (filters.userId) where.performedBy = filters.userId;
-    if (filters.branchId) where.branchId = filters.branchId;
+    applyBranchScope(where, filters);
     if (filters.startDate || filters.endDate) {
       where.createdAt = {};
       if (filters.startDate) where.createdAt.gte = new Date(filters.startDate);
@@ -114,7 +136,7 @@ export class CertifiedInstrumentLogModel {
     if (filters.accountNumber) where.accountNumber = { contains: filters.accountNumber.trim() };
     if (filters.txnRefNo) where.txnRefNo = { contains: filters.txnRefNo.trim() };
     if (filters.userId) where.performedBy = filters.userId;
-    if (filters.branchId) where.branchId = filters.branchId;
+    applyBranchScope(where, filters);
     if (filters.startDate || filters.endDate) {
       where.createdAt = {};
       if (filters.startDate) where.createdAt.gte = new Date(filters.startDate);

@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { certifiedCheckService, branchService, inventoryService } from '@/lib/api';
 import { CertifiedBranch, CertifiedSerialRange, CertifiedStatistics } from '@/lib/api/services/certifiedCheck.service';
-import { Stamp, Printer, RefreshCw, CheckCircle, AlertCircle, Building2, Package } from 'lucide-react';
+import { Layers, Printer, RefreshCw, CheckCircle, AlertCircle, Building2, Package } from 'lucide-react';
+import { useAppSelector } from '@/store/hooks';
 
 export default function CertifiedChecksPage() {
+    const { user } = useAppSelector((state) => state.auth);
     const [branches, setBranches] = useState<CertifiedBranch[]>([]);
     const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
     const [serialRange, setSerialRange] = useState<CertifiedSerialRange | null>(null);
@@ -22,7 +24,7 @@ export default function CertifiedChecksPage() {
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [user?.id, user?.branchId, user?.isAdmin]);
 
     useEffect(() => {
         if (selectedBranch) {
@@ -43,6 +45,11 @@ export default function CertifiedChecksPage() {
             setBranches(branchesData);
             setStatistics(statsData);
             setAvailableStock((stockData as any).quantity);
+            if (user && !user.isAdmin && user.branchId) {
+                setSelectedBranch(user.branchId);
+            } else if (branchesData.length === 1) {
+                setSelectedBranch(branchesData[0].id);
+            }
         } catch (err) {
             console.error('Error loading data:', err);
             setError('فشل في تحميل البيانات');
@@ -66,12 +73,6 @@ export default function CertifiedChecksPage() {
             console.error('Error loading serial range:', err);
         }
     };
-
-    useEffect(() => {
-        if (selectedBranch) {
-            loadSerialRange(selectedBranch);
-        }
-    }, [selectedBranch, customStartSerial, numberOfBooks]);
 
     const handlePrint = async () => {
         if (!selectedBranch) {
@@ -230,7 +231,7 @@ export default function CertifiedChecksPage() {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-3 rounded-xl shadow-lg">
-                            <Stamp className="w-8 h-8 text-white" />
+                            <Layers className="w-8 h-8 text-white" />
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-800">إصدار دفاتر الصكوك المصدقة</h1>
@@ -255,7 +256,7 @@ export default function CertifiedChecksPage() {
                                 <p className="text-3xl font-bold text-amber-600">{statistics?.totalBooks || 0}</p>
                             </div>
                             <div className="bg-amber-100 p-3 rounded-xl">
-                                <Stamp className="w-8 h-8 text-amber-600" />
+                                <Layers className="w-8 h-8 text-amber-600" />
                             </div>
                         </div>
                     </div>
@@ -346,6 +347,7 @@ export default function CertifiedChecksPage() {
                                 value={selectedBranch || ''}
                                 onChange={(e) => setSelectedBranch(e.target.value ? Number(e.target.value) : null)}
                                 className="input"
+                                disabled={!user?.isAdmin && branches.length <= 1}
                             >
                                 <option value="">-- اختر الفرع --</option>
                                 {branches.map((branch) => (

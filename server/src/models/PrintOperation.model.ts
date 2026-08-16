@@ -87,10 +87,13 @@ export class PrintOperationModel {
     });
   }
 
-  static async getStatistics(branchId?: number): Promise<any> {
-    const where: Prisma.PrintOperationWhereInput = branchId
-      ? { branchId }
-      : {};
+  static async getStatistics(branchId?: number, accountPrefix?: string): Promise<any> {
+    const where: Prisma.PrintOperationWhereInput = {};
+    if (accountPrefix) {
+      where.accountNumber = { startsWith: accountPrefix };
+    } else if (branchId) {
+      where.branchId = branchId;
+    }
 
     const stats = await prisma.printOperation.aggregate({
       where,
@@ -125,7 +128,7 @@ export class PrintOperationModel {
     const employees10 = await prisma.printOperation.count({
       where: {
         ...where,
-        sheetsPrinted: 10,
+        OR: [{ sheetsPrinted: 10 }, { accountType: 3 }],
       },
     });
 

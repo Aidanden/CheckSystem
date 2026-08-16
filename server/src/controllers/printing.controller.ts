@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { PrintingService } from '../services/printing.service';
 import { AccountService } from '../services/account.service';
 import { PrintCheckbookRequest } from '../types';
+import { assertAccountBelongsToUserBranch, getUserBranchScope, sendBranchError } from '../utils/branchAccess';
 
 export class PrintingController {
   static async printCheckbook(req: AuthRequest, res: Response): Promise<void> {
@@ -29,6 +30,13 @@ export class PrintingController {
         return;
       }
 
+      try {
+        await assertAccountBelongsToUserBranch(req.user, account_number);
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
+      }
+
       // Enforce branch-level access: non-admin users cannot print accounts of other branches
       if (req.user && !req.user.isAdmin) {
         if (account.branchId && req.user.branchId && account.branchId !== req.user.branchId) {
@@ -37,8 +45,14 @@ export class PrintingController {
         }
       }
 
-      // Get branchId from user, or find first available branch
       let branchId = req.user.branchId;
+      if (!req.user.isAdmin && !branchId) {
+        res.status(403).json({
+          success: false,
+          error: 'المستخدم غير مرتبط بفرع. لا يمكن الطباعة.',
+        });
+        return;
+      }
       if (!branchId) {
         // Import BranchModel to get first branch
         const { BranchModel } = await import('../models/Branch.model');
@@ -107,24 +121,30 @@ export class PrintingController {
 
       // Branch filtering with permissions
       let branchId: number | undefined;
+      let accountPrefix: string | undefined;
 
       if (req.user.isAdmin) {
-        // Admin can filter by any branch or see all
         branchId = req.query.branch_id
           ? parseInt(req.query.branch_id as string)
           : undefined;
       } else {
-        // Non-admin users can only see their own branch
-        if (!req.user.branchId) {
-          res.status(403).json({ error: 'المستخدم غير مرتبط بفرع' });
-          return;
+        try {
+          const scope = await getUserBranchScope(req.user);
+          if (scope.isAdmin) {
+            branchId = req.query.branch_id ? parseInt(String(req.query.branch_id)) : undefined;
+          } else {
+            accountPrefix = scope.branchNumber;
+          }
+        } catch (err) {
+          if (sendBranchError(res, err)) return;
+          throw err;
         }
-        branchId = req.user.branchId;
       }
 
       const history = await PrintingService.getPrintHistory({
         userId,
         branchId,
+        accountPrefix,
         accountNumber,
         accountHolderName,
         accountType,
@@ -152,22 +172,25 @@ export class PrintingController {
       }
 
       let branchId: number | undefined;
+      let accountPrefix: string | undefined;
 
       if (req.user.isAdmin) {
-        // Admin can filter by any branch or see all
         branchId = req.query.branch_id
           ? parseInt(req.query.branch_id as string)
           : undefined;
       } else {
-        // Non-admin users can only see their own branch
-        if (!req.user.branchId) {
-          res.status(403).json({ error: 'المستخدم غير مرتبط بفرع' });
-          return;
+        try {
+          const scope = await getUserBranchScope(req.user);
+          if (!scope.isAdmin) {
+            accountPrefix = scope.branchNumber;
+          }
+        } catch (err) {
+          if (sendBranchError(res, err)) return;
+          throw err;
         }
-        branchId = req.user.branchId;
       }
 
-      const stats = await PrintingService.getPrintStatistics(branchId);
+      const stats = await PrintingService.getPrintStatistics(branchId, accountPrefix);
       res.json(stats);
     } catch (error) {
       if (error instanceof Error) {

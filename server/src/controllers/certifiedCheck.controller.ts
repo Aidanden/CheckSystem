@@ -5,13 +5,30 @@ import { PrintSettingsModel } from '../models/PrintSettings.model';
 import { InventoryService } from '../services/inventory.service';
 import { StockType } from '../types';
 import { SystemSettingService } from '../services/systemSetting.service';
+import { AuthRequest } from '../middleware/auth.middleware';
+import {
+  assertSameBranchId,
+  getUserBranchScope,
+  resolveForcedBranchId,
+  sendBranchError,
+} from '../utils/branchAccess';
 
 const CERTIFIED_STUB_KEY = 'certified_check_stub_positions';
 
 // Get branches available for certified check printing
 export const getBranches = async (req: Request, res: Response) => {
     try {
-        const branches = await BranchModel.findAll();
+        const user = (req as AuthRequest).user;
+        let branches = await BranchModel.findAll();
+        try {
+            const scope = user ? await getUserBranchScope(user) : { isAdmin: true as const };
+            if (!scope.isAdmin) {
+                branches = branches.filter((b) => b.id === scope.branchId);
+            }
+        } catch (err) {
+            if (sendBranchError(res, err)) return;
+            throw err;
+        }
 
         // Get serial info for each branch
         const branchesWithSerials = await Promise.all(
@@ -42,6 +59,13 @@ export const getNextSerialRange = async (req: Request, res: Response) => {
         const branch = await BranchModel.findById(branchId);
         if (!branch) {
             return res.status(404).json({ error: 'الفرع غير موجود' });
+        }
+
+        try {
+            await assertSameBranchId((req as AuthRequest).user, branchId);
+        } catch (err) {
+            if (sendBranchError(res, err)) return;
+            throw err;
         }
 
         // الحصول على المعاملات من query string
@@ -93,6 +117,13 @@ export const printBook = async (req: Request, res: Response) => {
         const branch = await BranchModel.findById(branchId);
         if (!branch) {
             return res.status(404).json({ error: 'الفرع غير موجود' });
+        }
+
+        try {
+            await assertSameBranchId(user, branchId);
+        } catch (err) {
+            if (sendBranchError(res, err)) return;
+            throw err;
         }
 
         if (!branch.accountingNumber) {
@@ -208,6 +239,13 @@ export const reprintBook = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'السجل غير موجود' });
         }
 
+        try {
+            await assertSameBranchId(user, originalLog.branchId);
+        } catch (err) {
+            if (sendBranchError(res, err)) return;
+            throw err;
+        }
+
         // استخدام النطاق المحدد أو النطاق الأصلي
         const reprintFirstSerial = firstSerial || originalLog.firstSerial;
         const reprintLastSerial = lastSerial || originalLog.lastSerial;
@@ -282,7 +320,13 @@ export const getLogs = async (req: Request, res: Response) => {
     try {
         const skip = parseInt(req.query.skip as string) || 0;
         const take = parseInt(req.query.take as string) || 20;
-        const branchId = req.query.branchId ? parseInt(req.query.branchId as string) : undefined;
+        let branchId = req.query.branchId ? parseInt(req.query.branchId as string) : undefined;
+        try {
+            branchId = await resolveForcedBranchId((req as AuthRequest).user, Number.isFinite(branchId as number) ? branchId : undefined);
+        } catch (err) {
+            if (sendBranchError(res, err)) return;
+            throw err;
+        }
         const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
         const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
         let endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
@@ -311,9 +355,19 @@ export const getLogs = async (req: Request, res: Response) => {
 // Get statistics
 export const getStatistics = async (req: Request, res: Response) => {
     try {
-        const branchId = req.query.branchId ? parseInt(req.query.branchId as string) : undefined;
+        let branchId = req.query.branchId ? parseInt(req.query.branchId as string) : undefined;
+        try {
+            branchId = await resolveForcedBranchId((req as AuthRequest).user, Number.isFinite(branchId as number) ? branchId : undefined);
+        } catch (err) {
+            if (sendBranchError(res, err)) return;
+            throw err;
+        }
         const stats = await CertifiedCheckModel.getStatistics(branchId);
-        const branchSerials = await CertifiedCheckModel.getAllBranchSerials();
+        let branchSerials = await CertifiedCheckModel.getAllBranchSerials();
+        const user = (req as AuthRequest).user;
+        if (user && !user.isAdmin && branchId) {
+            branchSerials = branchSerials.filter((bs: any) => bs.branchId === branchId);
+        }
 
         res.json({
             ...stats,
@@ -434,6 +488,13 @@ export const savePrintRecord = async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'يجب تسجيل الدخول أولاً' });
         }
 
+        try {
+            await assertSameBranchId(user, data.branchId);
+        } catch (err) {
+            if (sendBranchError(res, err)) return;
+            throw err;
+        }
+
         const record = await CertifiedCheckModel.savePrintRecord({
             ...data,
             createdBy: user.userId,
@@ -477,7 +538,13 @@ export const getPrintRecords = async (req: Request, res: Response) => {
     try {
         const skip = parseInt(req.query.skip as string) || 0;
         const take = parseInt(req.query.take as string) || 20;
-        const branchId = req.query.branchId ? parseInt(req.query.branchId as string) : undefined;
+        let branchId = req.query.branchId ? parseInt(req.query.branchId as string) : undefined;
+        try {
+            branchId = await resolveForcedBranchId((req as AuthRequest).user, Number.isFinite(branchId as number) ? branchId : undefined);
+        } catch (err) {
+            if (sendBranchError(res, err)) return;
+            throw err;
+        }
         const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
         const search = req.query.search as string;
         const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
@@ -507,7 +574,13 @@ export const getPrintRecords = async (req: Request, res: Response) => {
 // Get individual certified check statistics
 export const getRecordStatistics = async (req: Request, res: Response) => {
     try {
-        const branchId = req.query.branchId ? parseInt(req.query.branchId as string) : undefined;
+        let branchId = req.query.branchId ? parseInt(req.query.branchId as string) : undefined;
+        try {
+            branchId = await resolveForcedBranchId((req as AuthRequest).user, Number.isFinite(branchId as number) ? branchId : undefined);
+        } catch (err) {
+            if (sendBranchError(res, err)) return;
+            throw err;
+        }
         const stats = await CertifiedCheckModel.getRecordStatistics(branchId);
         res.json(stats);
     } catch (error) {

@@ -15,6 +15,7 @@ export const SYSTEM_SCREENS = [
   { name: 'التقارير', href: '/reports', permission: 'SCREEN_REPORTS' },
   { name: 'إعدادات الطباعة', href: '/settings', permission: 'SYSTEM_SETTINGS' },
   { name: 'إعدادات طباعة شيك مصدق', href: '/certified-settings', permission: 'SYSTEM_SETTINGS' },
+  { name: 'عدادات الفئات', href: '/category-settings', permission: 'SCREEN_CATEGORY_SETTINGS' },
 ] as const;
 
 export type SystemScreenHref = (typeof SYSTEM_SCREENS)[number]['href'];

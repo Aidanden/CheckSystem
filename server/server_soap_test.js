@@ -55,8 +55,24 @@ const TEST_ACCOUNTS = [
    { branch: '001', account: '001001000100017', name: 'موظف - فاطمة علي حسن', startCheck: '42001', accountType: 3 }, // Employee
    { branch: '002', account: '002001000200016', name: 'موظف - خالد محمود علي', startCheck: '43001', accountType: 3 }, // Employee
    { branch: '002', account: '002001000200017', name: 'موظف - سارة يوسف أحمد', startCheck: '44001', accountType: 3 }, // Employee
-   { branch: '003', account: '003001000300011', name: 'موظف - عمر عبدالله سالم', startCheck: '45001', accountType: 3 } // Employee
+   { branch: '003', account: '003001000300011', name: 'موظف - عمر عبدالله سالم', startCheck: '45001', accountType: 3 }, // Employee
+
+   // اختبار عدادات الفئات: الخانات 4–6 من رقم الحساب = CUSTOMER_CATEGORY
+   // SOAP قد لا يرسل النوع أو يرسله معكوساً — الطباعة يجب أن تأخذ 01/02 من جدول الفئات
+   { branch: '001', account: '001214000100101', name: 'اختبار فئة 214 أفراد — SOAP يقول شركة (50 ورقة)', startCheck: '51001', accountType: 2, categoryHint: '214→01' },
+   { branch: '001', account: '001203000100102', name: 'اختبار فئة 203 شركات — SOAP يقول فرد (25 ورقة)', startCheck: '52001', accountType: 1, categoryHint: '203→02' },
+   { branch: '001', account: '001214000100103', name: 'اختبار فئة 214 أفراد — بدون accountType', startCheck: '53001', categoryHint: '214→01' },
+   { branch: '001', account: '001203000100104', name: 'اختبار فئة 203 شركات — بدون accountType', startCheck: '54001', categoryHint: '203→02' },
+   { branch: '002', account: '002214000200101', name: 'اختبار مصراتة 214 أفراد — SOAP شركة', startCheck: '55001', accountType: 2, categoryHint: '214→01' },
+   { branch: '002', account: '002203000200102', name: 'اختبار مصراتة 203 شركات — SOAP فرد', startCheck: '56001', accountType: 1, categoryHint: '203→02' },
+   { branch: '001', account: '001999000100199', name: 'اختبار فئة 999 غير مسجلة', startCheck: '57001', accountType: 2, categoryHint: '999 غير موجودة' },
 ];
+
+TEST_ACCOUNTS.forEach((row) => {
+   if (row.categoryHint) return;
+   const cat = row.accountType === 2 ? '203' : row.accountType === 3 ? '201' : '214';
+   row.account = String(row.account).slice(0, 3) + cat + String(row.account).slice(6);
+});
 
 const TEST_INSTRUMENTS = [
    {
@@ -165,11 +181,12 @@ function getCurrentDate() {
 // دالة لتحديد عدد الشيكات حسب نوع الحساب
 function getChequeLeavesByAccountType(accountType) {
    // 1 = Individual (25 شيك), 2 = Corporate (50 شيك), 3 = Employee (10 شيك)
+   // undefined = بلا نوع من SOAP — عدد لا يطابق 10/25/50 حتى لا يُعتمد عليه في تحديد 01/02
    switch (accountType) {
-      case 1: return 25; // Individual
-      case 2: return 50; // Corporate
-      case 3: return 10; // Employee
-      default: return 25; // Default to Individual
+      case 1: return 25;
+      case 2: return 50;
+      case 3: return 10;
+      default: return 15;
    }
 }
 
@@ -235,7 +252,9 @@ const soapHandler = async (req, res) => {
 
             const instrument = TEST_INSTRUMENTS.find(item => item.txnRefNo === txnRefNo);
             if (!instrument) {
-               throw new Error(`لم يتم العثور على صك مصدق للرقم المرجعي: ${txnRefNo}`);
+               const err: any = new Error(`لم يتم العثور على صك مصدق للرقم المرجعي: ${txnRefNo}`);
+               err.statusCode = 404;
+               throw err;
             }
 
             const msgId = generateMsgId();
@@ -332,17 +351,20 @@ const soapHandler = async (req, res) => {
       console.log(`🔍 بيانات الحساب:`, {
          account: accountData.account,
          name: accountData.name,
-         accountType: accountData.accountType,
+         accountType: accountData.accountType ?? '(غير مرسل)',
+         categoryDigits: String(accountData.account).replace(/\D/g, '').substring(3, 6),
          startCheck: accountData.startCheck
       });
 
       if (operation === 'QueryCheckBook') {
          const firstChequeNumber = accountData.startCheck;
-         const accountType = accountData.accountType || 1; // Default to Individual if not specified
+         const accountType = accountData.accountType; // قد يكون undefined لاختبار الفئات
          const chequeLeaves = getChequeLeavesByAccountType(accountType);
          const chequeStatuses = generateChequeStatuses(firstChequeNumber, chequeLeaves);
+         const typeLabel = accountType === 1 ? 'فردي' : accountType === 2 ? 'شركة' : accountType === 3 ? 'موظف' : 'بدون نوع SOAP';
 
-         console.log(`📋 نوع الحساب: ${accountType === 1 ? 'فردي' : accountType === 2 ? 'شركة' : 'موظف'} (${accountType}) - عدد الشيكات: ${chequeLeaves}`);
+         console.log(`📋 SOAP accountType: ${typeLabel} (${accountType ?? 'none'}) - أوراق الدفتر: ${chequeLeaves}`);
+         console.log(`🏷️  فئة من رقم الحساب (خانات 4-6): ${String(account).replace(/\D/g, '').substring(3, 6)} ${accountData.categoryHint ? '| المتوقع في الطباعة: ' + accountData.categoryHint : ''}`);
          console.log(`📊 عدد الشيكات المولدة: ${chequeStatuses.length}`);
 
          responseXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -478,7 +500,7 @@ const soapHandler = async (req, res) => {
    </S:Body>
 </S:Envelope>`;
 
-      res.status(500).set('Content-Type', 'text/xml; charset=utf-8');
+      res.status(error.statusCode === 404 ? 404 : 500).set('Content-Type', 'text/xml; charset=utf-8');
       res.send(errorResponse);
    }
 };
@@ -517,9 +539,15 @@ app.listen(PORT, () => {
    TEST_INSTRUMENTS.forEach(item => {
       console.log(`  - ${item.txnRefNo} | ${item.benefName} | ${item.amount} ${item.currency}`);
    });
-   console.log('\n📊 الحسابات المتوفرة:');
-   TEST_ACCOUNTS.forEach(acc => {
-      const accountTypeName = acc.accountType === 1 ? 'فردي (25 شيك)' : acc.accountType === 2 ? 'شركة (50 شيك)' : 'موظف (10 شيك)';
+   console.log('\n🧪 حسابات اختبار عدادات الفئات (الخانات 4–6 تحدد 01/02 وليس SOAP):');
+   TEST_ACCOUNTS.filter(acc => acc.categoryHint).forEach(acc => {
+      const soapType = acc.accountType === 1 ? 'SOAP=فرد 25 ورقة' : acc.accountType === 2 ? 'SOAP=شركة 50 ورقة' : 'SOAP بلا نوع (15 ورقة)';
+      console.log(`  - ${acc.account} | ${acc.name}`);
+      console.log(`      ${soapType} | المتوقع من الفئات: ${acc.categoryHint}`);
+   });
+   console.log('\n📊 بقية الحسابات:');
+   TEST_ACCOUNTS.filter(acc => !acc.categoryHint).forEach(acc => {
+      const accountTypeName = acc.accountType === 1 ? 'فردي (25 شيك)' : acc.accountType === 2 ? 'شركة (50 شيك)' : acc.accountType === 3 ? 'موظف (10 شيك)' : 'بدون نوع';
       console.log(`  - ${acc.account} (${acc.name}) - فرع ${acc.branch} - ${accountTypeName}`);
    });
    console.log('═══════════════════════════════════════════════════════════════\n');

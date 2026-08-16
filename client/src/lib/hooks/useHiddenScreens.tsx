@@ -21,10 +21,16 @@ export function HiddenScreensProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (!token) {
+        setHiddenScreens([]);
+        return;
+      }
       const { hiddenScreens: screens } = await systemSettingsService.getHiddenScreens();
       setHiddenScreens(screens);
     } catch (error) {
       console.error('فشل تحميل الشاشات المخفية:', error);
+      setHiddenScreens([]);
     } finally {
       setLoading(false);
     }

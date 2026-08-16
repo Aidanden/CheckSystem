@@ -2,11 +2,21 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { BranchService } from '../services/branch.service';
 import { CreateBranchRequest } from '../types';
+import { assertSameBranchCode, assertSameBranchId, getUserBranchScope, sendBranchError } from '../utils/branchAccess';
 
 export class BranchController {
-  static async getAll(_req: AuthRequest, res: Response): Promise<void> {
+  static async getAll(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const branches = await BranchService.getAllBranches();
+      let branches = await BranchService.getAllBranches();
+      try {
+        const scope = req.user ? await getUserBranchScope(req.user) : { isAdmin: true as const };
+        if (!scope.isAdmin) {
+          branches = branches.filter((b) => b.id === scope.branchId);
+        }
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
+      }
       res.json(branches);
     } catch (error) {
       if (error instanceof Error) {
@@ -21,6 +31,12 @@ export class BranchController {
     try {
       const id = parseInt(req.params.id);
       const branch = await BranchService.getBranchById(id);
+      try {
+        await assertSameBranchId(req.user, id);
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
+      }
       res.json(branch);
     } catch (error) {
       if (error instanceof Error) {
@@ -41,6 +57,13 @@ export class BranchController {
         return;
       }
 
+      try {
+        await assertSameBranchCode(req.user, branch.branchNumber || code);
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
+      }
+
       res.json(branch);
     } catch (error) {
       if (error instanceof Error) {
@@ -54,6 +77,13 @@ export class BranchController {
   static async getByAccountNumber(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { accountNumber } = req.params;
+      try {
+        await assertSameBranchCode(req.user, accountNumber.slice(0, 3));
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
+      }
+
       const branch = await BranchService.getBranchByAccountNumber(accountNumber);
 
       if (!branch) {

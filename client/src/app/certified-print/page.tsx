@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Stamp, Printer, Eye, Save, AlertCircle, CheckCircle, Calculator, PlusCircle, History, User as UserIcon, Activity, Clock, ArrowLeftRight } from 'lucide-react';
+import { Layers, Printer, Eye, Save, AlertCircle, CheckCircle, Calculator, PlusCircle, History, User as UserIcon, Activity, Clock, ArrowLeftRight } from 'lucide-react';
 import { certifiedCheckService } from '@/lib/api';
 import { useAppSelector } from '@/store/hooks';
 import { formatNumber } from '@/utils/locale';
@@ -494,7 +494,7 @@ export default function CertifiedPrintPage() {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-3 rounded-xl shadow-lg">
-                            <Stamp className="w-8 h-8 text-white" />
+                            <Layers className="w-8 h-8 text-white" />
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-800">

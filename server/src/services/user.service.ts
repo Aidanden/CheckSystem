@@ -3,6 +3,7 @@ import { BranchModel } from '../models/Branch.model';
 import { PermissionModel } from '../models/Permission.model';
 import { AuthService } from './auth.service';
 import { CreateUserRequest, UpdateUserRequest } from '../types';
+import prisma from '../lib/prisma';
 
 export class UserService {
   static async getAllUsers(): Promise<UserWithPermissions[]> {
@@ -34,7 +35,14 @@ export class UserService {
       throw new Error('Username already exists');
     }
 
-    // Validate branch if provided
+    if (data.password && data.password.length < 8) {
+      throw new Error('كلمة المرور يجب ألا تقل عن 8 أحرف');
+    }
+
+    if (!data.is_admin && !data.branch_id) {
+      throw new Error('يجب ربط المستخدم غير المدير بفرع');
+    }
+
     if (data.branch_id) {
       const branch = await BranchModel.findById(data.branch_id);
       if (!branch) {
@@ -88,6 +96,16 @@ export class UserService {
       }
     }
 
+    if (data.password && data.password.length < 8) {
+      throw new Error('كلمة المرور يجب ألا تقل عن 8 أحرف');
+    }
+
+    const willBeAdmin = data.is_admin ?? existing.isAdmin;
+    const nextBranchId = data.branch_id !== undefined ? data.branch_id : existing.branchId;
+    if (!willBeAdmin && !nextBranchId) {
+      throw new Error('يجب ربط المستخدم غير المدير بفرع');
+    }
+
     // Validate branch if provided
     if (data.branch_id) {
       const branch = await BranchModel.findById(data.branch_id);
@@ -106,13 +124,11 @@ export class UserService {
       }
     }
 
-    // Prepare update data
-    const updateData: any = {
-      username: data.username,
-      branchId: data.branch_id,
-      isAdmin: data.is_admin,
-      isActive: data.is_active,
-    };
+    const updateData: any = {};
+    if (data.username !== undefined) updateData.username = data.username;
+    if (data.branch_id !== undefined) updateData.branchId = data.branch_id;
+    if (data.is_admin !== undefined) updateData.isAdmin = data.is_admin;
+    if (data.is_active !== undefined) updateData.isActive = data.is_active;
 
     // Hash new password if provided
     if (data.password) {
@@ -136,11 +152,21 @@ export class UserService {
     return updated;
   }
 
-  static async deleteUser(id: number): Promise<void> {
-    const success = await UserModel.delete(id);
-    if (!success) {
-      throw new Error('Failed to delete user');
+  static async deleteUser(id: number): Promise<{ deactivated?: boolean }> {
+    try {
+      await prisma.userPermission.deleteMany({ where: { userId: id } });
+    } catch {
+      /* ignore */
     }
+
+    const success = await UserModel.delete(id);
+    if (success) return {};
+
+    const disabled = await UserModel.update(id, { isActive: false });
+    if (!disabled) {
+      throw new Error('تعذر حذف المستخدم');
+    }
+    return { deactivated: true };
   }
 
   static async checkPermission(userId: number, permissionCode: string): Promise<boolean> {

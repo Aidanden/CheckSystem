@@ -23,6 +23,7 @@ const ALLOWED_SCREEN_HREFS = [
   '/reports',
   '/settings',
   '/certified-settings',
+  '/category-settings',
 ];
 
 export class SystemSettingService {

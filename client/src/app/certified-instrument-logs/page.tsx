@@ -11,6 +11,7 @@ import { Branch } from '@/types';
 import { useAppSelector } from '@/store/hooks';
 import { openCertifiedInstrumentPrint } from '@/lib/utils/certifiedInstrumentPrint';
 import { amountToArabicTafqeet } from '@/lib/utils/arabicAmountWords';
+import { assertClientSameBranch } from '@/lib/utils/branchAccess';
 
 export default function CertifiedInstrumentLogsPage() {
   const { user: currentUser } = useAppSelector((state) => state.auth);
@@ -89,6 +90,11 @@ export default function CertifiedInstrumentLogsPage() {
 
   const handleReprint = async (log: CertifiedInstrumentLog) => {
     if (!canReprint) return;
+    const branchError = assertClientSameBranch(currentUser, log.txnBranch);
+    if (branchError) {
+      setError(branchError);
+      return;
+    }
     setReprintingId(log.id);
     setError(null);
     try {
@@ -259,10 +265,12 @@ ${logs.map((log) => `<tr>
                 <option value="">كل المستخدمين</option>
                 {users.map((u) => <option key={u.id} value={u.id}>{u.username}</option>)}
               </select>
+              {currentUser?.isAdmin && (
               <select className="input" value={filters.branchId ?? ''} onChange={(e) => { setPage(0); setFilters({ ...filters, branchId: e.target.value ? Number(e.target.value) : undefined }); }}>
                 <option value="">كل الفروع</option>
                 {branches.map((b) => <option key={b.id} value={b.id}>{b.branchName}</option>)}
               </select>
+              )}
               <input type="date" className="input" value={filters.startDate} onChange={(e) => { setPage(0); setFilters({ ...filters, startDate: e.target.value }); }} />
               <input type="date" className="input" value={filters.endDate} onChange={(e) => { setPage(0); setFilters({ ...filters, endDate: e.target.value }); }} />
               <button onClick={() => { setPage(0); setFilters({ operationType: '', accountNumber: '', txnRefNo: '', startDate: '', endDate: '', userId: undefined, branchId: undefined, limit: 20 }); }} className="btn bg-gray-100">إعادة تعيين</button>

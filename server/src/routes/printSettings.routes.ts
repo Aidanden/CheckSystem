@@ -4,6 +4,12 @@ import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 
+router.get(
+  '/',
+  authenticate,
+  PrintSettingsController.getAllSettings
+);
+
 // Get settings for specific account type (authenticated users)
 router.get(
   '/:accountType',

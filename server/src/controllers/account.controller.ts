@@ -2,11 +2,24 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { AccountService } from '../services/account.service';
 import { QueryAccountRequest } from '../types';
+import { assertAccountBelongsToUserBranch, sendBranchError } from '../utils/branchAccess';
 
 export class AccountController {
-  static async getAll(_req: AuthRequest, res: Response): Promise<void> {
+  static async getAll(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const accounts = await AccountService.getAllAccounts();
+      let accounts = await AccountService.getAllAccounts();
+      if (req.user && !req.user.isAdmin) {
+        try {
+          const { getUserBranchScope } = await import('../utils/branchAccess');
+          const scope = await getUserBranchScope(req.user);
+          if (!scope.isAdmin) {
+            accounts = accounts.filter((a) => String(a.accountNumber || '').startsWith(scope.branchNumber));
+          }
+        } catch (err) {
+          if (sendBranchError(res, err)) return;
+          throw err;
+        }
+      }
       res.json(accounts);
     } catch (error) {
       if (error instanceof Error) {
@@ -34,8 +47,17 @@ export class AccountController {
   static async queryAccount(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { account_number, branch_id, branch_core_code, source } = req.body as QueryAccountRequest;
-      const resolvedBranchId = branch_id ?? req.user?.branchId;
+      const resolvedBranchId = req.user?.isAdmin
+        ? (branch_id ?? req.user?.branchId)
+        : req.user?.branchId;
       const resolvedSource: 'test' | 'bank' = source ?? 'bank';
+
+      try {
+        await assertAccountBelongsToUserBranch(req.user, account_number);
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
+      }
 
       const { account, checkbookDetails } = await AccountService.queryAccount(account_number, {
         source: resolvedSource,

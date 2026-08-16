@@ -336,7 +336,7 @@ export default function UsersPage() {
                     },
                     {
                       name: 'إدارة النظام والتقارير العامة',
-                      codes: ['MANAGE_USERS', 'MANAGE_BRANCHES', 'SYSTEM_SETTINGS', 'SCREEN_REPORTS']
+                      codes: ['MANAGE_USERS', 'MANAGE_BRANCHES', 'SYSTEM_SETTINGS', 'SCREEN_CATEGORY_SETTINGS', 'SCREEN_REPORTS']
                     }
                   ].map((group) => (
                     <div key={group.name} className="space-y-2">

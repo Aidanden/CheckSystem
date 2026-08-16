@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { inventoryService } from '@/lib/api';
 import { Inventory, InventoryTransaction } from '@/types';
-import { Package, Plus, Minus, History, TrendingUp, TrendingDown, Stamp } from 'lucide-react';
+import { Package, Plus, Minus, History, TrendingUp, TrendingDown, Layers } from 'lucide-react';
 import { formatDateShort, formatNumber } from '@/utils/locale';
 
 export default function CertifiedInventoryPage() {
@@ -76,7 +76,7 @@ export default function CertifiedInventoryPage() {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-3 rounded-xl shadow-lg">
-                            <Stamp className="w-8 h-8 text-white" />
+                            <Layers className="w-8 h-8 text-white" />
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-800">إدارة مخزون الصكوك المصدقة</h1>

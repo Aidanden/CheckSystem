@@ -405,6 +405,9 @@ export class BankAPIClient {
 
       if (!response.ok) {
         const text = await response.text();
+        if (response.status === 404 || text.includes('لم يتم العثور')) {
+          throw new Error('لم يتم العثور على بيانات الصك المصدق لهذا الرقم المرجعي');
+        }
         throw new Error(`Bank SOAP error: ${response.status} - ${text}`);
       }
 

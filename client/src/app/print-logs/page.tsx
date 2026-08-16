@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { printLogService, soapService, branchService } from '@/lib/api';
+import { printLogService, soapService, branchService, customerCategoryService } from '@/lib/api';
 import { useAppSelector } from '@/store/hooks';
 import { FileText, Printer, Search, Filter, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import renderCheckbookHtml, { type CheckbookData } from '@/lib/utils/printRenderer';
 import { buildPreviewFromSoap, type SoapCheckbookResponse } from '@/lib/soap/checkbook';
 import { printSettingsAPI, type PrintSettings } from '@/lib/printSettings.api';
 import { resolveAccountType } from '@/lib/utils/accountType';
+import { assertClientSameBranch } from '@/lib/utils/branchAccess';
 
 interface PrintLog {
   id: number;
@@ -115,6 +116,12 @@ export default function PrintLogsPage() {
       return;
     }
 
+    const branchError = assertClientSameBranch(currentUser, selectedLog.accountNumber.substring(0, 3));
+    if (branchError) {
+      alert(branchError);
+      return;
+    }
+
     // التحقق من اختيار سبب إعادة الطباعة
     if (!reprintReason || (reprintReason !== 'damaged' && reprintReason !== 'not_printed')) {
       alert('الرجاء اختيار سبب إعادة الطباعة: ورقة تالفة أو ورقة لم تطبع');
@@ -129,6 +136,13 @@ export default function PrintLogsPage() {
         accountNumber: selectedLog.accountNumber,
         firstChequeNumber: selectedLog.firstChequeNumber,
       }) as SoapCheckbookResponse;
+
+      if (soapResponse.categoryLeavesMismatch) {
+        throw new Error(
+          soapResponse.categoryLeavesMismatchError ||
+            'تعارض بين فئة الحساب وعدد أوراق الدفتر. لا يمكن إعادة الطباعة.'
+        );
+      }
 
       // تصفية الشيكات بناءً على النطاق المحدد
       const filteredStatuses = soapResponse.chequeStatuses.filter(
@@ -146,11 +160,23 @@ export default function PrintLogsPage() {
         // نترك chequeLeaves كما هو من الاستجابة الأصلية لتحديد نوع الحساب (Corporate = 50, Individual = 25, Employee = 10)
       };
 
-      const accountType = resolveAccountType({
+      let accountType = resolveAccountType({
         chequeLeaves: soapResponse.chequeLeaves,
         chequeCount: soapResponse.chequeStatuses?.filter((c) => c.chequeNumber > 0).length,
         fallbackAccountType: selectedLog.accountType,
       });
+      if (soapResponse.customerCategoryFound && soapResponse.accountType) {
+        accountType = soapResponse.accountType as 1 | 2;
+      } else {
+        try {
+          const resolved = await customerCategoryService.resolve(selectedLog.accountNumber);
+          if (resolved.found && resolved.accountType) {
+            accountType = resolved.accountType;
+          }
+        } catch {
+          /* keep fallback */
+        }
+      }
 
       // جلب إعدادات الطباعة
       let resolvedLayout: PrintSettings | null = null;
@@ -216,6 +242,7 @@ export default function PrintLogsPage() {
           operationType: 'reprint',
           reprintReason: reprintReason as 'damaged' | 'not_printed',
           chequeNumbers,
+          customerName: soapResponse.customerName,
         });
         console.log('✅ تم تسجيل عملية إعادة الطباعة بنجاح');
         loadLogs();
@@ -235,7 +262,11 @@ export default function PrintLogsPage() {
       // alert('✅ تمت إعادة الطباعة بنجاح!'); // Removed alert to be less intrusive
     } catch (error: any) {
       console.error('Reprint failed:', error);
-      alert(`فشل في إعادة الطباعة: ${error.message || 'خطأ غير معروف'}`);
+      alert(
+        `فشل في إعادة الطباعة: ${
+          error.response?.data?.error || error.response?.data?.details || error.message || 'خطأ غير معروف'
+        }`
+      );
     } finally {
       setReprinting(false);
     }

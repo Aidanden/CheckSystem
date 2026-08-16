@@ -225,6 +225,7 @@ export class PrintingService {
     dateFrom?: string;
     dateTo?: string;
     limit?: number;
+    accountPrefix?: string;
   }): Promise<any[]> {
     const { userId, branchId, accountNumber, accountHolderName, accountType, status, dateFrom, dateTo, limit = 100 } = filters;
 
@@ -235,11 +236,21 @@ export class PrintingService {
       where.userId = userId;
     }
 
-    if (branchId) {
+    if (branchId && !filters.accountPrefix) {
       where.branchId = branchId;
     }
 
-    if (accountNumber) {
+    if (filters.accountPrefix) {
+      const prefix = String(filters.accountPrefix).replace(/\D/g, '').slice(-3).padStart(3, '0');
+      if (accountNumber) {
+        where.AND = [
+          { accountNumber: { startsWith: prefix } },
+          { accountNumber: { contains: accountNumber } },
+        ];
+      } else {
+        where.accountNumber = { startsWith: prefix };
+      }
+    } else if (accountNumber) {
       where.accountNumber = { contains: accountNumber };
     }
 
@@ -297,9 +308,9 @@ export class PrintingService {
     });
   }
 
-  static async getPrintStatistics(branchId?: number): Promise<any> {
-    const stats = await PrintOperationModel.getStatistics(branchId);
-    const reprintStats = await PrintLogModel.getReprintStatistics(branchId);
+  static async getPrintStatistics(branchId?: number, accountPrefix?: string): Promise<any> {
+    const stats = await PrintOperationModel.getStatistics(branchId, accountPrefix);
+    const reprintStats = await PrintLogModel.getReprintStatistics(branchId, accountPrefix);
 
     return {
       ...stats,

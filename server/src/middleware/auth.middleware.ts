@@ -8,6 +8,7 @@ export interface AuthRequest extends Request {
     username: string;
     isAdmin: boolean;
     branchId?: number;
+    branchNumber?: string;
   };
 }
 
@@ -20,7 +21,7 @@ export const authenticate = async (
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ error: 'No token provided' });
+      res.status(401).json({ error: 'لم يتم إرسال رمز الدخول' });
       return;
     }
 
@@ -28,22 +29,23 @@ export const authenticate = async (
     const decoded = await AuthService.verifyToken(token);
 
     // Verify user still exists and is active
-    const user = await UserModel.findById(decoded.userId);
+    const user = await UserModel.findByIdWithDetails(decoded.userId);
     if (!user || !user.isActive) {
       res.status(401).json({ error: 'Invalid token or user is disabled' });
       return;
     }
 
     req.user = {
-      userId: decoded.userId,
-      username: decoded.username,
-      isAdmin: decoded.isAdmin,
-      branchId: decoded.branchId,
+      userId: user.id,
+      username: user.username,
+      isAdmin: user.isAdmin,
+      branchId: user.branchId ?? undefined,
+      branchNumber: user.branch?.branchNumber,
     };
 
     next();
   } catch (error) {
-    res.status(401).json({ error: 'Invalid or expired token' });
+    res.status(401).json({ error: 'رمز الدخول غير صالح أو منتهٍ' });
   }
 };
 
@@ -53,7 +55,7 @@ export const requireAdmin = (
   next: NextFunction
 ): void => {
   if (!req.user || !req.user.isAdmin) {
-    res.status(403).json({ error: 'Admin access required' });
+    res.status(403).json({ error: 'هذه العملية تتطلب صلاحيات مدير النظام' });
     return;
   }
   next();
@@ -67,7 +69,7 @@ export const requirePermission = (permissionCode: string | string[]) => {
   ): Promise<void> => {
     try {
       if (!req.user) {
-        res.status(401).json({ error: 'Authentication required' });
+        res.status(401).json({ error: 'يجب تسجيل الدخول' });
         return;
       }
 
@@ -90,7 +92,7 @@ export const requirePermission = (permissionCode: string | string[]) => {
 
       if (!hasPermission) {
         res.status(403).json({
-          error: 'You do not have permission to perform this action',
+          error: 'ليست لديك صلاحية لتنفيذ هذه العملية',
           required_permission: permissionCode,
         });
         return;
@@ -98,7 +100,7 @@ export const requirePermission = (permissionCode: string | string[]) => {
 
       next();
     } catch (error) {
-      res.status(500).json({ error: 'Permission check failed' });
+      res.status(500).json({ error: 'فشل التحقق من الصلاحية' });
     }
   };
 };

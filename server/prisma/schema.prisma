@@ -349,3 +349,15 @@ model CertifiedInstrumentLog {
   @@index([branchId])
   @@map("certified_instrument_logs")
 }
+
+model CustomerCategory {
+  id           Int      @id @default(autoincrement())
+  categoryCode String   @unique @map("category_code")
+  description  String
+  typeCode     String   @map("type_code")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("customer_categories")
+}

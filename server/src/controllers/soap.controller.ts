@@ -3,6 +3,12 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { bankAPI } from '../utils/bankAPI';
 import { BranchModel } from '../models/Branch.model';
 import { CertifiedInstrumentLogService } from '../services/certifiedInstrumentLog.service';
+import { CustomerCategoryService } from '../services/customerCategory.service';
+import {
+  assertAccountBelongsToUserBranch,
+  assertSameBranchCode,
+  sendBranchError,
+} from '../utils/branchAccess';
 
 export class SoapController {
   static async queryCheckbook(req: AuthRequest, res: Response): Promise<void> {
@@ -18,6 +24,13 @@ export class SoapController {
 
       // استخراج رقم الفرع من أول 3 أرقام من رقم الحساب (كما طلب المستخدم)
       const extractedBranchCode = trimmedAccountNumber.substring(0, 3);
+
+      try {
+        await assertAccountBelongsToUserBranch(req.user, trimmedAccountNumber);
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
+      }
 
       // الأولوية للرقم المستخرج من الحساب لضمان الدقة
       const finalBranchCode = extractedBranchCode || branchCode?.trim() || '001';
@@ -82,6 +95,25 @@ export class SoapController {
         if (customerName) {
           (result as any).customerName = customerName;
         }
+      }
+
+      const category = await CustomerCategoryService.resolveFromAccount(trimmedAccountNumber);
+      (result as any).customerCategoryCode = category.categoryCode;
+      (result as any).customerCategoryFound = category.found;
+      if (category.found) {
+        (result as any).customerCategoryDescription = category.description;
+        (result as any).micrTypeCode = category.typeCode;
+        (result as any).accountType = category.accountType;
+        const leavesMismatch = CustomerCategoryService.leavesMismatchMessage(
+          category.typeCode,
+          (result as any).chequeLeaves
+        );
+        if (leavesMismatch) {
+          (result as any).categoryLeavesMismatch = true;
+          (result as any).categoryLeavesMismatchError = leavesMismatch;
+        }
+      } else {
+        (result as any).customerCategoryError = category.error;
       }
 
       console.log('📤 إرسال النتيجة:', {
@@ -158,6 +190,13 @@ export class SoapController {
         return;
       }
 
+      try {
+        await assertSameBranchCode(req.user, result.txnBranch || (result as any).branchNumber);
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
+      }
+
       if (req.user) {
         try {
           await CertifiedInstrumentLogService.create({
@@ -187,8 +226,10 @@ export class SoapController {
       res.json({ ...result, alreadyPrinted });
     } catch (error: any) {
       console.error('InstrumentList SOAP query error:', error);
-      res.status(500).json({
-        error: 'فشل الاستعلام عن الصك المصدق',
+      const message = String(error?.message || '');
+      const notFound = message.includes('لم يتم العثور') || message.includes('غير موجود');
+      res.status(notFound ? 404 : 500).json({
+        error: notFound ? 'لم يتم العثور على صك مصدق بهذا الرقم المرجعي' : 'فشل الاستعلام عن الصك المصدق',
         details: error.message,
       });
     }

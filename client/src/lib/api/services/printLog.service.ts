@@ -12,6 +12,7 @@ export interface PrintLogData {
   reprintReason?: 'damaged' | 'not_printed'; // سبب إعادة الطباعة: 'damaged' = تالفة، 'not_printed' = لم تطبع
   notes?: string;
   chequeNumbers: number[];
+  customerName?: string;
 }
 
 export interface PrintLog {

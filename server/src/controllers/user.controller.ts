@@ -81,8 +81,15 @@ export class UserController {
   static async delete(req: AuthRequest, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
-      await UserService.deleteUser(id);
-      res.json({ message: 'User deleted successfully' });
+      const result = await UserService.deleteUser(id);
+      if (result.deactivated) {
+        res.json({
+          message: 'تعذر الحذف لارتباط المستخدم بسجلات. تم تعطيل الحساب بدلاً من ذلك.',
+          deactivated: true,
+        });
+        return;
+      }
+      res.json({ message: 'تم حذف المستخدم' });
     } catch (error) {
       if (error instanceof Error) {
         res.status(400).json({ error: error.message });

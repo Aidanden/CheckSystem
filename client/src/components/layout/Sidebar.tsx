@@ -15,7 +15,7 @@ import {
   FileText,
   Settings,
   ClipboardList,
-  Stamp,
+  Layers,
 } from 'lucide-react';
 
 const navigation = [
@@ -28,10 +28,10 @@ const navigation = [
 
   // الشيكات المصدقة
   { name: 'طباعة شيك مصدق', href: '/certified-print', icon: Printer, permission: 'SCREEN_CERTIFIED_PRINT' },
-  { name: 'طباعة صك مصدق (منظومة)', href: '/certified-instrument', icon: Stamp, permission: 'SCREEN_CERTIFIED_INSTRUMENT' },
+  { name: 'طباعة صك مصدق (منظومة)', href: '/certified-instrument', icon: Layers, permission: 'SCREEN_CERTIFIED_INSTRUMENT' },
   { name: 'سجل طباعة الصك المصدق (منظومة)', href: '/certified-instrument-logs', icon: ClipboardList, permission: 'SCREEN_CERTIFIED_INSTRUMENT_LOGS' },
   { name: 'تقارير الشيك المصدقة', href: '/certified-reports', icon: FileText, permission: 'SCREEN_CERTIFIED_REPORTS' },
-  { name: 'إصدار دفاتر مصدقة', href: '/certified-checks', icon: Stamp, permission: 'SCREEN_CERTIFIED_BOOKS' },
+  { name: 'إصدار دفاتر مصدقة', href: '/certified-checks', icon: FileText, permission: 'SCREEN_CERTIFIED_BOOKS' },
   { name: 'سجل و تقارير دفاتر المصدقة', href: '/certified-logs', icon: ClipboardList, permission: 'SCREEN_CERTIFIED_LOGS' },
   { name: 'مخزن الشيكات المصدقة', href: '/certified-inventory', icon: Package, permission: 'CERTIFIED_INVENTORY_MANAGEMENT' },
 
@@ -41,6 +41,7 @@ const navigation = [
   { name: 'التقارير', href: '/reports', icon: FileText, permission: 'SCREEN_REPORTS' },
   { name: 'إعدادات الطباعة', href: '/settings', icon: Settings, permission: 'SYSTEM_SETTINGS' },
   { name: 'إعدادات طباعة شيك مصدق', href: '/certified-settings', icon: Settings, permission: 'SYSTEM_SETTINGS' },
+  { name: 'عدادات الفئات', href: '/category-settings', icon: Layers, permission: 'SCREEN_CATEGORY_SETTINGS' },
 ];
 
 export default function Sidebar() {

@@ -7,18 +7,34 @@ import routes from './routes';
 import { errorHandler } from './middleware/errorHandler.middleware';
 import prisma from './lib/prisma';
 import { getMorganConfig } from './config/logger.config';
+import { CustomerCategoryService } from './services/customerCategory.service';
 
 // Load environment variables
 dotenv.config();
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
-const HOST = process.env.HOST || '10.250.100.40';
+const HOST = process.env.HOST || '0.0.0.0';
 
-// Middleware
-app.use(helmet()); // Security headers
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:3060',
+  'http://127.0.0.1:3060',
+  'http://localhost:3040',
+  'http://127.0.0.1:3040',
+  'http://10.250.100.40:3060',
+  'http://10.250.100.40:3040',
+].filter(Boolean) as string[];
+
+app.use(helmet());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://10.250.100.40:3040',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(null, false);
+  },
   credentials: true,
 }));
 // Use secure logging configuration
@@ -56,6 +72,11 @@ const startServer = async () => {
         permissionCode: 'REPRINT_CERTIFIED_INSTRUMENT',
         description: 'إعادة طباعة الصك المصدق من سجل المنظومة فقط',
       },
+      {
+        permissionName: 'عدادات الفئات',
+        permissionCode: 'SCREEN_CATEGORY_SETTINGS',
+        description: 'الوصول إلى شاشة تسجيل وتعديل فئات الحسابات (أفراد/شركات)',
+      },
     ];
     for (const perm of instrumentPerms) {
       await prisma.permission.upsert({
@@ -63,6 +84,40 @@ const startServer = async () => {
         create: perm,
         update: { permissionName: perm.permissionName, description: perm.description },
       });
+    }
+
+    const allPerms = await prisma.permission.findMany({ select: { id: true } });
+    const admins = await prisma.user.findMany({ where: { isAdmin: true }, select: { id: true } });
+    for (const admin of admins) {
+      for (const perm of allPerms) {
+        await prisma.userPermission.upsert({
+          where: { userId_permissionId: { userId: admin.id, permissionId: perm.id } },
+          update: {},
+          create: { userId: admin.id, permissionId: perm.id },
+        });
+      }
+    }
+
+    try {
+      const ops = await prisma.printOperation.findMany({ select: { id: true, accountNumber: true } });
+      const branches = await prisma.branch.findMany();
+      for (const op of ops) {
+        const code = String(op.accountNumber || '').replace(/\D/g, '').slice(0, 3).padStart(3, '0');
+        const branch = branches.find((b) => String(b.branchNumber || '').replace(/\D/g, '').slice(-3).padStart(3, '0') === code);
+        if (branch) {
+          await prisma.printOperation.update({
+            where: { id: op.id },
+            data: { branchId: branch.id, routingNumber: branch.routingNumber },
+          });
+        }
+      }
+    } catch (repairError) {
+      console.warn('تعذر تصحيح فروع سجلات الطباعة:', repairError);
+    }
+
+    const jwtSecret = process.env.JWT_SECRET || '';
+    if (!jwtSecret || jwtSecret.includes('your_jwt_secret') || jwtSecret === 'check_printing_secret_key_2024_very_secure') {
+      console.warn('⚠️ JWT_SECRET افتراضي. غيّره في بيئة الإنتاج.');
     }
 
     const layoutFlag = await prisma.systemSetting.findUnique({
@@ -139,8 +194,10 @@ const startServer = async () => {
       console.log('✅ Applied certified cheque default print layout');
     }
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Server is running on port ${PORT}`);
+    await CustomerCategoryService.seedDefaults();
+
+    app.listen(Number(PORT), HOST, () => {
+      console.log(`🚀 Server is running on ${HOST}:${PORT}`);
       console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🌐 API URL: http://${HOST}:${PORT}/api`);
     });

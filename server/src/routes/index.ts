@@ -11,6 +11,7 @@ import soapRoutes from './soap.routes';
 import printLogRoutes from './printLog.routes';
 import certifiedCheckRoutes from './certifiedCheck.routes';
 import certifiedInstrumentLogRoutes from './certifiedInstrumentLog.routes';
+import customerCategoryRoutes from './customerCategory.routes';
 
 const router = Router();
 
@@ -32,6 +33,7 @@ router.use('/soap', soapRoutes);
 router.use('/print-logs', printLogRoutes);
 router.use('/certified-checks', certifiedCheckRoutes);
 router.use('/certified-instrument-logs', certifiedInstrumentLogRoutes);
+router.use('/customer-categories', customerCategoryRoutes);
 
 export default router;
 

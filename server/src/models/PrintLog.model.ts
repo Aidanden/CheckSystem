@@ -15,6 +15,7 @@ export interface CreatePrintLogData {
   printedByName: string;
   notes?: string;
   chequeNumbers: number[];
+  customerName?: string;
 }
 
 export class PrintLogModel {
@@ -107,6 +108,7 @@ export class PrintLogModel {
     startDate?: Date;
     endDate?: Date;
     userId?: number;
+    accountBranch?: string;
   }): Promise<{ logs: PrintLog[]; total: number }> {
     const where: any = {};
 
@@ -116,6 +118,19 @@ export class PrintLogModel {
 
     if (options?.accountNumber) {
       where.accountNumber = { contains: options.accountNumber };
+    }
+
+    if (options?.accountBranch) {
+      const code = String(options.accountBranch).replace(/\D/g, '').slice(-3).padStart(3, '0');
+      const unpadded = code.replace(/^0+/, '') || '0';
+      const branchFilter = {
+        OR: [
+          { accountBranch: code },
+          { accountBranch: unpadded },
+          { accountNumber: { startsWith: code } },
+        ],
+      };
+      where.AND = [...(where.AND || []), branchFilter];
     }
 
     if (options?.userId) {
@@ -183,12 +198,14 @@ export class PrintLogModel {
       },
     });
   }
-  static async getReprintStatistics(branchId?: number): Promise<{ operations: number, sheets: number }> {
+  static async getReprintStatistics(branchId?: number, accountPrefix?: string): Promise<{ operations: number, sheets: number }> {
     const where: any = {
       operationType: 'reprint'
     };
 
-    if (branchId) {
+    if (accountPrefix) {
+      where.accountNumber = { startsWith: accountPrefix };
+    } else if (branchId) {
       where.user = {
         branchId: branchId
       };

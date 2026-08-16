@@ -1,6 +1,13 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { PrintLogService } from '../services/printLog.service';
+import { CustomerCategoryService } from '../services/customerCategory.service';
+import {
+  assertAccountBelongsToUserBranch,
+  assertSameBranchCode,
+  getUserBranchScope,
+  sendBranchError,
+} from '../utils/branchAccess';
 
 export class PrintLogController {
   // إنشاء سجل طباعة جديد
@@ -18,12 +25,54 @@ export class PrintLogController {
         reprintReason,
         notes,
         chequeNumbers,
+        customerName,
       } = req.body;
 
       if (!req.user) {
         res.status(401).json({ error: 'المستخدم غير مصرح' });
         return;
       }
+
+      try {
+        await assertAccountBelongsToUserBranch(req.user, accountNumber);
+        if (accountBranch) {
+          await assertSameBranchCode(req.user, accountBranch);
+        }
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
+      }
+
+      const category = await CustomerCategoryService.resolveFromAccount(String(accountNumber));
+      if (!category.found) {
+        res.status(400).json({
+          error: category.error || 'فئة الحساب غير مسجلة في عدادات الفئات. لا يمكن الطباعة.',
+        });
+        return;
+      }
+      const leaves = Number(totalCheques);
+      const mismatch = CustomerCategoryService.leavesMismatchMessage(category.typeCode, leaves);
+      if (mismatch) {
+        res.status(400).json({ error: mismatch });
+        return;
+      }
+      const sentType = accountType != null ? Number(accountType) : undefined;
+      if (category.typeCode === '02' && sentType != null && sentType !== 2) {
+        res.status(400).json({
+          error: `نوع الحساب المرسل (${accountType}) لا يطابق فئة الشركات (02).`,
+        });
+        return;
+      }
+      if (category.typeCode === '01' && sentType != null && sentType !== 1 && sentType !== 3) {
+        res.status(400).json({
+          error: `نوع الحساب المرسل (${accountType}) لا يطابق فئة الأفراد (01).`,
+        });
+        return;
+      }
+
+      const resolvedAccountType =
+        sentType ??
+        (category.typeCode === '02' ? 2 : leaves === 10 ? 3 : 1);
 
       // التحقق من وجود سبب إعادة الطباعة عند إعادة الطباعة
       if (operationType === 'reprint' && !reprintReason) {
@@ -50,13 +99,14 @@ export class PrintLogController {
         firstChequeNumber,
         lastChequeNumber,
         totalCheques,
-        accountType,
+        accountType: resolvedAccountType,
         operationType: operationType || 'print',
         reprintReason: reprintReason || undefined,
         printedBy: req.user.userId,
         printedByName: req.user.username,
         notes,
         chequeNumbers,
+        customerName,
       });
 
       console.log('✅ تم إنشاء سجل طباعة:', {
@@ -88,6 +138,13 @@ export class PrintLogController {
       if (!accountNumber || !Array.isArray(chequeNumbers)) {
         res.status(400).json({ error: 'بيانات غير صحيحة' });
         return;
+      }
+
+      try {
+        await assertAccountBelongsToUserBranch(req.user, accountNumber);
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
       }
 
       const status = await PrintLogService.checkChequesPrintStatus(
@@ -129,6 +186,17 @@ export class PrintLogController {
         }
       }
 
+      let accountBranch: string | undefined;
+      try {
+        const scope = await getUserBranchScope(req.user!);
+        if (!scope.isAdmin) {
+          accountBranch = scope.branchNumber;
+        }
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
+      }
+
       const result = await PrintLogService.getAllLogs({
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined,
@@ -137,6 +205,7 @@ export class PrintLogController {
         startDate: startDate as string | undefined,
         endDate: endDate as string | undefined,
         userId: finalUserId,
+        accountBranch,
       });
 
       res.json(result);
@@ -158,6 +227,13 @@ export class PrintLogController {
       if (!log) {
         res.status(404).json({ error: 'السجل غير موجود' });
         return;
+      }
+
+      try {
+        await assertAccountBelongsToUserBranch(req.user, log.accountNumber);
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
       }
 
       res.json(log);

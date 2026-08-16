@@ -31,6 +31,11 @@ async function main() {
       description: 'الوصول إلى شاشة إعدادات الطباعة وتخطيط الشيكات',
     },
     {
+      permissionName: 'عدادات الفئات',
+      permissionCode: 'SCREEN_CATEGORY_SETTINGS',
+      description: 'الوصول إلى شاشة تسجيل وتعديل فئات الحسابات (أفراد/شركات)',
+    },
+    {
       permissionName: 'شاشة التقارير العامة',
       permissionCode: 'SCREEN_REPORTS',
       description: 'الوصول إلى الشاشة العامة للتقارير والإحصائيات',
@@ -116,6 +121,28 @@ async function main() {
     });
   }
   console.log('✅ Permissions created');
+
+  const defaultCategories = [
+    { categoryCode: '227', description: 'الأغراض الشخصية وسترن يونيو', typeCode: '01' },
+    { categoryCode: '214', description: 'أفراد / أعمال حرة / رجال أعمال', typeCode: '01' },
+    { categoryCode: '203', description: 'شركات خاصة', typeCode: '02' },
+    { categoryCode: '217', description: 'موظفي القطاع الخاص', typeCode: '01' },
+    { categoryCode: '201', description: 'موظفي المصرف', typeCode: '01' },
+    { categoryCode: '234', description: 'نشاط تجاري / صناعي / حرفي (رخصة فردية)', typeCode: '02' },
+    { categoryCode: '209', description: 'غير مقيمين / أفراد', typeCode: '01' },
+    { categoryCode: '224', description: 'مصارف أجنبية / عملة أجنبية - يورو', typeCode: '02' },
+    { categoryCode: '202', description: 'موظفي الدولة', typeCode: '01' },
+    { categoryCode: '204', description: 'شركات و مؤسسات عامة', typeCode: '02' },
+    { categoryCode: '220', description: 'شركات / عملة أجنبية - دولار', typeCode: '02' },
+    { categoryCode: '236', description: 'التجارة الالكترونية', typeCode: '02' },
+    { categoryCode: '212', description: 'مؤسسات عسكرية', typeCode: '02' },
+    { categoryCode: '222', description: 'شركات / عملة أجنبية - يورو', typeCode: '02' },
+    { categoryCode: '218', description: 'التضامن الاجتماعي', typeCode: '01' },
+    { categoryCode: '210', description: 'شركات الأجنبية', typeCode: '02' },
+    { categoryCode: '219', description: 'أفراد / عملة أجنبية - دولار', typeCode: '01' },
+  ];
+  await prisma.customerCategory.createMany({ data: defaultCategories, skipDuplicates: true });
+  console.log('✅ Customer categories seeded');
 
   // Create two branches: Tripoli (main) and Misrata
   console.log('Creating branches for Tripoli and Misrata...');
@@ -276,15 +303,6 @@ async function main() {
     }
   }
   console.log('✅ Permissions assigned to branch users');
-
-  // Set all non-admin users' password to '123' (hashed), leave admin unchanged
-  console.log('Updating passwords: setting password "123" for all non-admin users...');
-  const defaultPassHash = await bcrypt.hash('123', 10);
-  await prisma.user.updateMany({
-    where: { username: { not: 'admin' } },
-    data: { passwordHash: defaultPassHash },
-  });
-  console.log('✅ Updated passwords for non-admin users (password = 123)');
 
   // Create initial inventory
   console.log('Creating initial inventory...');

@@ -5,15 +5,17 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Search, Printer, CheckCircle, RefreshCw } from 'lucide-react';
 import renderCheckbookHtml, { type CheckbookData } from '@/lib/utils/printRenderer';
 import {
-  querySoapCheckbook,
   buildPreviewFromSoap,
   type SoapCheckbookResponse,
 } from '@/lib/soap/checkbook';
 import { printSettingsAPI, type PrintSettings } from '@/lib/printSettings.api';
 import { branchService, soapService, printLogService } from '@/lib/api';
 import { resolveAccountType } from '@/lib/utils/accountType';
+import { useAppSelector } from '@/store/hooks';
+import { assertClientSameBranch } from '@/lib/utils/branchAccess';
 
 export default function PrintPage() {
+  const { user: currentUser } = useAppSelector((state) => state.auth);
   const [accountNumber, setAccountNumber] = useState('');
   const [firstChequeNumber, setFirstChequeNumber] = useState('');
   const [soapData, setSoapData] = useState<SoapCheckbookResponse | null>(null);
@@ -66,26 +68,11 @@ export default function PrintPage() {
         throw new Error('يجب تسجيل الدخول أولاً');
       }
 
-      // فك تشفير الـ token للحصول على معلومات المستخدم
-      const tokenParts = token.split('.');
-      if (tokenParts.length !== 3) {
-        throw new Error('رمز المصادقة غير صالح');
-      }
-
-      const payload = JSON.parse(atob(tokenParts[1]));
-      const currentUser = payload;
-
-      // التحقق من رقم الفرع إذا لم يكن المستخدم مديراً
-      if (!currentUser.isAdmin && currentUser.branchNumber) {
-        // استخراج أول 3 أرقام من رقم الحساب
-        const accountBranchCode = accountNumber.substring(0, 3);
-
-        // التحقق من تطابق رقم الفرع
-        if (accountBranchCode !== currentUser.branchNumber) {
-          setError(`❌ هذا الحساب تابع لفرع آخر (${accountBranchCode}). أنت مخول فقط للاستعلام عن حسابات فرع ${currentUser.branchNumber}.`);
-          setLoading(false);
-          return;
-        }
+      const branchError = assertClientSameBranch(currentUser, accountNumber.substring(0, 3));
+      if (branchError) {
+        setError(branchError);
+        setLoading(false);
+        return;
       }
 
       // استخدام الخدمة الجديدة التي تمر عبر الخادم
@@ -95,10 +82,18 @@ export default function PrintPage() {
         firstChequeNumber: firstChequeNumber ? parseInt(firstChequeNumber, 10) : undefined,
       }) as SoapCheckbookResponse;
 
-      const accountType = resolveAccountType({
-        chequeLeaves: soapResponse.chequeLeaves,
-        chequeCount: soapResponse.chequeStatuses?.filter((c) => c.chequeNumber > 0).length,
-      });
+      const accountType = soapResponse.customerCategoryFound && soapResponse.accountType
+        ? (soapResponse.accountType as 1 | 2)
+        : resolveAccountType({
+            chequeLeaves: soapResponse.chequeLeaves,
+            chequeCount: soapResponse.chequeStatuses?.filter((c) => c.chequeNumber > 0).length,
+          });
+
+      if (soapResponse.categoryLeavesMismatch) {
+        setError(soapResponse.categoryLeavesMismatchError || 'تعارض بين فئة الحساب وعدد أوراق الدفتر. لا يمكن الطباعة.');
+      } else if (!soapResponse.customerCategoryFound) {
+        setError(soapResponse.customerCategoryError || 'تعذر تحديد فئة الحساب من عدادات الفئات. سجّل الفئة قبل الطباعة.');
+      }
 
       let resolvedLayout: PrintSettings | null = null;
       try {
@@ -168,16 +163,34 @@ export default function PrintPage() {
         console.warn('تعذر التحقق من حالة الطباعة:', checkError);
       }
 
+      setSoapData(soapResponse);
+      if (soapResponse.categoryLeavesMismatch) {
+        setCheckbookPreview(null);
+        setError(soapResponse.categoryLeavesMismatchError || 'تعارض بين فئة الحساب وعدد أوراق الدفتر. لا يمكن الطباعة.');
+        return;
+      }
       const preview = buildPreviewFromSoap(soapResponse, {
         layout: resolvedLayout ?? undefined,
         branchName: resolvedBranchName,
         routingNumber: resolvedRouting,
+        accountType,
       });
-      setSoapData(soapResponse);
       setCheckbookPreview(preview);
+      if (!soapResponse.customerCategoryFound) {
+        setError((prev) =>
+          prev && prev.startsWith('⚠️')
+            ? prev
+            : (soapResponse.customerCategoryError || 'فئة الحساب غير مسجلة في عدادات الفئات')
+        );
+      }
     } catch (err: any) {
       console.error('SOAP query failed:', err);
-      setError(err.message || 'فشل الاستعلام عن دفتر الشيكات عبر SOAP');
+      setError(
+        err?.response?.data?.error ||
+          err?.response?.data?.details ||
+          err.message ||
+          'فشل الاستعلام عن دفتر الشيكات عبر SOAP'
+      );
     } finally {
       setLoading(false);
     }
@@ -186,6 +199,16 @@ export default function PrintPage() {
   const handlePrint = async () => {
     if (!checkbookPreview || !soapData) {
       setError('لا توجد بيانات جاهزة للطباعة. الرجاء إجراء الاستعلام أولاً.');
+      return;
+    }
+
+    if (soapData.categoryLeavesMismatch) {
+      setError(soapData.categoryLeavesMismatchError || 'تعارض بين فئة الحساب وعدد أوراق الدفتر. لا يمكن الطباعة.');
+      return;
+    }
+
+    if (!soapData.customerCategoryFound) {
+      setError(soapData.customerCategoryError || 'لا يمكن الطباعة قبل تسجيل فئة الحساب في عدادات الفئات.');
       return;
     }
 
@@ -218,6 +241,7 @@ export default function PrintPage() {
         accountType: checkbookPreview.operation.accountType,
         operationType: 'print',
         chequeNumbers,
+        customerName: soapData.customerName,
       });
 
       setPrintLogged(true);
@@ -303,8 +327,15 @@ export default function PrintPage() {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
+          <div className={`px-4 py-3 rounded-lg ${
+            soapData?.categoryLeavesMismatch
+              ? 'bg-red-100 border-2 border-red-400 text-red-900'
+              : 'bg-red-50 border border-red-200 text-red-700'
+          }`}>
+            {soapData?.categoryLeavesMismatch && (
+              <p className="font-bold mb-1">تم إيقاف الطباعة</p>
+            )}
+            <p>{error}</p>
           </div>
         )}
 
@@ -364,10 +395,22 @@ export default function PrintPage() {
                         <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-medium border border-blue-100">
                           {soapData.chequeLeaves} ورقة
                         </span>
-                        <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md font-medium border border-purple-100">
-                          {soapData.checkBookType ?? 'غير محدد'}
+                        <span className={`px-2 py-1 rounded-md font-medium border ${
+                          soapData.micrTypeCode === '02'
+                            ? 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                            : 'bg-green-50 text-green-700 border-green-100'
+                        }`}>
+                          ترميز {soapData.micrTypeCode || '—'} — {soapData.micrTypeCode === '02' ? 'شركات' : soapData.micrTypeCode === '01' ? 'أفراد' : 'غير محدد'}
                         </span>
+                        {soapData.customerCategoryCode && (
+                          <span className="bg-gray-50 text-gray-700 px-2 py-1 rounded-md font-medium border border-gray-200 font-mono">
+                            فئة {soapData.customerCategoryCode}
+                          </span>
+                        )}
                       </div>
+                      {soapData.customerCategoryDescription && (
+                        <p className="text-xs text-gray-500 mt-1">{soapData.customerCategoryDescription}</p>
+                      )}
                       <p className="text-xs text-gray-400 mt-1">
                         Start: <span className="font-mono text-gray-600">{soapData.firstChequeNumber ?? 'N/A'}</span>
                       </p>
@@ -419,6 +462,8 @@ export default function PrintPage() {
                     disabled={
                       printing ||
                       !checkbookPreview ||
+                      !soapData.customerCategoryFound ||
+                      !!soapData.categoryLeavesMismatch ||
                       (alreadyPrintedCheques.length > 0 && !printLogged)
                     }
                     className="w-full btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 py-3"
@@ -450,6 +495,7 @@ export default function PrintPage() {
                         layout: layout ?? undefined,
                         branchName: branchInfo?.name,
                         routingNumber: branchInfo?.routing,
+                        accountType: soapData.accountType as 1 | 2 | 3 | undefined,
                       });
                       setCheckbookPreview(refreshed);
                     }}

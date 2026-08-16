@@ -3,6 +3,16 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { PrintSettingsService } from '../services/printSettings.service';
 
 export class PrintSettingsController {
+  static async getAllSettings(_req: Request, res: Response): Promise<void> {
+    try {
+      const settings = await Promise.all([1, 2, 3, 4].map((t) => PrintSettingsService.getSettings(t)));
+      res.json(settings);
+    } catch (error) {
+      console.error('Error fetching print settings:', error);
+      res.status(500).json({ error: 'فشل جلب إعدادات الطباعة' });
+    }
+  }
+
   static async getSettings(req: Request, res: Response): Promise<void> {
     try {
       const accountType = parseInt(req.params.accountType);

@@ -27,9 +27,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      refresh();
       router.push('/dashboard');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, refresh]);
 
   useEffect(() => {
     return () => {

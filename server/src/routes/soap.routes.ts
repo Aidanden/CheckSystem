@@ -12,6 +12,7 @@ router.use(authenticate);
 // Query checkbook via SOAP
 router.post(
   '/query-checkbook',
+  requirePermission(['SCREEN_PRINT', 'SCREEN_PRINT_LOGS', 'REPRINT']),
   validate([
     body('accountNumber')
       .isString()

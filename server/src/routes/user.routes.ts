@@ -29,7 +29,7 @@ router.post(
     body('username').notEmpty().withMessage('Username is required'),
     body('password')
       .notEmpty().withMessage('Password is required')
-      .isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+      .isLength({ min: 8 }).withMessage('كلمة المرور يجب ألا تقل عن 8 أحرف'),
     body('branch_id').optional().isInt().withMessage('Branch ID must be an integer'),
     body('is_admin').optional().isBoolean().withMessage('is_admin must be a boolean'),
     body('permission_ids').isArray().withMessage('permission_ids must be an array'),
@@ -45,7 +45,7 @@ router.put(
     body('username').optional().notEmpty().withMessage('Username cannot be empty'),
     body('password')
       .optional()
-      .isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+      .isLength({ min: 8 }).withMessage('كلمة المرور يجب ألا تقل عن 8 أحرف'),
     body('branch_id').optional().isInt().withMessage('Branch ID must be an integer'),
     body('is_admin').optional().isBoolean().withMessage('is_admin must be a boolean'),
     body('is_active').optional().isBoolean().withMessage('is_active must be a boolean'),

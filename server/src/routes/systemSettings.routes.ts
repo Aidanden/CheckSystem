@@ -6,7 +6,7 @@ import { validate } from '../middleware/validation.middleware';
 
 const router = Router();
 
-router.get('/hidden-screens', SystemSettingController.getHiddenScreens);
+router.get('/hidden-screens', authenticate, SystemSettingController.getHiddenScreens);
 
 router.post(
   '/hidden-screens/unlock',

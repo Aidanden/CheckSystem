@@ -54,6 +54,14 @@ export interface SoapCheckbookResponse {
   checker?: string;
   checkerStamp?: string;
   chequeStatuses: SoapChequeStatus[];
+  customerCategoryCode?: string | null;
+  customerCategoryFound?: boolean;
+  customerCategoryDescription?: string;
+  customerCategoryError?: string;
+  micrTypeCode?: string;
+  accountType?: number;
+  categoryLeavesMismatch?: boolean;
+  categoryLeavesMismatchError?: string;
   rawXml: string;
 }
 

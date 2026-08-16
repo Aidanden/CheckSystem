@@ -2,6 +2,12 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { CertifiedInstrumentLogService } from '../services/certifiedInstrumentLog.service';
 import { UserModel } from '../models/User.model';
+import {
+  assertSameBranchCode,
+  assertSameBranchId,
+  getUserBranchScope,
+  sendBranchError,
+} from '../utils/branchAccess';
 
 export class CertifiedInstrumentLogController {
   static async create(req: AuthRequest, res: Response): Promise<void> {
@@ -57,6 +63,19 @@ export class CertifiedInstrumentLogController {
         }
       }
 
+      try {
+        if (txnBranch) {
+          await assertSameBranchCode(req.user, txnBranch);
+        } else if (branchId != null) {
+          await assertSameBranchId(req.user, branchId);
+        } else {
+          await assertSameBranchCode(req.user, null);
+        }
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
+      }
+
       if (operationType === 'print') {
         const alreadyPrinted = await CertifiedInstrumentLogService.isPrinted(txnRefNo.trim());
         if (alreadyPrinted) {
@@ -100,6 +119,21 @@ export class CertifiedInstrumentLogController {
     try {
       const page = req.query.page ? parseInt(String(req.query.page), 10) : 0;
       const limit = req.query.limit ? parseInt(String(req.query.limit), 10) : 20;
+      let branchId = req.query.branchId ? parseInt(String(req.query.branchId), 10) : undefined;
+      let branchCode: string | undefined;
+      try {
+        const scope = await getUserBranchScope(req.user!);
+        if (scope.isAdmin) {
+          branchId = Number.isFinite(branchId as number) ? branchId : undefined;
+        } else {
+          branchCode = scope.branchNumber;
+          branchId = undefined;
+        }
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
+      }
+
       const result = await CertifiedInstrumentLogService.findAll({
         page,
         limit,
@@ -109,7 +143,8 @@ export class CertifiedInstrumentLogController {
         startDate: req.query.startDate as string | undefined,
         endDate: req.query.endDate as string | undefined,
         userId: req.query.userId ? parseInt(String(req.query.userId), 10) : undefined,
-        branchId: req.query.branchId ? parseInt(String(req.query.branchId), 10) : undefined,
+        branchId,
+        branchCode,
       });
       res.json(result);
     } catch (error: any) {
@@ -120,6 +155,21 @@ export class CertifiedInstrumentLogController {
 
   static async getStatistics(req: AuthRequest, res: Response): Promise<void> {
     try {
+      let branchId = req.query.branchId ? parseInt(String(req.query.branchId), 10) : undefined;
+      let branchCode: string | undefined;
+      try {
+        const scope = await getUserBranchScope(req.user!);
+        if (scope.isAdmin) {
+          branchId = Number.isFinite(branchId as number) ? branchId : undefined;
+        } else {
+          branchCode = scope.branchNumber;
+          branchId = undefined;
+        }
+      } catch (err) {
+        if (sendBranchError(res, err)) return;
+        throw err;
+      }
+
       const stats = await CertifiedInstrumentLogService.getStatistics({
         operationType: req.query.operationType as 'query' | 'print' | 'reprint' | undefined,
         accountNumber: req.query.accountNumber as string | undefined,
@@ -127,7 +177,8 @@ export class CertifiedInstrumentLogController {
         startDate: req.query.startDate as string | undefined,
         endDate: req.query.endDate as string | undefined,
         userId: req.query.userId ? parseInt(String(req.query.userId), 10) : undefined,
-        branchId: req.query.branchId ? parseInt(String(req.query.branchId), 10) : undefined,
+        branchId,
+        branchCode,
       });
       res.json(stats);
     } catch (error: any) {
