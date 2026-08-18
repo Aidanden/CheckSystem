@@ -1,5 +1,3 @@
-import * as XLSX from 'xlsx';
-
 export const EXPORT_MAX_ROWS = 10000;
 
 export function accountTypeLabel(type: number | null | undefined): string {
@@ -44,6 +42,82 @@ export function inventoryTransactionLabel(type: string): string {
 
 type CellValue = string | number | null | undefined;
 
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function sanitizeSheetName(name: string): string {
+  const cleaned = name.replace(/[:\\/?*[\]]/g, ' ').trim() || 'التقرير';
+  return cleaned.slice(0, 31);
+}
+
+function cellXml(value: CellValue): string {
+  if (value === null || value === undefined || value === '') {
+    return '<Cell><Data ss:Type="String"></Data></Cell>';
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return `<Cell><Data ss:Type="Number">${value}</Data></Cell>`;
+  }
+  return `<Cell><Data ss:Type="String">${escapeXml(String(value))}</Data></Cell>`;
+}
+
+function rowXml(cells: CellValue[], styleId?: string): string {
+  const style = styleId ? ` ss:StyleID="${styleId}"` : '';
+  return `<Row${style}>${cells.map(cellXml).join('')}</Row>`;
+}
+
+function buildSpreadsheetXml(options: {
+  sheetName?: string;
+  headers: string[];
+  rows: CellValue[][];
+  summaryRows?: CellValue[][];
+}): string {
+  const sheetName = sanitizeSheetName(options.sheetName || 'التقرير');
+  const tableRows: string[] = [];
+
+  if (options.summaryRows?.length) {
+    for (const summary of options.summaryRows) {
+      tableRows.push(rowXml(summary));
+    }
+    tableRows.push(rowXml([]));
+  }
+
+  tableRows.push(rowXml(options.headers, 'Header'));
+  for (const row of options.rows) {
+    tableRows.push(rowXml(row.map((cell) => cell ?? '')));
+  }
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center" ss:ReadingOrder="RightToLeft"/>
+   <Font ss:FontName="Tahoma" ss:Size="11"/>
+  </Style>
+  <Style ss:ID="Header">
+   <Alignment ss:Vertical="Center" ss:Horizontal="Center" ss:ReadingOrder="RightToLeft"/>
+   <Font ss:FontName="Tahoma" ss:Size="11" ss:Bold="1"/>
+   <Interior ss:Color="#D9E2F3" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="${escapeXml(sheetName)}">
+  <Table>${tableRows.join('')}</Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <DisplayRightToLeft/>
+  </WorksheetOptions>
+ </Worksheet>
+</Workbook>`;
+}
+
 export function downloadExcel(options: {
   filename: string;
   sheetName?: string;
@@ -51,22 +125,21 @@ export function downloadExcel(options: {
   rows: CellValue[][];
   summaryRows?: CellValue[][];
 }) {
-  const sheetData: CellValue[][] = [];
-  if (options.summaryRows?.length) {
-    sheetData.push(...options.summaryRows, []);
+  const xml = buildSpreadsheetXml(options);
+  const blob = new Blob(['\uFEFF', xml], {
+    type: 'application/vnd.ms-excel;charset=utf-8',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = options.filename.endsWith('.xls')
+    ? options.filename
+    : options.filename.replace(/\.xlsx$/i, '.xls');
+  if (!a.download.endsWith('.xls')) {
+    a.download = `${a.download}.xls`;
   }
-  sheetData.push(options.headers, ...options.rows.map((row) => row.map((cell) => cell ?? '')));
-
-  const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
-  worksheet['!cols'] = options.headers.map((header) => ({
-    wch: Math.min(40, Math.max(String(header).length + 4, 14)),
-  }));
-
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, options.sheetName || 'التقرير');
-
-  const filename = options.filename.endsWith('.xlsx') ? options.filename : `${options.filename}.xlsx`;
-  XLSX.writeFile(workbook, filename);
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export async function fetchAllPaginated<T>(options: {
@@ -95,5 +168,5 @@ export async function fetchAllPaginated<T>(options: {
 
 export function reportFilename(prefix: string): string {
   const date = new Date().toISOString().split('T')[0];
-  return `${prefix}-${date}.xlsx`;
+  return `${prefix}-${date}.xls`;
 }
