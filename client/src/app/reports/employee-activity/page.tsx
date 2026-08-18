@@ -6,8 +6,17 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { printLogService, inventoryService, userService } from '@/lib/api';
 import { User } from '@/types';
 import { FileText, Download, Filter, Calendar, X, Search, User as UserIcon, Printer, Package, RefreshCw } from 'lucide-react';
-import { formatDateShort, formatDateMedium } from '@/utils/locale';
+import { formatDateMedium } from '@/utils/locale';
 import { RootState } from '@/store';
+import {
+  accountTypeLabel,
+  downloadExcel,
+  inventoryTransactionLabel,
+  operationTypeLabel,
+  reprintReasonLabel,
+  reportFilename,
+  stockTypeLabel,
+} from '@/lib/utils/exportReport';
 
 interface PrintLogActivity {
   id: number;
@@ -44,6 +53,7 @@ export default function EmployeeActivityReportPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   // Activity data
   const [printLogs, setPrintLogs] = useState<PrintLogActivity[]>([]);
@@ -141,68 +151,110 @@ export default function EmployeeActivityReportPage() {
     });
   };
 
-  const exportToCSV = () => {
+  const exportToExcel = async () => {
     if (!selectedUserId) return;
 
-    const selectedUser = users.find(u => u.id === selectedUserId);
-    const userName = selectedUser?.username || 'مستخدم';
+    try {
+      setExporting(true);
+      const selectedUser = users.find((u) => u.id === selectedUserId);
+      const userName = selectedUser?.username || 'مستخدم';
 
-    // تجميع البيانات
-    const allData: any[] = [];
+      const printLogsParams: any = {
+        page: 1,
+        limit: 10000,
+        userId: selectedUserId,
+      };
+      if (filters.dateFrom) printLogsParams.startDate = filters.dateFrom;
+      if (filters.dateTo) printLogsParams.endDate = filters.dateTo;
+      if (filters.operationType) printLogsParams.operationType = filters.operationType;
 
-    // إضافة سجلات الطباعة
-    printLogs.forEach((log) => {
-      allData.push({
-        النوع: 'طباعة',
-        العملية: log.operationType === 'print' ? 'طباعة' : 'إعادة طباعة',
-        'سبب إعادة الطباعة': log.reprintReason === 'damaged' ? 'ورقة تالفة' : log.reprintReason === 'not_printed' ? 'ورقة لم تطبع' : '-',
-        'رقم الحساب': log.accountNumber,
-        'الفرع': log.branchName || `فرع ${log.accountBranch}`,
-        'من شيك': log.firstChequeNumber,
-        'إلى شيك': log.lastChequeNumber,
-        'عدد الشيكات': log.totalCheques,
-        'نوع الحساب': log.accountType === 1 ? 'فردي' : log.accountType === 2 ? 'شركة' : 'موظف',
-        'التاريخ': formatDateShort(log.printDate),
-        'الوقت': new Date(log.printDate).toLocaleTimeString('ar-LY'),
-        'ملاحظات': log.notes || '-',
+      const [printLogsResult, inventoryTransactionsData] = await Promise.all([
+        printLogService.getAll(printLogsParams),
+        inventoryService.getTransactionHistory(undefined, 10000),
+      ]);
+
+      const exportPrintLogs = printLogsResult.logs;
+      const exportInventory = inventoryTransactionsData.filter(
+        (transaction: any) => transaction.userId === selectedUserId
+      );
+
+      const allData: Record<string, string | number>[] = [];
+
+      exportPrintLogs.forEach((log) => {
+        allData.push({
+          القسم: 'طباعة',
+          العملية: operationTypeLabel(log.operationType),
+          'سبب إعادة الطباعة': reprintReasonLabel(log.reprintReason),
+          'رقم الحساب': log.accountNumber,
+          الفرع: log.branchName || `فرع ${log.accountBranch}`,
+          'من شيك': log.firstChequeNumber,
+          'إلى شيك': log.lastChequeNumber,
+          'عدد الشيكات': log.totalCheques,
+          'نوع الحساب': accountTypeLabel(log.accountType),
+          التاريخ: formatDateMedium(log.printDate),
+          ملاحظات: log.notes || '—',
+        });
       });
-    });
 
-    // إضافة معاملات المخزون
-    inventoryTransactions.forEach((transaction) => {
-      allData.push({
-        النوع: 'مخزون',
-        العملية: transaction.transactionType === 'ADD' ? 'إضافة' : 'خصم',
-        'سبب إعادة الطباعة': '-',
-        'رقم الحساب': '-',
-        'الفرع': '-',
-        'من شيك': transaction.serialFrom || '-',
-        'إلى شيك': transaction.serialTo || '-',
-        'عدد الشيكات': transaction.quantity,
-        'نوع الحساب': transaction.stockType === 1 ? 'فردي' : 'شركة',
-        'التاريخ': formatDateShort(transaction.createdAt),
-        'الوقت': new Date(transaction.createdAt).toLocaleTimeString('ar-LY'),
-        'ملاحظات': transaction.notes || '-',
+      exportInventory.forEach((transaction) => {
+        allData.push({
+          القسم: 'مخزون',
+          العملية: inventoryTransactionLabel(transaction.transactionType),
+          'سبب إعادة الطباعة': '—',
+          'رقم الحساب': '—',
+          الفرع: '—',
+          'من شيك': transaction.serialFrom || '—',
+          'إلى شيك': transaction.serialTo || '—',
+          'عدد الشيكات': transaction.quantity,
+          'نوع الحساب': stockTypeLabel(transaction.stockType),
+          التاريخ: formatDateMedium(transaction.createdAt),
+          ملاحظات: transaction.notes || '—',
+        });
       });
-    });
 
-    // ترتيب حسب التاريخ
-    allData.sort((a, b) => {
-      const dateA = new Date(a.التاريخ + ' ' + a.الوقت).getTime();
-      const dateB = new Date(b.التاريخ + ' ' + b.الوقت).getTime();
-      return dateB - dateA;
-    });
+      const headers = Object.keys(allData[0] || {
+        القسم: '',
+        العملية: '',
+        'سبب إعادة الطباعة': '',
+        'رقم الحساب': '',
+        الفرع: '',
+        'من شيك': '',
+        'إلى شيك': '',
+        'عدد الشيكات': '',
+        'نوع الحساب': '',
+        التاريخ: '',
+        ملاحظات: '',
+      });
+      const rows = allData.map((row) => headers.map((header) => row[header] ?? ''));
 
-    // إنشاء CSV
-    const headers = Object.keys(allData[0] || {});
-    const rows = allData.map((row) => headers.map((header) => row[header] || ''));
-    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `تقرير-عمل-${userName}-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
+      const summaryStats = {
+        totalPrintOperations: exportPrintLogs.filter((l) => l.operationType === 'print').length,
+        totalReprintOperations: exportPrintLogs.filter((l) => l.operationType === 'reprint').length,
+        totalSheetsPrinted: exportPrintLogs.reduce((sum, log) => sum + log.totalCheques, 0),
+        totalInventoryAdditions: exportInventory.filter((t) => t.transactionType === 'ADD').length,
+        totalInventoryDeductions: exportInventory.filter((t) => t.transactionType === 'DEDUCT').length,
+      };
+
+      downloadExcel({
+        filename: reportFilename(`تقرير-عمل-${userName}`),
+        sheetName: 'نشاط الموظف',
+        headers,
+        rows,
+        summaryRows: [
+          ['الموظف', userName],
+          ['عمليات الطباعة', summaryStats.totalPrintOperations],
+          ['عمليات إعادة الطباعة', summaryStats.totalReprintOperations],
+          ['إجمالي الأوراق', summaryStats.totalSheetsPrinted],
+          ['إضافات المخزون', summaryStats.totalInventoryAdditions],
+          ['خصومات المخزون', summaryStats.totalInventoryDeductions],
+        ],
+      });
+    } catch (error) {
+      console.error('فشل تصدير التقرير:', error);
+      alert('فشل تصدير التقرير. حاول مرة أخرى.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const activeFiltersCount = [
@@ -247,12 +299,12 @@ export default function EmployeeActivityReportPage() {
             </button>
             {selectedUserId && (
               <button
-                onClick={exportToCSV}
+                onClick={exportToExcel}
                 className="btn btn-primary flex items-center gap-2"
-                disabled={loading}
+                disabled={loading || exporting}
               >
                 <Download className="w-5 h-5" />
-                تصدير CSV
+                {exporting ? 'جاري التصدير...' : 'تصدير Excel'}
               </button>
             )}
           </div>

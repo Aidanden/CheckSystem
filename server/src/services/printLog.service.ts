@@ -184,7 +184,7 @@ export class PrintLogService {
     accountBranch?: string;
   }) {
     const page = options?.page || 1;
-    const limit = options?.limit || 50;
+    const limit = Math.min(10000, options?.limit || 50);
     const skip = (page - 1) * limit;
 
     const startDate = options?.startDate ? new Date(options.startDate) : undefined;

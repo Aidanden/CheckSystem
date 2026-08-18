@@ -60,8 +60,8 @@ export class InventoryController {
       const stockType = req.query.stock_type 
         ? parseInt(req.query.stock_type as string) as StockType
         : undefined;
-      const limit = req.query.limit 
-        ? parseInt(req.query.limit as string)
+      const limit = req.query.limit
+        ? Math.min(10000, parseInt(req.query.limit as string))
         : 100;
 
       const transactions = await InventoryService.getTransactionHistory(stockType, limit);

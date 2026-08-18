@@ -84,7 +84,7 @@ export class CertifiedInstrumentLogModel {
 
   static async findAll(filters: InstrumentLogFilters = {}) {
     const page = Math.max(0, filters.page ?? 0);
-    const limit = Math.min(200, Math.max(1, filters.limit ?? 20));
+    const limit = Math.min(10000, Math.max(1, filters.limit ?? 20));
     const where: any = {};
 
     if (filters.operationType) where.operationType = filters.operationType;

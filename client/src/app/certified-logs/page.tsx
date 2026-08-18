@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { formatDateMedium, formatNumber } from '@/utils/locale';
 import { User } from '@/types';
+import { downloadExcel, fetchAllPaginated, operationTypeLabel, reportFilename } from '@/lib/utils/exportReport';
 
 export default function CertifiedLogsPage() {
     const { user } = useAppSelector((state) => state.auth);
@@ -30,6 +31,7 @@ export default function CertifiedLogsPage() {
     const [statistics, setStatistics] = useState<{ totalBooks: number; totalChecks: number; lastPrintDate: string | null } | null>(null);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [exporting, setExporting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [reprinting, setReprinting] = useState(false);
 
@@ -206,26 +208,51 @@ export default function CertifiedLogsPage() {
         }
     };
 
-    const exportToCSV = () => {
-        const headers = ['الفرع', 'الرقم المحاسبي', 'التسلسل من', 'التسلسل إلى', 'العدد', 'النوع', 'التاريخ', 'المستخدم'];
-        const rows = logs.map(l => [
-            l.branchName,
-            l.accountingNumber,
-            l.firstSerial,
-            l.lastSerial,
-            l.totalChecks,
-            l.operationType === 'print' ? 'طباعة' : 'إعادة طباعة',
-            new Date(l.printDate).toLocaleString(),
-            l.printedByName
-        ]);
+    const exportToExcel = async () => {
+        try {
+            setExporting(true);
+            const exportLogs = await fetchAllPaginated({
+                fetchPage: async (skip, take) => {
+                    const res = await certifiedCheckService.getLogs({
+                        skip,
+                        take,
+                        branchId: filters.branchId,
+                        userId: filters.userId,
+                        startDate: filters.startDate || undefined,
+                        endDate: filters.endDate || undefined,
+                    });
+                    return { items: res.logs, total: res.total };
+                },
+            });
 
-        const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `تقرير-دفاتر-مصدقة-${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
+            const headers = ['الفرع', 'الرقم المحاسبي', 'التسلسل من', 'التسلسل إلى', 'العدد', 'النوع', 'التاريخ', 'المستخدم'];
+            const rows = exportLogs.map((log) => [
+                log.branchName,
+                log.accountingNumber,
+                log.firstSerial,
+                log.lastSerial,
+                log.totalChecks,
+                operationTypeLabel(log.operationType),
+                formatDateMedium(log.printDate),
+                log.printedByName,
+            ]);
+
+            downloadExcel({
+                filename: reportFilename('تقرير-دفاتر-مصدقة'),
+                sheetName: 'دفاتر مصدقة',
+                headers,
+                rows,
+                summaryRows: [
+                    ['إجمالي الدفاتر', statistics?.totalBooks || exportLogs.length],
+                    ['إجمالي الصكوك', statistics?.totalChecks || '—'],
+                ],
+            });
+        } catch (err) {
+            console.error('فشل تصدير التقرير:', err);
+            alert('فشل تصدير التقرير. حاول مرة أخرى.');
+        } finally {
+            setExporting(false);
+        }
     };
 
     // Reprint logic (from original)
@@ -302,12 +329,12 @@ export default function CertifiedLogsPage() {
                             طباعة التقرير
                         </button>
                         <button
-                            onClick={exportToCSV}
-                            disabled={logs.length === 0}
-                            className="btn bg-amber-600 text-white flex items-center gap-2"
+                            onClick={exportToExcel}
+                            disabled={logs.length === 0 || exporting}
+                            className="btn bg-amber-600 text-white flex items-center gap-2 disabled:opacity-50"
                         >
                             <Download className="w-5 h-5" />
-                            تصدير Excel
+                            {exporting ? 'جاري التصدير...' : 'تصدير Excel'}
                         </button>
                     </div>
                 </div>

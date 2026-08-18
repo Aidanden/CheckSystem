@@ -116,7 +116,7 @@ export class PrintingController {
       const dateFrom = req.query.date_from as string | undefined;
       const dateTo = req.query.date_to as string | undefined;
       const limit = req.query.limit
-        ? parseInt(req.query.limit as string)
+        ? Math.min(10000, parseInt(req.query.limit as string))
         : 100;
 
       // Branch filtering with permissions

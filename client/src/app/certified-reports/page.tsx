@@ -18,8 +18,9 @@ import {
     ClipboardList,
     ArrowRightLeft
 } from 'lucide-react';
-import { formatDateShort, formatDateMedium, formatNumber } from '@/utils/locale';
+import { formatDateMedium } from '@/utils/locale';
 import { RootState } from '@/store';
+import { downloadExcel, fetchAllPaginated, reportFilename } from '@/lib/utils/exportReport';
 
 export default function CertifiedReportsPage() {
     const user = useSelector((state: RootState) => state.auth.user);
@@ -28,6 +29,7 @@ export default function CertifiedReportsPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [statistics, setStatistics] = useState<{ totalRecords: number; lastRecordDate: string | null } | null>(null);
     const [loading, setLoading] = useState(true);
+    const [exporting, setExporting] = useState(false);
     const [total, setTotal] = useState(0);
     const [error, setError] = useState<string | null>(null);
 
@@ -202,25 +204,54 @@ export default function CertifiedReportsPage() {
         }
     };
 
-    const exportToCSV = () => {
-        const headers = ['رقم الصك', 'رقم الحساب', 'صاحب الحساب', 'المستفيد', 'القيمة', 'التاريخ', 'بواسطة'];
-        const rows = records.map((rec) => [
-            rec.checkNumber,
-            rec.accountNumber,
-            rec.accountHolderName,
-            rec.beneficiaryName,
-            `${rec.amountDinars}.${rec.amountDirhams}`,
-            rec.createdAt ? new Date(rec.createdAt).toLocaleDateString() : '',
-            rec.createdByName || '-',
-        ]);
+    const exportToExcel = async () => {
+        try {
+            setExporting(true);
+            const exportRecords = await fetchAllPaginated({
+                fetchPage: async (skip, take) => {
+                    const res = await certifiedCheckService.getPrintRecords({
+                        skip,
+                        take,
+                        branchId: filters.branchId,
+                        userId: filters.userId,
+                        search: filters.search || undefined,
+                        startDate: filters.startDate || undefined,
+                        endDate: filters.endDate || undefined,
+                    });
+                    return { items: res.records, total: res.total };
+                },
+            });
 
-        const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
-        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `تقرير-صكوك-مصدقة-${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
+            const headers = ['رقم الصك', 'رقم الحساب', 'صاحب الحساب', 'المستفيد', 'القيمة (د.ل)', 'التاريخ', 'الفرع', 'بواسطة', 'نوع الصك'];
+            const rows = exportRecords.map((rec) => [
+                rec.checkNumber,
+                rec.accountNumber,
+                rec.accountHolderName,
+                rec.beneficiaryName,
+                `${rec.amountDinars}.${rec.amountDirhams}`,
+                rec.createdAt ? formatDateMedium(rec.createdAt) : '—',
+                rec.branchName || '—',
+                rec.createdByName || '—',
+                rec.checkType || '—',
+            ]);
+
+            downloadExcel({
+                filename: reportFilename('تقرير-صكوك-مصدقة'),
+                sheetName: 'الصكوك المصدقة',
+                headers,
+                rows,
+                summaryRows: [
+                    ['إجمالي الصكوك المصدقة', statistics?.totalRecords || exportRecords.length],
+                    ['آخر عملية إصدار', statistics?.lastRecordDate ? formatDateMedium(statistics.lastRecordDate) : '—'],
+                    ['عدد السجلات المُصدَّرة', exportRecords.length],
+                ],
+            });
+        } catch (err) {
+            console.error('فشل تصدير التقرير:', err);
+            alert('فشل تصدير التقرير. حاول مرة أخرى.');
+        } finally {
+            setExporting(false);
+        }
     };
 
     const activeFiltersCount = [
@@ -267,12 +298,12 @@ export default function CertifiedReportsPage() {
                             طباعة التقرير
                         </button>
                         <button
-                            onClick={exportToCSV}
-                            disabled={records.length === 0}
+                            onClick={exportToExcel}
+                            disabled={records.length === 0 || exporting}
                             className="btn bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2 shadow-md disabled:opacity-50"
                         >
                             <Download className="w-5 h-5" />
-                            تصدير Excel
+                            {exporting ? 'جاري التصدير...' : 'تصدير Excel'}
                         </button>
                     </div>
                 </div>

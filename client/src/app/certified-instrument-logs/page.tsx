@@ -12,6 +12,12 @@ import { useAppSelector } from '@/store/hooks';
 import { openCertifiedInstrumentPrint } from '@/lib/utils/certifiedInstrumentPrint';
 import { amountToArabicTafqeet } from '@/lib/utils/arabicAmountWords';
 import { assertClientSameBranch } from '@/lib/utils/branchAccess';
+import {
+  downloadExcel,
+  fetchAllPaginated,
+  operationTypeLabel,
+  reportFilename,
+} from '@/lib/utils/exportReport';
 
 export default function CertifiedInstrumentLogsPage() {
   const { user: currentUser } = useAppSelector((state) => state.auth);
@@ -23,6 +29,7 @@ export default function CertifiedInstrumentLogsPage() {
   const [reprintingId, setReprintingId] = useState<number | null>(null);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(true);
   const [stats, setStats] = useState({ total: 0, queries: 0, prints: 0, reprints: 0, lastOperationDate: null as string | null });
@@ -144,39 +151,77 @@ export default function CertifiedInstrumentLogsPage() {
     }
   };
 
-  const exportCsv = () => {
-    const header = [
-      'التاريخ',
-      'النوع',
-      'الرقم المرجعي',
-      'رقم الصك',
-      'رقم الحساب',
-      'صاحب الحساب',
-      'المستفيد',
-      'المبلغ',
-      'الفرع',
-      'المستخدم',
-    ];
-    const rows = logs.map((log) => [
-      formatDateMedium(log.createdAt),
-      operationLabel(log.operationType),
-      log.txnRefNo,
-      log.instrumentNo || '',
-      log.accountNumber || '',
-      log.accountHolderName || '',
-      log.beneficiaryName || '',
-      log.amount != null ? String(log.amount) : '',
-      log.branchName || log.txnBranch || '',
-      log.performedByName,
-    ]);
-    const csv = [header, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `certified-instrument-logs-${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const exportToExcel = async () => {
+    try {
+      setExporting(true);
+      const exportParams = {
+        limit: filters.limit,
+        operationType: filters.operationType || undefined,
+        accountNumber: filters.accountNumber.trim() || undefined,
+        txnRefNo: filters.txnRefNo.trim() || undefined,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+        userId: filters.userId,
+        branchId: filters.branchId,
+      };
+      const exportLogs = await fetchAllPaginated({
+        pageSize: 500,
+        fetchPage: async (skip, take) => {
+          const page = Math.floor(skip / take);
+          const res = await certifiedInstrumentLogService.getAll({
+            ...exportParams,
+            page,
+            limit: take,
+          });
+          return { items: res.logs, total: res.total };
+        },
+      });
+
+      const headers = [
+        'التاريخ',
+        'النوع',
+        'الرقم المرجعي',
+        'رقم الصك',
+        'رقم الحساب',
+        'صاحب الحساب',
+        'المستفيد',
+        'المبلغ',
+        'العملة',
+        'الفرع',
+        'المستخدم',
+      ];
+      const rows = exportLogs.map((log) => [
+        formatDateMedium(log.createdAt),
+        operationTypeLabel(log.operationType),
+        log.txnRefNo,
+        log.instrumentNo || '—',
+        log.accountNumber || '—',
+        log.accountHolderName || '—',
+        log.beneficiaryName || '—',
+        log.amount != null ? log.amount : '—',
+        log.currency || '—',
+        log.branchName || log.txnBranch || '—',
+        log.performedByName,
+      ]);
+
+      downloadExcel({
+        filename: reportFilename('تقرير-صك-المنظومة'),
+        sheetName: 'صكوك المنظومة',
+        headers,
+        rows,
+        summaryRows: [
+          ['كل العمليات', stats.total],
+          ['استعلام', stats.queries],
+          ['طباعة', stats.prints],
+          ['إعادة طباعة', stats.reprints],
+        ],
+      });
+    } catch (err) {
+      console.error('فشل تصدير التقرير:', err);
+      alert('فشل تصدير التقرير. حاول مرة أخرى.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const printReport = () => {
@@ -230,8 +275,12 @@ ${logs.map((log) => `<tr>
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={exportCsv} className="btn bg-gray-100 text-gray-800 flex items-center gap-2">
-              <Download className="w-4 h-4" /> تصدير
+            <button
+              onClick={exportToExcel}
+              disabled={logs.length === 0 || exporting}
+              className="btn bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2 disabled:opacity-50"
+            >
+              <Download className="w-4 h-4" /> {exporting ? 'جاري التصدير...' : 'تصدير Excel'}
             </button>
             <button onClick={printReport} className="btn btn-primary flex items-center gap-2">
               <FileText className="w-4 h-4" /> طباعة التقرير

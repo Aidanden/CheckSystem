@@ -6,8 +6,14 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { printingService, branchService, userService } from '@/lib/api';
 import { PrintOperation, PrintStatistics, Branch, User } from '@/types';
 import { FileText, Download, Filter, Calendar, X, Search, Printer, RefreshCw, ClipboardList, User as UserIcon } from 'lucide-react';
-import { formatDateShort, formatDateMedium, formatNumber } from '@/utils/locale';
+import { formatDateMedium } from '@/utils/locale';
 import { RootState } from '@/store';
+import {
+  accountTypeLabel,
+  downloadExcel,
+  printStatusLabel,
+  reportFilename,
+} from '@/lib/utils/exportReport';
 
 export default function ReportsPage() {
   const user = useSelector((state: RootState) => state.auth.user);
@@ -16,6 +22,7 @@ export default function ReportsPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   // Filter states
   const [showFilters, setShowFilters] = useState(false);
@@ -226,29 +233,53 @@ export default function ReportsPage() {
     }
   };
 
-  const exportToCSV = () => {
-    const headers = ['ID', 'رقم الحساب', 'الاسم', 'النوع', 'الأوراق', 'من', 'إلى', 'التاريخ', 'الحالة', 'المستخدم', 'الفرع'];
-    const rows = operations.map((op: any) => [
-      op.id,
-      op.accountNumber,
-      op.account?.accountHolderName || '',
-      op.accountType === 1 ? 'فردي' : 'شركة',
-      op.sheetsPrinted,
-      op.serialFrom,
-      op.serialTo,
-      formatDateShort(op.printDate),
-      op.status,
-      op.user?.username || '-',
-      op.branch?.branchName || '-',
-    ]);
+  const exportToExcel = async () => {
+    try {
+      setExporting(true);
+      const apiFilters: any = { limit: 10000 };
+      if (filters.branchId) apiFilters.branchId = filters.branchId;
+      if (filters.userId) apiFilters.userId = filters.userId;
+      if (filters.accountNumber) apiFilters.accountNumber = filters.accountNumber;
+      if (filters.accountHolderName) apiFilters.accountHolderName = filters.accountHolderName;
+      if (filters.accountType) apiFilters.accountType = filters.accountType;
+      if (filters.status) apiFilters.status = filters.status;
+      if (filters.dateFrom) apiFilters.dateFrom = filters.dateFrom;
+      if (filters.dateTo) apiFilters.dateTo = filters.dateTo;
 
-    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `تقرير-عمليات-الطباعة-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
+      const exportOps = await printingService.getHistory(apiFilters);
+      const headers = ['#', 'رقم الحساب', 'اسم صاحب الحساب', 'النوع', 'من', 'إلى', 'الأوراق', 'التاريخ', 'الحالة', 'المستخدم', 'الفرع'];
+      const rows = exportOps.map((op: any) => [
+        op.id,
+        op.accountNumber,
+        op.account?.accountHolderName || '—',
+        accountTypeLabel(op.accountType),
+        op.serialFrom,
+        op.serialTo,
+        op.sheetsPrinted,
+        formatDateMedium(op.printDate),
+        printStatusLabel(op.status),
+        op.user?.username || '—',
+        op.branch?.branchName || '—',
+      ]);
+
+      downloadExcel({
+        filename: reportFilename('تقرير-عمليات-الطباعة'),
+        sheetName: 'عمليات الطباعة',
+        headers,
+        rows,
+        summaryRows: [
+          ['إجمالي العمليات', statistics?.total_operations || exportOps.length],
+          ['أوراق مطبوعة', statistics?.total_sheets_printed || '—'],
+          ['إعادة طباعة (عمليات)', statistics?.reprint_operations || '—'],
+          ['إعادة طباعة (أوراق)', statistics?.reprint_sheets || '—'],
+        ],
+      });
+    } catch (error) {
+      console.error('فشل تصدير التقرير:', error);
+      alert('فشل تصدير التقرير. حاول مرة أخرى.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (loading && operations.length === 0) {
@@ -308,12 +339,12 @@ export default function ReportsPage() {
               طباعة التقرير
             </button>
             <button
-              onClick={exportToCSV}
-              disabled={operations.length === 0}
+              onClick={exportToExcel}
+              disabled={operations.length === 0 || exporting}
               className="btn bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2 shadow-md disabled:opacity-50"
             >
               <Download className="w-5 h-5" />
-              تصدير Excel
+              {exporting ? 'جاري التصدير...' : 'تصدير Excel'}
             </button>
           </div>
         </div>
