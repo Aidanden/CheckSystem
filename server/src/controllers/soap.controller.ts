@@ -111,6 +111,16 @@ export class SoapController {
         if (leavesMismatch) {
           (result as any).categoryLeavesMismatch = true;
           (result as any).categoryLeavesMismatchError = leavesMismatch;
+        } else {
+          const leavesWarning = CustomerCategoryService.leavesWarningMessage(
+            category.typeCode,
+            (result as any).chequeLeaves
+          );
+          if (leavesWarning) {
+            (result as any).categoryLeavesWarning = true;
+            (result as any).categoryLeavesWarningMessage = leavesWarning;
+            (result as any).sheetsToPrint = Number((result as any).chequeLeaves);
+          }
         }
       } else {
         (result as any).customerCategoryError = category.error;

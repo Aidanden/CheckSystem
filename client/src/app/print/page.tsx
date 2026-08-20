@@ -24,6 +24,7 @@ export default function PrintPage() {
   const [printing, setPrinting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [branchInfo, setBranchInfo] = useState<{ name: string; routing: string } | null>(null);
   const [layout, setLayout] = useState<PrintSettings | null>(null);
   const [alreadyPrintedCheques, setAlreadyPrintedCheques] = useState<number[]>([]);
@@ -53,6 +54,7 @@ export default function PrintPage() {
 
     setLoading(true);
     setError(null);
+    setWarning(null);
     setSuccess(false);
     setPrintLogged(false);
     setSoapData(null);
@@ -93,6 +95,11 @@ export default function PrintPage() {
         setError(soapResponse.categoryLeavesMismatchError || 'تعارض بين فئة الحساب وعدد أوراق الدفتر. لا يمكن الطباعة.');
       } else if (!soapResponse.customerCategoryFound) {
         setError(soapResponse.customerCategoryError || 'تعذر تحديد فئة الحساب من عدادات الفئات. سجّل الفئة قبل الطباعة.');
+      } else if (soapResponse.categoryLeavesWarning) {
+        setWarning(
+          soapResponse.categoryLeavesWarningMessage ||
+            `تنبيه: سيتم طباعة ${soapResponse.sheetsToPrint || soapResponse.chequeLeaves || '—'} ورقة فقط.`
+        );
       }
 
       let resolvedLayout: PrintSettings | null = null;
@@ -210,6 +217,16 @@ export default function PrintPage() {
     if (!soapData.customerCategoryFound) {
       setError(soapData.customerCategoryError || 'لا يمكن الطباعة قبل تسجيل فئة الحساب في عدادات الفئات.');
       return;
+    }
+
+    if (soapData.categoryLeavesWarning) {
+      const sheets = soapData.sheetsToPrint || soapData.chequeLeaves || checkbookPreview.checks?.length;
+      const standard = soapData.micrTypeCode === '02' ? 50 : 25;
+      const kind = soapData.micrTypeCode === '02' ? 'شركات' : 'أفراد';
+      const confirmed = window.confirm(
+        `تنبيه: دفتر ${kind} بعدد أوراق أقل من المعيار (${standard}).\n\nسيتم طباعة ${sheets} ورقة فقط.\n\nهل تريد المتابعة؟`
+      );
+      if (!confirmed) return;
     }
 
     // دفتر مطبوع مسبقاً من استعلام سابق → إعادة الطباعة من السجلات فقط
@@ -336,6 +353,19 @@ export default function PrintPage() {
               <p className="font-bold mb-1">تم إيقاف الطباعة</p>
             )}
             <p>{error}</p>
+          </div>
+        )}
+
+        {/* Corporate partial book warning */}
+        {warning && !soapData?.categoryLeavesMismatch && (
+          <div className="bg-amber-50 border-2 border-amber-400 text-amber-950 px-4 py-3 rounded-lg">
+            <p className="font-bold mb-1">تنبيه قبل الطباعة</p>
+            <p>{warning}</p>
+            {(soapData?.sheetsToPrint || soapData?.chequeLeaves) != null && (
+              <p className="mt-2 text-lg font-black">
+                عدد الأوراق التي سيتم طباعتها: {soapData?.sheetsToPrint || soapData?.chequeLeaves}
+              </p>
+            )}
           </div>
         )}
 

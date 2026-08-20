@@ -144,6 +144,17 @@ export default function PrintLogsPage() {
         );
       }
 
+      if (soapResponse.categoryLeavesWarning) {
+        const sheets = soapResponse.sheetsToPrint || soapResponse.chequeLeaves;
+        const confirmed = window.confirm(
+          `${soapResponse.categoryLeavesWarningMessage || 'تنبيه: عدد أوراق الدفتر أقل من المعيار.'}\n\nعدد الأوراق: ${sheets}\n\nهل تريد المتابعة؟`
+        );
+        if (!confirmed) {
+          setReprinting(false);
+          return;
+        }
+      }
+
       // تصفية الشيكات بناءً على النطاق المحدد
       const filteredStatuses = soapResponse.chequeStatuses.filter(
         c => c.chequeNumber >= reprintStartSerial && c.chequeNumber <= reprintEndSerial && c.chequeNumber > 0

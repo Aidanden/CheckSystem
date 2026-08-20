@@ -62,6 +62,9 @@ export interface SoapCheckbookResponse {
   accountType?: number;
   categoryLeavesMismatch?: boolean;
   categoryLeavesMismatchError?: string;
+  categoryLeavesWarning?: boolean;
+  categoryLeavesWarningMessage?: string;
+  sheetsToPrint?: number;
   rawXml: string;
 }
 
