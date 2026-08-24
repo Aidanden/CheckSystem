@@ -1,85 +1,130 @@
-export function numberToArabicWords(num: number): string {
-  if (num === 0) return 'صفر';
+/**
+ * تفقيط المبالغ بالأسلوب المصرفي الليبي:
+ * الآحاد ثم العشرات (تسعة وأربعون، سبعة وعشرون)
+ * الدرهم = جزء من ألف (3 خانات عشرية)
+ */
 
-  const ones = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة'];
-  const tens = ['', 'عشرة', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
-  const hundreds = ['', 'مائة', 'مائتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'];
-  const teens = ['عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+const ONES = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة'];
+const TEENS = [
+  'عشرة',
+  'أحد عشر',
+  'اثنا عشر',
+  'ثلاثة عشر',
+  'أربعة عشر',
+  'خمسة عشر',
+  'ستة عشر',
+  'سبعة عشر',
+  'ثمانية عشر',
+  'تسعة عشر',
+];
+const TENS = ['', 'عشرة', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+const HUNDREDS = [
+  '',
+  'مائة',
+  'مائتان',
+  'ثلاثمائة',
+  'أربعمائة',
+  'خمسمائة',
+  'ستمائة',
+  'سبعمائة',
+  'ثمانمائة',
+  'تسعمائة',
+];
 
-  const convertGroup = (n: number): string => {
-    if (n === 0) return '';
+function joinAnd(parts: string[]): string {
+  return parts.filter(Boolean).join(' و');
+}
 
-    const h = Math.floor(n / 100);
-    const t = Math.floor((n % 100) / 10);
-    const o = n % 10;
+/** تحويل 0–999: مئات ثم آحاد ثم عشرات */
+function convertBelowThousand(n: number): string {
+  if (n <= 0) return '';
 
-    let result = '';
-    if (h > 0) result += hundreds[h];
+  const h = Math.floor(n / 100);
+  const rest = n % 100;
+  const parts: string[] = [];
 
-    if (t === 1) {
-      if (result) result += ' و';
-      result += teens[o];
+  if (h > 0) parts.push(HUNDREDS[h]);
+
+  if (rest > 0) {
+    if (rest < 10) {
+      parts.push(ONES[rest]);
+    } else if (rest < 20) {
+      parts.push(TEENS[rest - 10]);
     } else {
-      if (t > 0) {
-        if (result) result += ' و';
-        result += tens[t];
-      }
+      const t = Math.floor(rest / 10);
+      const o = rest % 10;
       if (o > 0) {
-        if (result) result += ' و';
-        result += ones[o];
+        parts.push(ONES[o], TENS[t]);
+      } else {
+        parts.push(TENS[t]);
       }
     }
-
-    return result;
-  };
-
-  if (num < 1000) {
-    return convertGroup(num);
   }
 
-  if (num < 1000000) {
-    const thousands = Math.floor(num / 1000);
-    const remainder = num % 1000;
-    let result = '';
-    if (thousands === 1) result = 'ألف';
-    else if (thousands === 2) result = 'ألفان';
-    else if (thousands <= 10) result = convertGroup(thousands) + ' آلاف';
-    else result = convertGroup(thousands) + ' ألفاً';
+  return joinAnd(parts);
+}
 
-    if (remainder > 0) result += ' و' + convertGroup(remainder);
-    return result;
+function convertThousands(thousands: number): string {
+  if (thousands === 1) return 'ألف';
+  if (thousands === 2) return 'ألفان';
+  if (thousands >= 3 && thousands <= 10) return `${convertBelowThousand(thousands)} آلاف`;
+  return `${convertBelowThousand(thousands)} ألف`;
+}
+
+function convertMillions(millions: number): string {
+  if (millions === 1) return 'مليون';
+  if (millions === 2) return 'مليونان';
+  if (millions >= 3 && millions <= 10) return `${convertBelowThousand(millions)} ملايين`;
+  return `${convertBelowThousand(millions)} مليون`;
+}
+
+export function numberToArabicWords(num: number): string {
+  const value = Math.floor(Math.abs(num));
+  if (value === 0) return 'صفر';
+
+  const billions = Math.floor(value / 1_000_000_000);
+  const millions = Math.floor((value % 1_000_000_000) / 1_000_000);
+  const thousands = Math.floor((value % 1_000_000) / 1000);
+  const remainder = value % 1000;
+  const parts: string[] = [];
+
+  if (billions > 0) {
+    if (billions === 1) parts.push('مليار');
+    else if (billions === 2) parts.push('ملياران');
+    else if (billions <= 10) parts.push(`${convertBelowThousand(billions)} مليارات`);
+    else parts.push(`${convertBelowThousand(billions)} مليار`);
   }
 
-  const millions = Math.floor(num / 1000000);
-  const remainder = num % 1000000;
-  let result = '';
-  if (millions === 1) result = 'مليون';
-  else if (millions === 2) result = 'مليونان';
-  else if (millions <= 10) result = convertGroup(millions) + ' ملايين';
-  else result = convertGroup(millions) + ' مليوناً';
+  if (millions > 0) parts.push(convertMillions(millions));
+  if (thousands > 0) parts.push(convertThousands(thousands));
+  if (remainder > 0) parts.push(convertBelowThousand(remainder));
 
-  if (remainder > 0) {
-    result += ' و' + numberToArabicWords(remainder);
-  }
+  return joinAnd(parts);
+}
 
-  return result;
+function parseAmount(amount: number | string): number {
+  if (typeof amount === 'number') return amount;
+  const normalized = String(amount).trim().replace(/,/g, '');
+  return parseFloat(normalized);
 }
 
 export function amountToArabicTafqeet(amount: number | string): string {
-  const numeric = typeof amount === 'string' ? parseFloat(amount) : amount;
+  const numeric = parseAmount(amount);
   if (!Number.isFinite(numeric) || numeric < 0) return '';
 
-  const dinars = Math.floor(numeric);
-  const dirhams = Math.round((numeric - dinars) * 1000);
+  const rounded = Math.round(numeric * 1000) / 1000;
+  const dinars = Math.floor(rounded + 1e-9);
+  const dirhams = Math.round((rounded - dinars) * 1000);
 
-  let words = '';
+  const parts: string[] = [];
   if (dinars > 0) {
-    words = numberToArabicWords(dinars) + ' دينار ليبي';
+    parts.push(`${numberToArabicWords(dinars)} دينار`);
   }
   if (dirhams > 0) {
-    if (words) words += ' و';
-    words += numberToArabicWords(dirhams) + ' درهم';
+    parts.push(`${numberToArabicWords(dirhams)} درهم`);
   }
-  if (!words) words = 'صفر دينار ليبي';
-  return words + ' لا غير';
+  if (!parts.length) {
+    return 'صفر دينار لا غير';
+  }
+  return `${parts.join(' و')} لا غير`;
 }

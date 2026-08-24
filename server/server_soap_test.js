@@ -120,6 +120,201 @@ const TEST_INSTRUMENTS = [
       instrumentDesc: 'Cheque Clearing Network Libya',
       issueDate: '2026-07-20',
    },
+   {
+      txnRefNo: '2610010496270325',
+      customerNo: '00000021',
+      account: '001214000100002',
+      drName: 'محمد علي أحمد',
+      benefName: 'شركة النور للمقاولات',
+      amount: '49627.325',
+      currency: 'LYD',
+      instrNo: '000002010',
+      branch: '001',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-08-10',
+   },
+   {
+      txnRefNo: '2610010000000001',
+      customerNo: '00000022',
+      account: '001214000100003',
+      drName: 'سالم عمر خالد',
+      benefName: 'مستشفى طرابلس المركزي',
+      amount: '1',
+      currency: 'LYD',
+      instrNo: '000002011',
+      branch: '001',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-08-11',
+   },
+   {
+      txnRefNo: '2610010000000125',
+      customerNo: '00000023',
+      account: '001214000100005',
+      drName: 'فاطمة حسن محمود',
+      benefName: 'شركة الواحة للتأمين',
+      amount: '125.750',
+      currency: 'LYD',
+      instrNo: '000002012',
+      branch: '001',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-08-12',
+   },
+   {
+      txnRefNo: '2610010000000999',
+      customerNo: '00000024',
+      account: '001203000100004',
+      drName: 'شركة الأفق للتجارة',
+      benefName: 'مصلحة الجمارك',
+      amount: '999.999',
+      currency: 'LYD',
+      instrNo: '000002013',
+      branch: '001',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-08-13',
+   },
+   {
+      txnRefNo: '2610010000250000',
+      customerNo: '00000025',
+      account: '001203000100006',
+      drName: 'شركة النور للاستثمار',
+      benefName: 'مصرف ليبيا المركزي',
+      amount: '250000',
+      currency: 'LYD',
+      instrNo: '000002014',
+      branch: '001',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-08-14',
+   },
+   {
+      txnRefNo: '2610010000007005',
+      customerNo: '00000026',
+      account: '001201000100016',
+      drName: 'موظف - أحمد سعيد محمد',
+      benefName: 'شركة الاتصالات الليبية',
+      amount: '7.005',
+      currency: 'LYD',
+      instrNo: '000002015',
+      branch: '001',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-08-15',
+   },
+   {
+      txnRefNo: '2620020000150750',
+      customerNo: '00000027',
+      account: '002214000200002',
+      drName: 'علي مصطفى علي',
+      benefName: 'جامعة مصراتة',
+      amount: '1500.750',
+      currency: 'LYD',
+      instrNo: '000010051',
+      branch: '002',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-08-16',
+   },
+   {
+      txnRefNo: '2620020000325100',
+      customerNo: '00000028',
+      account: '002203000200006',
+      drName: 'شركة الساحل للصناعات',
+      benefName: 'شركة الكهرباء',
+      amount: '32500.100',
+      currency: 'LYD',
+      instrNo: '000010052',
+      branch: '002',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-08-17',
+   },
+   {
+      txnRefNo: '2620020000002050',
+      customerNo: '00000029',
+      account: '002214000200005',
+      drName: 'هدى إبراهيم يوسف',
+      benefName: 'صيدلية الأمل',
+      amount: '20.050',
+      currency: 'LYD',
+      instrNo: '000010053',
+      branch: '002',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-08-18',
+   },
+   {
+      txnRefNo: '2630030000876500',
+      customerNo: '00000030',
+      account: '003203000300001',
+      drName: 'شركة برقة للخدمات المالية',
+      benefName: 'مصلحة الضرائب بنغازي',
+      amount: '87650',
+      currency: 'LYD',
+      instrNo: '000020001',
+      branch: '003',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-08-19',
+   },
+   {
+      txnRefNo: '2630030000049325',
+      customerNo: '00000031',
+      account: '003214000300002',
+      drName: 'عبدالله محمود إبراهيم',
+      benefName: 'مستشفى بنغازي الطبي',
+      amount: '493.325',
+      currency: 'LYD',
+      instrNo: '000020002',
+      branch: '003',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-08-20',
+   },
+   {
+      txnRefNo: '2630030001000000',
+      customerNo: '00000032',
+      account: '003203000300005',
+      drName: 'شركة الشروق للاستثمار',
+      benefName: 'وزارة المالية',
+      amount: '1000000',
+      currency: 'LYD',
+      instrNo: '000020003',
+      branch: '003',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-08-21',
+   },
+   {
+      txnRefNo: '2610010000021450',
+      customerNo: '00000033',
+      account: '001214000100007',
+      drName: 'أحمد محمود السيد',
+      benefName: 'شركة سلطان للمطابخ',
+      amount: '2145',
+      currency: 'LYD',
+      instrNo: '000002016',
+      branch: '001',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-08-22',
+   },
 ];
 
 // CORS يجب أن يكون أولاً
@@ -170,6 +365,36 @@ function getCurrentTimestamp() {
 }
 
 // دالة لتوليد تاريخ بصيغة FCUBS
+function xmlText(value) {
+   if (value == null) return '';
+   if (typeof value === 'string' || typeof value === 'number') return String(value).trim();
+   if (typeof value === 'object') {
+      if (value._ != null) return String(value._).trim();
+      if (value['#text'] != null) return String(value['#text']).trim();
+   }
+   return '';
+}
+
+function findTxnRefNo(node) {
+   if (!node || typeof node !== 'object') return '';
+   if (node.TXN_REF_NO != null) {
+      const text = xmlText(node.TXN_REF_NO);
+      if (text) return text;
+   }
+   for (const value of Object.values(node)) {
+      if (value && typeof value === 'object') {
+         const found = findTxnRefNo(value);
+         if (found) return found;
+      }
+   }
+   return '';
+}
+
+function findInstrument(txnRefNo) {
+   const wanted = String(txnRefNo || '').replace(/\D/g, '');
+   return TEST_INSTRUMENTS.find((item) => String(item.txnRefNo).replace(/\D/g, '') === wanted) || null;
+}
+
 function getCurrentDate() {
    const now = new Date();
    const year = now.getFullYear();
@@ -242,17 +467,15 @@ const soapHandler = async (req, res) => {
          } else if (result.Envelope.Body.QUERYFETCHINSTRUMENTLIST_IOFS_REQ) {
             operation = 'QueryFetchInstrumentList';
             const requestBody = result.Envelope.Body.QUERYFETCHINSTRUMENTLIST_IOFS_REQ;
-            const masterIo = requestBody.FCUBS_BODY['Fetch-In-Lst-Master-IO'];
-            const txnRefNo = (masterIo && masterIo.TXN_REF_NO) ? String(masterIo.TXN_REF_NO).trim() : '';
-            const headerBranch = requestBody.FCUBS_HEADER && requestBody.FCUBS_HEADER.BRANCH
-               ? String(requestBody.FCUBS_HEADER.BRANCH)
-               : '001';
+            const txnRefNo = findTxnRefNo(requestBody);
+            const headerBranch = xmlText(requestBody.FCUBS_HEADER && requestBody.FCUBS_HEADER.BRANCH) || '001';
 
             console.log(`🔍 QueryFetchInstrumentList - TXN_REF_NO: ${txnRefNo}`);
 
-            const instrument = TEST_INSTRUMENTS.find(item => item.txnRefNo === txnRefNo);
+            const instrument = findInstrument(txnRefNo);
             if (!instrument) {
-               const err: any = new Error(`لم يتم العثور على صك مصدق للرقم المرجعي: ${txnRefNo}`);
+               console.log('📑 الأرقام المتاحة:', TEST_INSTRUMENTS.map((item) => item.txnRefNo).join(', '));
+               const err = new Error(`لم يتم العثور على صك مصدق للرقم المرجعي: ${txnRefNo}`);
                err.statusCode = 404;
                throw err;
             }
