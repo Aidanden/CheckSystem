@@ -6,59 +6,59 @@ const PORT = 8080;
 
 // بيانات الحسابات التجريبية
 // accountType: 1 = Individual (25 شيك), 2 = Corporate (50 شيك), 3 = Employee (10 شيك)
+// أرقام الحسابات: فرع(3) + فئة(3: 214 أفراد / 203 شركات / 201 موظفين) + باقي الرقم
 const TEST_ACCOUNTS = [
    // فرع طرابلس 001
-   { branch: '001', account: '001001000100001', name: 'شركة ليبيا للاتصالات', startCheck: '1001', accountType: 2 }, // Corporate
-   { branch: '001', account: '001001000100002', name: 'محمد علي أحمد', startCheck: '2001', accountType: 1 }, // Individual
-   { branch: '001', account: '001001000100003', name: 'سالم عمر خالد', startCheck: '3001', accountType: 1 }, // Individual
-   { branch: '001', account: '001001000100004', name: 'شركة الأفق للتجارة', startCheck: '4001', accountType: 2 }, // Corporate
-   { branch: '001', account: '001001000100005', name: 'فاطمة حسن محمود', startCheck: '5001', accountType: 1 }, // Individual
-   { branch: '001', account: '001001000100006', name: 'شركة النور للاستثمار', startCheck: '11001', accountType: 2 }, // Corporate
-   { branch: '001', account: '001001000100007', name: 'أحمد محمود السيد', startCheck: '12001', accountType: 1 }, // Individual
-   { branch: '001', account: '001001000100008', name: 'شركة الصحراء للنقل', startCheck: '13001', accountType: 2 }, // Corporate
-   { branch: '001', account: '001001000100009', name: 'مريم عبدالله سالم', startCheck: '14001', accountType: 1 }, // Individual
-   { branch: '001', account: '001001000100010', name: 'شركة الواحة للبناء', startCheck: '15001', accountType: 2 }, // Corporate
-   { branch: '001', account: '001001000100011', name: 'يوسف خالد إبراهيم', startCheck: '16001', accountType: 1 }, // Individual
-   { branch: '001', account: '001001000100012', name: 'شركة النجوم للتجارة العامة', startCheck: '17001', accountType: 2 }, // Corporate
-   { branch: '001', account: '001001000100013', name: 'نورا محمد علي', startCheck: '18001', accountType: 1 }, // Individual
-   { branch: '001', account: '001001000100014', name: 'شركة الفجر للخدمات', startCheck: '19001', accountType: 2 }, // Corporate
-   { branch: '001', account: '001001000100015', name: 'عمر عبدالرحمن حسن', startCheck: '20001', accountType: 1 }, // Individual
+   { branch: '001', account: '001203000100001', name: 'شركة ليبيا للاتصالات', startCheck: '1001', accountType: 2 },
+   { branch: '001', account: '001214000100002', name: 'محمد علي أحمد', startCheck: '2001', accountType: 1 },
+   { branch: '001', account: '001214000100003', name: 'سالم عمر خالد', startCheck: '3001', accountType: 1 },
+   { branch: '001', account: '001203000100004', name: 'شركة الأفق للتجارة', startCheck: '4001', accountType: 2 },
+   { branch: '001', account: '001214000100005', name: 'فاطمة حسن محمود', startCheck: '5001', accountType: 1 },
+   { branch: '001', account: '001203000100006', name: 'شركة النور للاستثمار', startCheck: '11001', accountType: 2 },
+   { branch: '001', account: '001214000100007', name: 'أحمد محمود السيد', startCheck: '12001', accountType: 1 },
+   { branch: '001', account: '001203000100008', name: 'شركة الصحراء للنقل', startCheck: '13001', accountType: 2 },
+   { branch: '001', account: '001214000100009', name: 'مريم عبدالله سالم', startCheck: '14001', accountType: 1 },
+   { branch: '001', account: '001203000100010', name: 'شركة الواحة للبناء', startCheck: '15001', accountType: 2 },
+   { branch: '001', account: '001214000100011', name: 'يوسف خالد إبراهيم', startCheck: '16001', accountType: 1 },
+   { branch: '001', account: '001203000100012', name: 'شركة النجوم للتجارة العامة', startCheck: '17001', accountType: 2 },
+   { branch: '001', account: '001214000100013', name: 'نورا محمد علي', startCheck: '18001', accountType: 1 },
+   { branch: '001', account: '001203000100014', name: 'شركة الفجر للخدمات', startCheck: '19001', accountType: 2 },
+   { branch: '001', account: '001214000100015', name: 'عمر عبدالرحمن حسن', startCheck: '20001', accountType: 1 },
    // فرع مصراته 002
-   { branch: '002', account: '002001000200001', name: 'شركة مصراتة القابضة', startCheck: '6001', accountType: 2 }, // Corporate
-   { branch: '002', account: '002001000200002', name: 'علي مصطفى علي', startCheck: '7001', accountType: 1 }, // Individual
-   { branch: '002', account: '002001000200003', name: 'خالد عبدالسلام محمد', startCheck: '8001', accountType: 1 }, // Individual
-   { branch: '002', account: '002001000200004', name: 'شركة البحر المتوسط', startCheck: '9001', accountType: 2 }, // Corporate
-   { branch: '002', account: '002001000200005', name: 'هدى إبراهيم يوسف', startCheck: '10001', accountType: 1 }, // Individual
-   { branch: '002', account: '002001000200006', name: 'شركة الساحل للصناعات', startCheck: '21001', accountType: 2 }, // Corporate
-   { branch: '002', account: '002001000200007', name: 'سارة أحمد محمود', startCheck: '22001', accountType: 1 }, // Individual
-   { branch: '002', account: '002001000200008', name: 'شركة الرياح للتجارة', startCheck: '23001', accountType: 2 }, // Corporate
-   { branch: '002', account: '002001000200009', name: 'مصطفى سالم عبدالله', startCheck: '24001', accountType: 1 }, // Individual
-   { branch: '002', account: '002001000200010', name: 'شركة الأمل للاستيراد والتصدير', startCheck: '25001', accountType: 2 }, // Corporate
-   { branch: '002', account: '002001000200011', name: 'ليلى حسن علي', startCheck: '26001', accountType: 1 }, // Individual
-   { branch: '002', account: '002001000200012', name: 'شركة الصقر للطاقة', startCheck: '27001', accountType: 2 }, // Corporate
-   { branch: '002', account: '002001000200013', name: 'طارق يوسف خالد', startCheck: '28001', accountType: 1 }, // Individual
-   { branch: '002', account: '002001000200014', name: 'شركة المروج للزراعة', startCheck: '29001', accountType: 2 }, // Corporate
-   { branch: '002', account: '002001000200015', name: 'رنا عبدالرحمن محمد', startCheck: '30001', accountType: 1 }, // Individual
+   { branch: '002', account: '002203000200001', name: 'شركة مصراتة القابضة', startCheck: '6001', accountType: 2 },
+   { branch: '002', account: '002214000200002', name: 'علي مصطفى علي', startCheck: '7001', accountType: 1 },
+   { branch: '002', account: '002214000200003', name: 'خالد عبدالسلام محمد', startCheck: '8001', accountType: 1 },
+   { branch: '002', account: '002203000200004', name: 'شركة البحر المتوسط', startCheck: '9001', accountType: 2 },
+   { branch: '002', account: '002214000200005', name: 'هدى إبراهيم يوسف', startCheck: '10001', accountType: 1 },
+   { branch: '002', account: '002203000200006', name: 'شركة الساحل للصناعات', startCheck: '21001', accountType: 2 },
+   { branch: '002', account: '002214000200007', name: 'سارة أحمد محمود', startCheck: '22001', accountType: 1 },
+   { branch: '002', account: '002203000200008', name: 'شركة الرياح للتجارة', startCheck: '23001', accountType: 2 },
+   { branch: '002', account: '002214000200009', name: 'مصطفى سالم عبدالله', startCheck: '24001', accountType: 1 },
+   { branch: '002', account: '002203000200010', name: 'شركة الأمل للاستيراد والتصدير', startCheck: '25001', accountType: 2 },
+   { branch: '002', account: '002214000200011', name: 'ليلى حسن علي', startCheck: '26001', accountType: 1 },
+   { branch: '002', account: '002203000200012', name: 'شركة الصقر للطاقة', startCheck: '27001', accountType: 2 },
+   { branch: '002', account: '002214000200013', name: 'طارق يوسف خالد', startCheck: '28001', accountType: 1 },
+   { branch: '002', account: '002203000200014', name: 'شركة المروج للزراعة', startCheck: '29001', accountType: 2 },
+   { branch: '002', account: '002214000200015', name: 'رنا عبدالرحمن محمد', startCheck: '30001', accountType: 1 },
    // فرع بنغازي 003
-   { branch: '003', account: '003001000300001', name: 'شركة برقة للخدمات المالية', startCheck: '31001', accountType: 2 }, // Corporate
-   { branch: '003', account: '003001000300002', name: 'عبدالله محمود إبراهيم', startCheck: '32001', accountType: 1 }, // Individual
-   { branch: '003', account: '003001000300003', name: 'شركة الجبل للتجارة', startCheck: '33001', accountType: 2 }, // Corporate
-   { branch: '003', account: '003001000300004', name: 'فاطمة علي سالم', startCheck: '34001', accountType: 1 }, // Individual
-   { branch: '003', account: '003001000300005', name: 'شركة الشروق للاستثمار', startCheck: '35001', accountType: 2 }, // Corporate
-   { branch: '003', account: '003001000300006', name: 'خالد يوسف عبدالله', startCheck: '36001', accountType: 1 }, // Individual
-   { branch: '003', account: '003001000300007', name: 'شركة الوادي للبناء والتطوير', startCheck: '37001', accountType: 2 }, // Corporate
-   { branch: '003', account: '003001000300008', name: 'أسماء محمد حسن', startCheck: '38001', accountType: 1 }, // Individual
-   { branch: '003', account: '003001000300009', name: 'شركة النخيل للصناعات الغذائية', startCheck: '39001', accountType: 2 }, // Corporate
-   { branch: '003', account: '003001000300010', name: 'محمود عبدالسلام علي', startCheck: '40001', accountType: 1 }, // Individual
+   { branch: '003', account: '003203000300001', name: 'شركة برقة للخدمات المالية', startCheck: '31001', accountType: 2 },
+   { branch: '003', account: '003214000300002', name: 'عبدالله محمود إبراهيم', startCheck: '32001', accountType: 1 },
+   { branch: '003', account: '003203000300003', name: 'شركة الجبل للتجارة', startCheck: '33001', accountType: 2 },
+   { branch: '003', account: '003214000300004', name: 'فاطمة علي سالم', startCheck: '34001', accountType: 1 },
+   { branch: '003', account: '003203000300005', name: 'شركة الشروق للاستثمار', startCheck: '35001', accountType: 2 },
+   { branch: '003', account: '003214000300006', name: 'خالد يوسف عبدالله', startCheck: '36001', accountType: 1 },
+   { branch: '003', account: '003203000300007', name: 'شركة الوادي للبناء والتطوير', startCheck: '37001', accountType: 2 },
+   { branch: '003', account: '003214000300008', name: 'أسماء محمد حسن', startCheck: '38001', accountType: 1 },
+   { branch: '003', account: '003203000300009', name: 'شركة النخيل للصناعات الغذائية', startCheck: '39001', accountType: 2 },
+   { branch: '003', account: '003214000300010', name: 'محمود عبدالسلام علي', startCheck: '40001', accountType: 1 },
    // حسابات موظفين (Employee - 10 شيك)
-   { branch: '001', account: '001001000100016', name: 'موظف - أحمد سعيد محمد', startCheck: '41001', accountType: 3 }, // Employee
-   { branch: '001', account: '001001000100017', name: 'موظف - فاطمة علي حسن', startCheck: '42001', accountType: 3 }, // Employee
-   { branch: '002', account: '002001000200016', name: 'موظف - خالد محمود علي', startCheck: '43001', accountType: 3 }, // Employee
-   { branch: '002', account: '002001000200017', name: 'موظف - سارة يوسف أحمد', startCheck: '44001', accountType: 3 }, // Employee
-   { branch: '003', account: '003001000300011', name: 'موظف - عمر عبدالله سالم', startCheck: '45001', accountType: 3 }, // Employee
+   { branch: '001', account: '001201000100016', name: 'موظف - أحمد سعيد محمد', startCheck: '41001', accountType: 3 },
+   { branch: '001', account: '001201000100017', name: 'موظف - فاطمة علي حسن', startCheck: '42001', accountType: 3 },
+   { branch: '002', account: '002201000200016', name: 'موظف - خالد محمود علي', startCheck: '43001', accountType: 3 },
+   { branch: '002', account: '002201000200017', name: 'موظف - سارة يوسف أحمد', startCheck: '44001', accountType: 3 },
+   { branch: '003', account: '003201000300011', name: 'موظف - عمر عبدالله سالم', startCheck: '45001', accountType: 3 },
 
    // اختبار عدادات الفئات: الخانات 4–6 من رقم الحساب = CUSTOMER_CATEGORY
-   // SOAP قد لا يرسل النوع أو يرسله معكوساً — الطباعة يجب أن تأخذ 01/02 من جدول الفئات
    { branch: '001', account: '001214000100101', name: 'اختبار فئة 214 أفراد — SOAP يقول شركة (50 ورقة)', startCheck: '51001', accountType: 2, categoryHint: '214→01' },
    { branch: '001', account: '001203000100102', name: 'اختبار فئة 203 شركات — SOAP يقول فرد (25 ورقة)', startCheck: '52001', accountType: 1, categoryHint: '203→02' },
    { branch: '001', account: '001214000100103', name: 'اختبار فئة 214 أفراد — بدون accountType', startCheck: '53001', categoryHint: '214→01' },
@@ -68,11 +68,24 @@ const TEST_ACCOUNTS = [
    { branch: '001', account: '001999000100199', name: 'اختبار فئة 999 غير مسجلة', startCheck: '57001', accountType: 2, categoryHint: '999 غير موجودة' },
 ];
 
-TEST_ACCOUNTS.forEach((row) => {
-   if (row.categoryHint) return;
-   const cat = row.accountType === 2 ? '203' : row.accountType === 3 ? '201' : '214';
-   row.account = String(row.account).slice(0, 3) + cat + String(row.account).slice(6);
-});
+/** يقبل الرقم الصحيح أو الشكل القديم 001001... (قبل إدراج الفئة في الخانات 4–6) */
+function findTestAccount(account) {
+   const raw = String(account || '').replace(/\D/g, '');
+   if (!raw) return undefined;
+
+   let found = TEST_ACCOUNTS.find((acc) => acc.account === account || acc.account === raw);
+   if (found) return found;
+
+   if (raw.length >= 9) {
+      const branch = raw.slice(0, 3);
+      const suffix = raw.slice(6);
+      found = TEST_ACCOUNTS.find((acc) => {
+         const a = String(acc.account).replace(/\D/g, '');
+         return a.slice(0, 3) === branch && a.slice(6) === suffix;
+      });
+   }
+   return found;
+}
 
 const TEST_INSTRUMENTS = [
    {
@@ -564,8 +577,8 @@ const soapHandler = async (req, res) => {
       console.log('  - فرع الحساب:', accountBranch);
       console.log('  - رقم الحساب:', account);
 
-      // البحث عن الحساب
-      const accountData = TEST_ACCOUNTS.find(acc => acc.account === account);
+      // البحث عن الحساب (يدعم الرقم الكامل أو الشكل القديم بدون فئة صحيحة)
+      const accountData = findTestAccount(account);
 
       if (!accountData) {
          throw new Error(`الحساب رقم ${account} غير موجود في قاعدة البيانات التجريبية`);
