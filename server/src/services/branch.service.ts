@@ -32,13 +32,19 @@ export class BranchService {
       throw new Error('Routing number already exists');
     }
 
-    return BranchModel.create({
+    const branch = await BranchModel.create({
       branchName: data.branch_name,
       branchLocation: data.branch_location,
       routingNumber: data.routing_number,
       branchNumber: data.branch_number ?? '',
       accountingNumber: data.accounting_number ?? '',
     });
+
+    // مخزون أفراد/شركات منفصل لكل فرع جديد
+    const { InventoryModel } = await import('../models/Inventory.model');
+    await InventoryModel.ensureBranchStockRows(branch.id);
+
+    return branch;
   }
 
   static async updateBranch(

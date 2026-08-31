@@ -4,14 +4,18 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { inventoryService } from '@/lib/api';
 import { Inventory, InventoryTransaction } from '@/types';
-import { Package, Plus, Minus, History, TrendingUp, TrendingDown, Layers } from 'lucide-react';
+import { Package, Plus, History, TrendingUp, TrendingDown, Layers, Pencil, Trash2 } from 'lucide-react';
 import { formatDateShort, formatNumber } from '@/utils/locale';
 
 export default function CertifiedInventoryPage() {
     const [inventory, setInventory] = useState<Inventory[]>([]);
     const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
     const [loading, setLoading] = useState(true);
+    const [busyId, setBusyId] = useState<number | null>(null);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [editTx, setEditTx] = useState<InventoryTransaction | null>(null);
+    const [editQuantity, setEditQuantity] = useState(0);
+    const [editNotes, setEditNotes] = useState('');
     const [addForm, setAddForm] = useState({
         stock_type: 3 as 1 | 2 | 3,
         quantity: 0,
@@ -29,7 +33,7 @@ export default function CertifiedInventoryPage() {
             setLoading(true);
             const [inv, trans] = await Promise.all([
                 inventoryService.getAll(),
-                inventoryService.getTransactionHistory(3, 20),
+                inventoryService.getTransactionHistory(3, 100),
             ]);
             // Filter inventory to only show certified (stockType === 3)
             setInventory(inv.filter(item => item.stockType === 3));
@@ -57,6 +61,51 @@ export default function CertifiedInventoryPage() {
             loadInventoryData();
         } catch (error: any) {
             alert(error.response?.data?.error || 'فشل في إضافة المخزون');
+        }
+    };
+
+    const handleReverse = async (trans: InventoryTransaction) => {
+        const kind = trans.transactionType === 'ADD' ? 'الإضافة' : 'الخصم';
+        const confirmed = window.confirm(
+            `هل تريد إلغاء عملية ${kind} رقم ${trans.id} بكمية ${trans.quantity}؟\nسيتم تعديل رصيد المخزون وإزالة العملية من السجل.`
+        );
+        if (!confirmed) return;
+        try {
+            setBusyId(trans.id);
+            await inventoryService.reverseTransaction(trans.id);
+            await loadInventoryData();
+        } catch (error: any) {
+            alert(error.response?.data?.error || 'فشل إلغاء العملية');
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    const openEdit = (trans: InventoryTransaction) => {
+        if (trans.transactionType !== 'ADD') {
+            alert('يمكن تعديل عمليات الإضافة فقط. لخصم خاطئ استخدم زر الإلغاء.');
+            return;
+        }
+        setEditTx(trans);
+        setEditQuantity(trans.quantity);
+        setEditNotes(trans.notes || '');
+    };
+
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editTx) return;
+        try {
+            setBusyId(editTx.id);
+            await inventoryService.updateTransaction(editTx.id, {
+                quantity: editQuantity,
+                notes: editNotes,
+            });
+            setEditTx(null);
+            await loadInventoryData();
+        } catch (error: any) {
+            alert(error.response?.data?.error || 'فشل تعديل العملية');
+        } finally {
+            setBusyId(null);
         }
     };
 
@@ -156,6 +205,7 @@ export default function CertifiedInventoryPage() {
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b border-gray-200">
+                                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">#</th>
                                     <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
                                         العملية
                                     </th>
@@ -168,12 +218,16 @@ export default function CertifiedInventoryPage() {
                                     <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
                                         ملاحظات
                                     </th>
+                                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
+                                        إجراءات
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {transactions.length > 0 ? (
                                     transactions.map((trans) => (
                                         <tr key={trans.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                            <td className="py-3 px-4 text-sm text-gray-400">{trans.id}</td>
                                             <td className="py-3 px-4">
                                                 <span
                                                     className={`flex items-center gap-1 text-sm ${trans.transactionType === 'ADD'
@@ -193,22 +247,38 @@ export default function CertifiedInventoryPage() {
                                                 {trans.transactionType === 'ADD' ? '+' : '-'}{trans.quantity}
                                             </td>
                                             <td className="py-3 px-4 text-sm">
-                                                {new Date(trans.createdAt).toLocaleDateString('ar-LY', {
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit'
-                                                })}
+                                                {formatDateShort(trans.createdAt)}
                                             </td>
                                             <td className="py-3 px-4 text-sm text-gray-600">
                                                 {trans.notes || '-'}
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                <div className="flex items-center gap-2">
+                                                    {trans.transactionType === 'ADD' && (
+                                                        <button
+                                                            onClick={() => openEdit(trans)}
+                                                            disabled={busyId === trans.id}
+                                                            className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 disabled:opacity-50"
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                            تعديل
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleReverse(trans)}
+                                                        disabled={busyId === trans.id}
+                                                        className="text-red-600 hover:text-red-800 text-sm flex items-center gap-1 disabled:opacity-50"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                        إلغاء
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={4} className="py-8 text-center text-gray-500">
+                                        <td colSpan={6} className="py-8 text-center text-gray-500">
                                             لا يوجد سجل حركات حتى الآن
                                         </td>
                                     </tr>
@@ -302,6 +372,55 @@ export default function CertifiedInventoryPage() {
                                     className="flex-1 btn btn-secondary"
                                 >
                                     إلغاء
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {editTx && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="card max-w-md w-full mx-4">
+                        <h2 className="text-xl font-bold text-gray-800 mb-2">تعديل عملية إضافة</h2>
+                        <p className="text-sm text-gray-600 mb-4">
+                            العملية #{editTx.id} — الكمية الحالية {editTx.quantity}
+                        </p>
+                        <form onSubmit={handleUpdate} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">الكمية الصحيحة</label>
+                                <input
+                                    type="number"
+                                    value={editQuantity}
+                                    onChange={(e) => setEditQuantity(Number(e.target.value))}
+                                    className="input"
+                                    min="1"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">ملاحظات</label>
+                                <textarea
+                                    value={editNotes}
+                                    onChange={(e) => setEditNotes(e.target.value)}
+                                    className="input"
+                                    rows={3}
+                                />
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    type="submit"
+                                    disabled={busyId === editTx.id}
+                                    className="flex-1 btn btn-primary disabled:opacity-50"
+                                >
+                                    حفظ التعديل
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setEditTx(null)}
+                                    className="flex-1 btn btn-secondary"
+                                >
+                                    إغلاق
                                 </button>
                             </div>
                         </form>

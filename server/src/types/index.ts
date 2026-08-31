@@ -118,6 +118,8 @@ export interface UpdateUserRequest {
 export interface AddInventoryRequest {
   stock_type: StockType;
   quantity: number;
+  /** مطلوب لمخزون الأفراد/الشركات؛ المصدق عام بدون فرع */
+  branch_id?: number;
   serial_from?: string;
   serial_to?: string;
   notes?: string;

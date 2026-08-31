@@ -58,6 +58,8 @@ export interface Inventory {
   id: number;
   stockType: 1 | 2 | 3; // 1: Individual, 2: Corporate, 3: Certified
   quantity: number;
+  branchId?: number | null;
+  branch?: { id: number; branchName: string; branchNumber: string } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -70,6 +72,8 @@ export interface InventoryTransaction {
   serialFrom?: string;
   serialTo?: string;
   userId?: number;
+  branchId?: number | null;
+  branch?: { id: number; branchName: string; branchNumber: string } | null;
   notes?: string;
   createdAt: string;
 }
@@ -77,6 +81,8 @@ export interface InventoryTransaction {
 export interface AddInventoryRequest {
   stock_type: 1 | 2 | 3;
   quantity: number;
+  /** مطلوب لمخزون الأفراد/الشركات */
+  branch_id?: number;
   serial_from?: string;
   serial_to?: string;
   notes?: string;

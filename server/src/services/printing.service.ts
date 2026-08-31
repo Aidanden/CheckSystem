@@ -1,12 +1,10 @@
 import prisma from '../lib/prisma';
 import { AccountModel } from '../models/Account.model';
-import { InventoryModel } from '../models/Inventory.model';
 import { PrintOperationModel } from '../models/PrintOperation.model';
 import { PrintLogModel } from '../models/PrintLog.model';
 import { BranchModel } from '../models/Branch.model';
 import { PrintSettingsModel } from '../models/PrintSettings.model';
 import { AccountService } from './account.service';
-import { InventoryService } from './inventory.service';
 import { AccountType, StockType, PrintStatus, PrintCheckbookResponse } from '../types';
 import { CheckFormatter, CheckData, CheckbookData } from '../types/check.types';
 
@@ -96,14 +94,14 @@ export class PrintingService {
         console.log('');
 
 
-        // Check inventory availability using transaction client
-        const inventory = await tx.inventory.findFirst({
-          where: { stockType },
-          select: { quantity: true },
+        // Check inventory availability for this branch
+        const inventory = await tx.inventory.findUnique({
+          where: { branchId_stockType: { branchId, stockType } },
+          select: { id: true, quantity: true },
         });
         const currentQuantity = inventory?.quantity || 0;
-        if (currentQuantity < 1) {
-          throw new Error('لا يوجد مخزون كافٍ');
+        if (!inventory || currentQuantity < 1) {
+          throw new Error('لا يوجد مخزون كافٍ لهذا الفرع');
         }
 
         // Calculate serial numbers
@@ -131,23 +129,19 @@ export class PrintingService {
           serialTo = lastSerial + sheetsPerBook;
         }
 
-        // Deduct from inventory using transaction client
-        await tx.inventory.updateMany({
-          where: { stockType },
-          data: {
-            quantity: {
-              decrement: 1,
-            },
-          },
+        // Deduct from this branch's inventory
+        await tx.inventory.update({
+          where: { id: inventory.id },
+          data: { quantity: { decrement: 1 } },
         });
 
-        // Record inventory transaction
         await tx.inventoryTransaction.create({
           data: {
             stockType,
             transactionType: 'DEDUCT',
             quantity: 1,
             userId,
+            branchId,
             notes: `طباعة دفتر شيكات للحساب ${accountNumber}`,
           },
         });

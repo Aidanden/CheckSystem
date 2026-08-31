@@ -57,17 +57,28 @@ async function resetSequences() {
 }
 
 async function ensureInventoryRows() {
-  const rows = [
-    { id: 1, stockType: 1 },
-    { id: 2, stockType: 2 },
-    { id: 3, stockType: 3 },
-  ] as const;
+  const branches = await prisma.branch.findMany({ select: { id: true } });
+  for (const b of branches) {
+    for (const stockType of [1, 2]) {
+      await prisma.inventory.upsert({
+        where: { branchId_stockType: { branchId: b.id, stockType } },
+        update: { quantity: 0 },
+        create: { branchId: b.id, stockType, quantity: 0 },
+      });
+    }
+  }
 
-  for (const row of rows) {
-    await prisma.inventory.upsert({
-      where: { id: row.id },
-      update: { quantity: 0 },
-      create: { id: row.id, stockType: row.stockType, quantity: 0 },
+  const certified = await prisma.inventory.findFirst({
+    where: { stockType: 3, branchId: null },
+  });
+  if (certified) {
+    await prisma.inventory.update({
+      where: { id: certified.id },
+      data: { quantity: 0 },
+    });
+  } else {
+    await prisma.inventory.create({
+      data: { stockType: 3, branchId: null, quantity: 0 },
     });
   }
 }

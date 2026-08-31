@@ -23,6 +23,8 @@ model Branch {
   users                      User[]
   certifiedCheckPrintRecords CertifiedCheckPrintRecord[]
   certifiedInstrumentLogs    CertifiedInstrumentLog[]
+  inventories                Inventory[]
+  inventoryTransactions      InventoryTransaction[]
 
   @@map("branches")
 }
@@ -88,9 +90,14 @@ model Inventory {
   id        Int      @id @default(autoincrement())
   stockType Int      @map("stock_type")
   quantity  Int      @default(0)
+  /// فرع المخزون — مطلوب لأفراد/شركات (1/2). المصدق (3) يبقى عاماً (null)
+  branchId  Int?     @map("branch_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  branch    Branch?  @relation(fields: [branchId], references: [id])
 
+  @@unique([branchId, stockType])
+  @@index([branchId])
   @@map("inventory")
 }
 
@@ -102,10 +109,14 @@ model InventoryTransaction {
   serialFrom      String?  @map("serial_from")
   serialTo        String?  @map("serial_to")
   userId          Int?     @map("user_id")
+  branchId        Int?     @map("branch_id")
   notes           String?
   createdAt       DateTime @default(now()) @map("created_at")
   user            User?    @relation(fields: [userId], references: [id])
+  branch          Branch?  @relation(fields: [branchId], references: [id])
 
+  @@index([branchId])
+  @@index([stockType])
   @@map("inventory_transactions")
 }
 

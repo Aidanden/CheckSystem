@@ -304,35 +304,37 @@ async function main() {
   }
   console.log('✅ Permissions assigned to branch users');
 
-  // Create initial inventory
+  // Create initial inventory (per branch for individuals/corporate; certified is global)
   console.log('Creating initial inventory...');
-  await prisma.inventory.upsert({
-    where: { id: 1 },
-    update: { quantity: 100 },
-    create: {
-      stockType: 1, // Individual
-      quantity: 100,
-    },
+  const seedBranches = await prisma.branch.findMany({ select: { id: true } });
+  for (const b of seedBranches) {
+    await prisma.inventory.upsert({
+      where: { branchId_stockType: { branchId: b.id, stockType: 1 } },
+      update: { quantity: 100 },
+      create: { branchId: b.id, stockType: 1, quantity: 100 },
+    });
+    await prisma.inventory.upsert({
+      where: { branchId_stockType: { branchId: b.id, stockType: 2 } },
+      update: { quantity: 50 },
+      create: { branchId: b.id, stockType: 2, quantity: 50 },
+    });
+  }
+  const certified = await prisma.inventory.findFirst({
+    where: { stockType: 3, branchId: null },
   });
-
-  await prisma.inventory.upsert({
-    where: { id: 2 },
-    update: { quantity: 50 },
-    create: {
-      stockType: 2, // Corporate
-      quantity: 50,
-    },
-  });
-
-  await prisma.inventory.upsert({
-    where: { id: 3 },
-    update: { quantity: 200 },
-    create: {
-      stockType: 3, // Certified
-      quantity: 200,
-    },
-  });
-  console.log('✅ Initial inventory added (100 individual, 50 corporate, 200 certified)');
+  if (certified) {
+    await prisma.inventory.update({
+      where: { id: certified.id },
+      data: { quantity: 200 },
+    });
+  } else {
+    await prisma.inventory.create({
+      data: { stockType: 3, branchId: null, quantity: 200 },
+    });
+  }
+  console.log(
+    `✅ Initial inventory: 100 individual + 50 corporate per branch (${seedBranches.length}), 200 certified global`
+  );
 
   // Create test accounts (15 digits each)
   console.log('Creating test accounts...');

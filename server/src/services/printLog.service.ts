@@ -7,44 +7,57 @@ import { AccountType, StockType } from '../types';
 
 export class PrintLogService {
   static async createPrintLog(data: CreatePrintLogData) {
-    // خصم المخزون عند الطباعة العادية
+    // خصم المخزون عند الطباعة العادية (من مخزون فرع الحساب)
     if (data.operationType === 'print') {
       try {
-        // تحديد نوع المخزون بناءً على نوع الحساب
-        // Individual (1) و Employee (3) يستخدمان Individual stock
-        // Corporate (2) يستخدم Corporate stock
+        const { BranchModel } = await import('../models/Branch.model');
+        const { accountBranchFromNumber } = await import('../utils/branchAccess');
+
         const accountType = Number(data.accountType);
         const stockType: StockType = accountType === AccountType.CORPORATE
           ? StockType.CORPORATE
           : StockType.INDIVIDUAL;
         const stockLabel = stockType === StockType.CORPORATE ? 'شركات' : 'أفراد';
 
-        console.log(`📊 تحديد نوع المخزون: accountType=${accountType} (${accountType === AccountType.CORPORATE ? 'شركة' : accountType === AccountType.EMPLOYEE ? 'موظف' : 'فردي'}) => stockType=${stockType} (${stockType === StockType.CORPORATE ? 'شركة' : 'فردي'})`);
-
-        // عدد الأوراق المطبوعة (يجب خصمها من المخزون)
-        const sheetsToDeduct = data.totalCheques;
-
-        // التحقق من توفر المخزون قبل الخصم
-        const availableQuantity = await InventoryService.getAvailableQuantity(stockType);
-        if (availableQuantity < sheetsToDeduct) {
+        const accountBranchCode =
+          accountBranchFromNumber(data.accountNumber) ||
+          String(data.accountBranch || '').replace(/\D/g, '').slice(-3).padStart(3, '0');
+        const accountBranch = await BranchModel.findByBranchCode(accountBranchCode);
+        if (!accountBranch) {
           throw new Error(
-            `لا يمكن الطباعة: لا يوجد مخزون كافٍ من شيكات ${stockLabel}. المطلوب: ${sheetsToDeduct} ورقة، المتاح: ${availableQuantity} ورقة. يرجى إضافة مخزون ${stockLabel} أولاً.`
+            `لا يمكن الطباعة: تعذر تحديد فرع الحساب (${accountBranchCode || 'غير معروف'}) لخصم المخزون.`
           );
         }
 
-        // خصم عدد الأوراق الفعلي من المخزون
+        console.log(
+          `📊 تحديد نوع المخزون: accountType=${accountType} => stockType=${stockType} (${stockLabel}) فرع=${accountBranch.branchName} (#${accountBranch.id})`
+        );
+
+        const sheetsToDeduct = data.totalCheques;
+        const availableQuantity = await InventoryService.getAvailableQuantity(
+          stockType,
+          accountBranch.id
+        );
+        if (availableQuantity < sheetsToDeduct) {
+          throw new Error(
+            `لا يمكن الطباعة: لا يوجد مخزون كافٍ من شيكات ${stockLabel} لفرع ${accountBranch.branchName}. المطلوب: ${sheetsToDeduct} ورقة، المتاح: ${availableQuantity} ورقة. يرجى إضافة مخزون ${stockLabel} لهذا الفرع أولاً.`
+          );
+        }
+
         await InventoryService.deductInventory(
           stockType,
           sheetsToDeduct,
           data.printedBy,
-          `طباعة دفتر شيكات للحساب ${data.accountNumber} (${sheetsToDeduct} ورقة - من ${data.firstChequeNumber} إلى ${data.lastChequeNumber})`
+          `طباعة دفتر شيكات للحساب ${data.accountNumber} (${sheetsToDeduct} ورقة - من ${data.firstChequeNumber} إلى ${data.lastChequeNumber})`,
+          accountBranch.id
         );
 
-        console.log(`✅ تم خصم ${sheetsToDeduct} ورقة من المخزون (نوع: ${stockType === StockType.INDIVIDUAL ? 'فردي' : 'شركة'})`);
+        console.log(
+          `✅ تم خصم ${sheetsToDeduct} ورقة من مخزون ${stockLabel} لفرع ${accountBranch.branchName}`
+        );
       } catch (error) {
         console.error('❌ خطأ في خصم المخزون:', error);
         if (error instanceof Error) {
-          // رسالة نقص المخزون تُعرض كما هي (أفراد / شركات)
           if (error.message.includes('مخزون') || error.message.includes('لا يمكن الطباعة')) {
             throw error;
           }
@@ -60,38 +73,53 @@ export class PrintLogService {
         throw new Error('يجب تحديد سبب إعادة الطباعة (ورقة تالفة أو ورقة لم تطبع)');
       }
 
-      // إذا كانت الورقة تالفة، يجب خصم عدد الأوراق من المخزون
       if (data.reprintReason === 'damaged') {
         try {
-          // تحديد نوع المخزون بناءً على نوع الحساب
+          const { BranchModel } = await import('../models/Branch.model');
+          const { accountBranchFromNumber } = await import('../utils/branchAccess');
+
           const accountType = Number(data.accountType);
           const stockType: StockType = accountType === AccountType.CORPORATE
             ? StockType.CORPORATE
             : StockType.INDIVIDUAL;
           const stockLabel = stockType === StockType.CORPORATE ? 'شركات' : 'أفراد';
 
-          console.log(`📊 إعادة طباعة - تحديد نوع المخزون: accountType=${accountType} (${accountType === AccountType.CORPORATE ? 'شركة' : accountType === AccountType.EMPLOYEE ? 'موظف' : 'فردي'}) => stockType=${stockType} (${stockType === StockType.CORPORATE ? 'شركة' : 'فردي'})`);
-
-          // عدد الأوراق المعاد طباعتها (يجب خصمها من المخزون)
-          const sheetsToDeduct = data.totalCheques;
-
-          // التحقق من توفر المخزون قبل الخصم
-          const availableQuantity = await InventoryService.getAvailableQuantity(stockType);
-          if (availableQuantity < sheetsToDeduct) {
+          const accountBranchCode =
+            accountBranchFromNumber(data.accountNumber) ||
+            String(data.accountBranch || '').replace(/\D/g, '').slice(-3).padStart(3, '0');
+          const accountBranch = await BranchModel.findByBranchCode(accountBranchCode);
+          if (!accountBranch) {
             throw new Error(
-              `لا يمكن الطباعة: لا يوجد مخزون كافٍ من شيكات ${stockLabel}. المطلوب: ${sheetsToDeduct} ورقة، المتاح: ${availableQuantity} ورقة. يرجى إضافة مخزون ${stockLabel} أولاً.`
+              `لا يمكن الطباعة: تعذر تحديد فرع الحساب (${accountBranchCode || 'غير معروف'}) لخصم المخزون.`
             );
           }
 
-          // خصم عدد الأوراق المعاد طباعتها من المخزون
+          console.log(
+            `📊 إعادة طباعة - stockType=${stockType} (${stockLabel}) فرع=${accountBranch.branchName}`
+          );
+
+          const sheetsToDeduct = data.totalCheques;
+          const availableQuantity = await InventoryService.getAvailableQuantity(
+            stockType,
+            accountBranch.id
+          );
+          if (availableQuantity < sheetsToDeduct) {
+            throw new Error(
+              `لا يمكن الطباعة: لا يوجد مخزون كافٍ من شيكات ${stockLabel} لفرع ${accountBranch.branchName}. المطلوب: ${sheetsToDeduct} ورقة، المتاح: ${availableQuantity} ورقة. يرجى إضافة مخزون ${stockLabel} لهذا الفرع أولاً.`
+            );
+          }
+
           await InventoryService.deductInventory(
             stockType,
             sheetsToDeduct,
             data.printedBy,
-            `إعادة طباعة دفتر شيكات تالف للحساب ${data.accountNumber} (${sheetsToDeduct} ورقة - من ${data.firstChequeNumber} إلى ${data.lastChequeNumber})`
+            `إعادة طباعة دفتر شيكات تالف للحساب ${data.accountNumber} (${sheetsToDeduct} ورقة - من ${data.firstChequeNumber} إلى ${data.lastChequeNumber})`,
+            accountBranch.id
           );
 
-          console.log(`✅ تم خصم ${sheetsToDeduct} ورقة من المخزون (إعادة طباعة - تالفة) (نوع: ${stockType === StockType.INDIVIDUAL ? 'فردي' : 'شركة'})`);
+          console.log(
+            `✅ تم خصم ${sheetsToDeduct} ورقة من مخزون ${stockLabel} لفرع ${accountBranch.branchName} (إعادة طباعة تالفة)`
+          );
         } catch (error) {
           console.error('❌ خطأ في خصم المخزون عند إعادة الطباعة:', error);
           if (error instanceof Error) {

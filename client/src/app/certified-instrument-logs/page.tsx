@@ -105,7 +105,8 @@ export default function CertifiedInstrumentLogsPage() {
     setReprintingId(log.id);
     setError(null);
     try {
-      const words = log.amountWords || amountToArabicTafqeet(Number(log.amount) || 0);
+      // إعادة توليد التفقيط من المبلغ دائماً (لا نستخدم النص المخزون لأنه قد يكون خاطئاً من طباعات قديمة)
+      const words = amountToArabicTafqeet(Number(log.amount) || 0);
       await certifiedInstrumentLogService.create({
         operationType: 'reprint',
         txnRefNo: log.txnRefNo,
