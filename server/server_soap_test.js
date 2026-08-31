@@ -627,7 +627,7 @@ const soapHandler = async (req, res) => {
             <Chq-Bk-Details-Full>
                <INCL_FOR_CHKBOOK_PRINTING>Y</INCL_FOR_CHKBOOK_PRINTING>
                <ACCOUNT_BRANCH>${accountBranch}</ACCOUNT_BRANCH>
-               <ACCOUNT>${account}</ACCOUNT>
+               <ACCOUNT>${accountData.account}</ACCOUNT>
                <FIRST_CHEQUE_NUMBER>${firstChequeNumber}</FIRST_CHEQUE_NUMBER>
                <CHEQUE_LEAVES>${chequeLeaves}</CHEQUE_LEAVES>
                <ORDER_DATE>${getCurrentDate()}</ORDER_DATE>
@@ -692,7 +692,7 @@ const soapHandler = async (req, res) => {
          <FCUBS_BODY>
             <Cust-Account-Full>
                <BRN>${accountBranch}</BRN>
-               <ACC>${account}</ACC>
+               <ACC>${accountData.account}</ACC>
                <CUSTNAME>${accountData.name}</CUSTNAME>
                <ADESC>${accountData.name}</ADESC>
                <CUSTNO>123456</CUSTNO>

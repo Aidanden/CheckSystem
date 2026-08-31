@@ -80,6 +80,25 @@ export class BankAPIClient {
 </soapenv:Envelope>`;
   }
 
+  private async extractSoapFaultMessage(xml: string): Promise<string | undefined> {
+    try {
+      const parsed = await parseStringPromise(xml, {
+        explicitArray: true,
+        ignoreAttrs: false,
+        tagNameProcessors: [require('xml2js').processors.stripPrefix],
+      });
+      const fault = parsed?.Envelope?.Body?.[0]?.Fault?.[0];
+      if (!fault) return undefined;
+      const detail =
+        this.extractText(fault.detail?.[0]?.message) ||
+        this.extractText(fault.detail?.[0]?.message?.[0]);
+      const faultString = this.extractText(fault.faultstring);
+      return detail || faultString || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
   private async postSoapRequest(envelope: string): Promise<string> {
     try {
       const endpoint = await this.getBaseUrl();
@@ -91,12 +110,16 @@ export class BankAPIClient {
         body: envelope,
       });
 
+      const text = await response.text();
       if (!response.ok) {
-        const text = await response.text();
+        const faultMessage = await this.extractSoapFaultMessage(text);
+        if (faultMessage) {
+          throw new Error(faultMessage);
+        }
         throw new Error(`Bank SOAP error: ${response.status} - ${text}`);
       }
 
-      return response.text();
+      return text;
     } catch (error: any) {
       if (error.cause?.code === 'ECONNREFUSED') {
         const endpoint = await this.getBaseUrl();
@@ -245,12 +268,16 @@ export class BankAPIClient {
         body: envelope,
       });
 
+      const text = await response.text();
       if (!response.ok) {
-        const text = await response.text();
+        const faultMessage = await this.extractSoapFaultMessage(text);
+        if (faultMessage) {
+          throw new Error(faultMessage);
+        }
         throw new Error(`Bank SOAP error: ${response.status} - ${text}`);
       }
 
-      return response.text();
+      return text;
     } catch (error: any) {
       if (error.cause?.code === 'ECONNREFUSED') {
         console.error(`❌ Cannot connect to FCUBS IA Service endpoint`);

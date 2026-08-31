@@ -97,7 +97,9 @@ export class SoapController {
         }
       }
 
-      const category = await CustomerCategoryService.resolveFromAccount(trimmedAccountNumber);
+      const category = await CustomerCategoryService.resolveFromAccount(
+        result.accountNumber || trimmedAccountNumber
+      );
       (result as any).customerCategoryCode = category.categoryCode;
       (result as any).customerCategoryFound = category.found;
       if (category.found) {
@@ -137,9 +139,16 @@ export class SoapController {
       res.json(result);
     } catch (error: any) {
       console.error('SOAP query error:', error);
-      res.status(500).json({
-        error: 'فشل الاستعلام عن دفتر الشيكات',
-        details: error.message
+      const message = String(error?.message || '');
+      const notFound =
+        message.includes('غير موجود') ||
+        message.includes('not found') ||
+        message.includes('SOAP Fault');
+      res.status(notFound ? 404 : 500).json({
+        error: notFound
+          ? message.replace(/^SOAP Fault:\s*/i, '').split(' - ')[0] || 'الحساب غير موجود'
+          : 'فشل الاستعلام عن دفتر الشيكات',
+        details: message,
       });
     }
   }
