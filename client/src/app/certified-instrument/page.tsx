@@ -41,7 +41,11 @@ export default function CertifiedInstrumentPage() {
       }
       setInstrument(result);
       setAmountWords(amountToArabicTafqeet(result.amount));
-      if (result.alreadyPrinted) {
+      if (result.instrumentStatus !== 'A' || result.txnStatus !== 'L') {
+        setError(
+          `لا يمكن طباعة الصك: يجب أن تكون INSTRUMENT_STATUS=A و TXN_STATUS=L (الحالي: ${result.instrumentStatus || '—'} / ${result.txnStatus || '—'}).`
+        );
+      } else if (result.alreadyPrinted) {
         setError('هذا الصك مطبوع مسبقاً. يمكن إعادة طباعته من سجل طباعة الصك المصدق فقط.');
       }
     } catch (err: any) {
@@ -51,12 +55,22 @@ export default function CertifiedInstrumentPage() {
     }
   };
 
+  const canPrintInstrument = (item: SoapInstrumentResponse) =>
+    item.instrumentStatus === 'A' && item.txnStatus === 'L';
+
   const handlePrint = async () => {
     if (!instrument) return;
 
     const branchError = assertClientSameBranch(currentUser, instrument.txnBranch || instrument.branchNumber);
     if (branchError) {
       setError(branchError);
+      return;
+    }
+
+    if (!canPrintInstrument(instrument)) {
+      setError(
+        `لا يمكن طباعة الصك: يجب أن تكون INSTRUMENT_STATUS=A و TXN_STATUS=L (الحالي: ${instrument.instrumentStatus || '—'} / ${instrument.txnStatus || '—'}).`
+      );
       return;
     }
 
@@ -169,8 +183,8 @@ export default function CertifiedInstrumentPage() {
           <div className="card space-y-4">
             <h2 className="text-lg font-semibold text-gray-800 border-b pb-3">بيانات الصك</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              <p><span className="text-gray-500">المستفيد: </span><strong>{instrument.beneficiaryName}</strong></p>
-              <p><span className="text-gray-500">صاحب الحساب: </span><strong>{instrument.accountHolderName}</strong></p>
+              <p><span className="text-gray-500">صادر الصك (BENEF_NAME): </span><strong>{instrument.beneficiaryName}</strong></p>
+              <p><span className="text-gray-500">الساحب (REMARKS): </span><strong>{instrument.accountHolderName}</strong></p>
               <p><span className="text-gray-500">رقم الحساب: </span><span className="font-mono" dir="ltr">{instrument.accountNumber}</span></p>
               <p><span className="text-gray-500">رقم الصك: </span><span className="font-mono" dir="ltr">{instrument.instrumentNo}</span></p>
               <p><span className="text-gray-500">رقم الفرع (من المصرف): </span><span className="font-mono" dir="ltr">{instrument.txnBranch}</span></p>
@@ -178,6 +192,8 @@ export default function CertifiedInstrumentPage() {
               <p><span className="text-gray-500">الرقم التوجيهي: </span><span className="font-mono" dir="ltr">{instrument.routingNumber || '—'}</span></p>
               <p><span className="text-gray-500">الرقم المحاسبي: </span><span className="font-mono" dir="ltr">{instrument.accountingNumber || '—'}</span></p>
               <p><span className="text-gray-500">التاريخ: </span>{instrument.issueDate}</p>
+              <p><span className="text-gray-500">حالة الصك: </span><span className="font-mono" dir="ltr">{instrument.instrumentStatus || '—'}</span></p>
+              <p><span className="text-gray-500">حالة العملية: </span><span className="font-mono" dir="ltr">{instrument.txnStatus || '—'}</span></p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t">
@@ -224,11 +240,21 @@ export default function CertifiedInstrumentPage() {
 
             <button
               onClick={handlePrint}
-              disabled={printing || instrument.alreadyPrinted || !instrument.routingNumber || !instrument.accountingNumber}
+              disabled={
+                printing ||
+                instrument.alreadyPrinted ||
+                !canPrintInstrument(instrument) ||
+                !instrument.routingNumber ||
+                !instrument.accountingNumber
+              }
               className="btn btn-primary flex items-center gap-2 disabled:opacity-50"
             >
               <Printer className="w-4 h-4" />
-              {instrument.alreadyPrinted ? 'مطبوع — أعد الطباعة من السجل' : 'طباعة الصك وترميزه'}
+              {instrument.alreadyPrinted
+                ? 'مطبوع — أعد الطباعة من السجل'
+                : !canPrintInstrument(instrument)
+                  ? 'غير قابل للطباعة (حالة غير مكتملة)'
+                  : 'طباعة الصك وترميزه'}
             </button>
           </div>
         )}

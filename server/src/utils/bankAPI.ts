@@ -495,9 +495,11 @@ export class BankAPIClient {
     }
 
     const header = response[0]?.FCUBS_HEADER?.[0];
-    const msgStat = this.extractText(header?.MSGSTAT);
-    if (msgStat && msgStat !== 'SUCCESS') {
-      throw new Error(`فشل الاستعلام عن الصك المصدق (MSGSTAT=${msgStat})`);
+    const msgStat = (this.extractText(header?.MSGSTAT) || '').trim().toUpperCase();
+    if (msgStat !== 'SUCCESS') {
+      throw new Error(
+        `لا يمكن طباعة الصك: حالة الرسالة غير ناجحة (MSGSTAT=${msgStat || 'فارغ'}). يجب أن تكون SUCCESS.`
+      );
     }
 
     const fcubsBody = response[0]?.FCUBS_BODY?.[0];
@@ -507,25 +509,43 @@ export class BankAPIClient {
       throw new Error('لم يتم العثور على بيانات الصك المصدق لهذا الرقم المرجعي');
     }
 
+    const instrumentStatus = (this.extractText(child.INSTRUMENT_STATUS) || '').trim().toUpperCase();
+    const txnStatus = (this.extractText(child.TXN_STATUS) || '').trim().toUpperCase();
+
+    // الطباعة مسموحة فقط عند: MSGSTAT=SUCCESS و INSTRUMENT_STATUS=A و TXN_STATUS=L
+    if (instrumentStatus !== 'A') {
+      throw new Error(
+        `لا يمكن طباعة الصك: حالة الصك غير مقبولة (INSTRUMENT_STATUS=${instrumentStatus || 'فارغ'}). يجب أن تكون A.`
+      );
+    }
+    if (txnStatus !== 'L') {
+      throw new Error(
+        `لا يمكن طباعة الصك: حالة العملية غير مقبولة (TXN_STATUS=${txnStatus || 'فارغ'}). يجب أن تكون L.`
+      );
+    }
+
     const amountText = this.extractText(child.INSTRUMENT_AMOUNT) || this.extractText(child.DR_AMOUNT) || '0';
+    // صادر الصك ← BENEF_NAME | الساحب ← REMARKS (حسب تحديث المصرف)
+    const beneficiaryName = this.extractText(child.BENEF_NAME) || '';
+    const accountHolderName = this.extractText(child.REMARKS) || '';
 
     return {
       txnRefNo: this.extractText(child.TXN_REF_NO) || this.extractText(master.TXN_REF_NO) || txnRefNo,
       customerNo: this.extractText(child.CUSTOMER_NO) || '',
       accountNumber: this.extractText(child.DR_AC_NO) || '',
-      accountHolderName: this.extractText(child.DR_NAME) || '',
-      beneficiaryName: this.extractText(child.BENEF_NAME) || '',
+      accountHolderName,
+      beneficiaryName,
       amount: parseFloat(amountText) || 0,
       currency: this.extractText(child.INSTRUMENT_CCY) || this.extractText(child.DR_AC_CCY) || 'LYD',
       instrumentNo: this.extractText(child.INSTR_NO) || '',
       instrumentType: this.extractText(child.INSTRUMENT_TYPE) || '',
       instrumentCode: this.extractText(child.INSTRUMENT_CODE) || '',
       instrumentDesc: this.extractText(child.INSTRUMENT_DESC) || '',
-      instrumentStatus: this.extractText(child.INSTRUMENT_STATUS) || '',
+      instrumentStatus,
       issueDate: this.extractText(child.INSTRUMENT_ISSUE_DATE) || this.extractText(child.BOOK_DATE) || '',
       bookDate: this.extractText(child.BOOK_DATE) || '',
       txnBranch: this.extractText(child.TXN_BRANCH) || branchCode,
-      txnStatus: this.extractText(child.TXN_STATUS) || '',
+      txnStatus,
     };
   }
 }

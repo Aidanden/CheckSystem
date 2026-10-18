@@ -247,8 +247,18 @@ export class SoapController {
       console.error('InstrumentList SOAP query error:', error);
       const message = String(error?.message || '');
       const notFound = message.includes('لم يتم العثور') || message.includes('غير موجود');
-      res.status(notFound ? 404 : 500).json({
-        error: notFound ? 'لم يتم العثور على صك مصدق بهذا الرقم المرجعي' : 'فشل الاستعلام عن الصك المصدق',
+      const notPrintable =
+        message.includes('لا يمكن طباعة الصك') ||
+        message.includes('MSGSTAT') ||
+        message.includes('INSTRUMENT_STATUS') ||
+        message.includes('TXN_STATUS');
+      const status = notFound ? 404 : notPrintable ? 400 : 500;
+      res.status(status).json({
+        error: notFound
+          ? 'لم يتم العثور على صك مصدق بهذا الرقم المرجعي'
+          : notPrintable
+            ? 'الصك غير قابل للطباعة حسب شروط المصرف'
+            : 'فشل الاستعلام عن الصك المصدق',
         details: error.message,
       });
     }

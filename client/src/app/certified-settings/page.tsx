@@ -554,7 +554,7 @@ export default function CertifiedSettingsPage() {
 
                         {/* Account Holder Name Position */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="font-medium text-gray-700">اسم صاحب الحساب</h3>
+                            <h3 className="font-medium text-gray-700">اسم الساحب (REMARKS)</h3>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -606,7 +606,7 @@ export default function CertifiedSettingsPage() {
 
                         {/* Beneficiary Name Position */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="font-medium text-gray-700">اسم المستفيد</h3>
+                            <h3 className="font-medium text-gray-700">صادر الصك / المستفيد (BENEF_NAME)</h3>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>

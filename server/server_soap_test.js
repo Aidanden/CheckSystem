@@ -92,7 +92,8 @@ const TEST_INSTRUMENTS = [
       txnRefNo: '2617301647520000',
       customerNo: '00000002',
       account: '001001000002114',
-      drName: 'علي حسين علي قارش',
+      drName: 'النقدية بالخزينة الفرعية - الرئيسي طرابلس',
+      remarks: 'علي حسين علي قارش',
       benefName: 'شركة سلطان للمطابخ',
       amount: '5000',
       currency: 'LYD',
@@ -102,12 +103,15 @@ const TEST_INSTRUMENTS = [
       instrumentType: 'MC',
       instrumentDesc: 'Cheque Clearing Network Libya',
       issueDate: '2026-05-14',
+      instrumentStatus: 'A',
+      txnStatus: 'L',
    },
    {
       txnRefNo: '2617301647520001',
       customerNo: '00000003',
       account: '001001000100002',
-      drName: 'محمد علي أحمد',
+      drName: 'النقدية بالخزينة الفرعية - الرئيسي طرابلس',
+      remarks: 'محمد علي أحمد',
       benefName: 'مصطفى سالم التجارة',
       amount: '1250.500',
       currency: 'LYD',
@@ -117,12 +121,71 @@ const TEST_INSTRUMENTS = [
       instrumentType: 'MC',
       instrumentDesc: 'Cheque Clearing Network Libya',
       issueDate: '2026-06-01',
+      instrumentStatus: 'A',
+      txnStatus: 'L',
+   },
+   // أمثلة المصرف الفعلية
+   {
+      txnRefNo: '2628801649220000',
+      customerNo: '',
+      account: '101010201',
+      drName: 'النقدية بالخزينة الفرعية - الرئيسي طرابلس',
+      remarks: 'شركة العنكبوت الليبي',
+      benefName: 'مصرف الإستثمار العربي الإسلامي',
+      amount: '175000',
+      currency: 'LYD',
+      instrNo: '000007711',
+      branch: '001',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-09-20',
+      instrumentStatus: 'A',
+      txnStatus: 'L',
+   },
+   {
+      txnRefNo: '2628801649205000',
+      customerNo: '',
+      account: '101010201',
+      drName: 'النقدية بالخزينة الفرعية - الرئيسي طرابلس',
+      remarks: 'أحمد محمد خالد',
+      benefName: 'طارق فادي حسين رحمه',
+      amount: '25',
+      currency: 'LYD',
+      instrNo: '000007710',
+      branch: '001',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-09-20',
+      instrumentStatus: 'A',
+      txnStatus: 'L',
+   },
+   // صك بحالة غير قابلة للطباعة (للاختبار السلبي)
+   {
+      txnRefNo: '2628801649999000',
+      customerNo: '',
+      account: '101010201',
+      drName: 'النقدية بالخزينة الفرعية - الرئيسي طرابلس',
+      remarks: 'اختبار مرفوض',
+      benefName: 'مستفيد مرفوض',
+      amount: '100',
+      currency: 'LYD',
+      instrNo: '000007799',
+      branch: '001',
+      instrumentCode: 'ECC_BC',
+      instrumentType: 'MC',
+      instrumentDesc: 'Cheque Clearing Network Libya',
+      issueDate: '2026-09-20',
+      instrumentStatus: 'C',
+      txnStatus: 'A',
    },
    {
       txnRefNo: '2620010002000999',
       customerNo: '00000010',
       account: '002001000200001',
-      drName: 'شركة مصراتة القابضة',
+      drName: 'النقدية بالخزينة الفرعية - مصراتة',
+      remarks: 'شركة مصراتة القابضة',
       benefName: 'مصلحة الضرائب',
       amount: '37500',
       currency: 'LYD',
@@ -132,12 +195,15 @@ const TEST_INSTRUMENTS = [
       instrumentType: 'MC',
       instrumentDesc: 'Cheque Clearing Network Libya',
       issueDate: '2026-07-20',
+      instrumentStatus: 'A',
+      txnStatus: 'L',
    },
    {
       txnRefNo: '2610010496270325',
       customerNo: '00000021',
       account: '001214000100002',
-      drName: 'محمد علي أحمد',
+      drName: 'النقدية بالخزينة الفرعية - الرئيسي طرابلس',
+      remarks: 'محمد علي أحمد',
       benefName: 'شركة النور للمقاولات',
       amount: '49627.325',
       currency: 'LYD',
@@ -147,12 +213,15 @@ const TEST_INSTRUMENTS = [
       instrumentType: 'MC',
       instrumentDesc: 'Cheque Clearing Network Libya',
       issueDate: '2026-08-10',
+      instrumentStatus: 'A',
+      txnStatus: 'L',
    },
    {
       txnRefNo: '2610010000000001',
       customerNo: '00000022',
       account: '001214000100003',
-      drName: 'سالم عمر خالد',
+      drName: 'النقدية بالخزينة الفرعية - الرئيسي طرابلس',
+      remarks: 'سالم عمر خالد',
       benefName: 'مستشفى طرابلس المركزي',
       amount: '1',
       currency: 'LYD',
@@ -162,6 +231,8 @@ const TEST_INSTRUMENTS = [
       instrumentType: 'MC',
       instrumentDesc: 'Cheque Clearing Network Libya',
       issueDate: '2026-08-11',
+      instrumentStatus: 'A',
+      txnStatus: 'L',
    },
    {
       txnRefNo: '2610010000000125',
@@ -495,6 +566,9 @@ const soapHandler = async (req, res) => {
 
             const msgId = generateMsgId();
             const bookDate = instrument.issueDate;
+            const remarks = instrument.remarks || instrument.drName || '';
+            const instrumentStatus = instrument.instrumentStatus || 'A';
+            const txnStatus = instrument.txnStatus || 'L';
             responseXml = `<?xml version="1.0" encoding="UTF-8"?>
 <S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
    <S:Body>
@@ -503,21 +577,29 @@ const soapHandler = async (req, res) => {
             <SOURCE>FLEXCUBE</SOURCE>
             <UBSCOMP>FCUBS</UBSCOMP>
             <MSGID>${msgId}</MSGID>
-            <USERID>ABHILASH01</USERID>
+            <USERID>ADMINUSER1</USERID>
             <BRANCH>${headerBranch}</BRANCH>
             <ENTITY>ENTITY_ID1</ENTITY>
             <SERVICE>InstrumentListService</SERVICE>
             <OPERATION>QueryFetchInstrumentList</OPERATION>
+            <SOURCE_USERID/>
+            <MULTITRIPID/>
             <FUNCTIONID>PIDISLST</FUNCTIONID>
             <ACTION>FETCH_IN_LST</ACTION>
             <MSGSTAT>SUCCESS</MSGSTAT>
          </FCUBS_HEADER>
          <FCUBS_BODY>
             <Fetch-In-Lst-Master-Full>
+               <CUSTOMER_NO/>
+               <DR_AC_NO/>
+               <INSTRUMENT_CCY/>
+               <INSTRUMENT_CODE/>
+               <INSTRUMENT_TYPE/>
+               <INSTR_NO/>
                <TXN_REF_NO>${instrument.txnRefNo}</TXN_REF_NO>
+               <SOURCE_CODE/>
                <Fetch-In-Lst-Child>
                   <BOOK_DATE>${bookDate}</BOOK_DATE>
-                  <CUSTOMER_NO>${instrument.customerNo}</CUSTOMER_NO>
                   <DR_AC_CCY>${instrument.currency}</DR_AC_CCY>
                   <DR_AC_NO>${instrument.account}</DR_AC_NO>
                   <DR_AMOUNT>${instrument.amount}</DR_AMOUNT>
@@ -530,13 +612,14 @@ const soapHandler = async (req, res) => {
                   <INSTRUMENT_CODE>${instrument.instrumentCode}</INSTRUMENT_CODE>
                   <INSTRUMENT_DESC>${instrument.instrumentDesc}</INSTRUMENT_DESC>
                   <INSTRUMENT_ISSUE_DATE>${instrument.issueDate}</INSTRUMENT_ISSUE_DATE>
-                  <INSTRUMENT_STATUS>A</INSTRUMENT_STATUS>
+                  <INSTRUMENT_STATUS>${instrumentStatus}</INSTRUMENT_STATUS>
                   <INSTRUMENT_TYPE>${instrument.instrumentType}</INSTRUMENT_TYPE>
                   <INSTR_NO>${instrument.instrNo}</INSTR_NO>
-                  <SOURCE_CODE>MANL</SOURCE_CODE>
+                  <REMARKS>${remarks}</REMARKS>
+                  <SOURCE_CODE>OBTLR</SOURCE_CODE>
                   <TXN_BRANCH>${instrument.branch}</TXN_BRANCH>
                   <TXN_REF_NO>${instrument.txnRefNo}</TXN_REF_NO>
-                  <TXN_STATUS>L</TXN_STATUS>
+                  <TXN_STATUS>${txnStatus}</TXN_STATUS>
                   <BENEF_NAME>${instrument.benefName}</BENEF_NAME>
                </Fetch-In-Lst-Child>
             </Fetch-In-Lst-Master-Full>
